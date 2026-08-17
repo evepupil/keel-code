@@ -1,6 +1,9 @@
 import type {
   ApprovalRequest,
   BoardData,
+  BuiltinProviderOption,
+  CatalogModel,
+  CatalogProvider,
   CreateSessionInput,
   DocListItem,
   DocRead,
@@ -99,6 +102,30 @@ export const api = {
   // ---- 工作区级 ----
   project: () => request<ProjectInfo>(w("/project")),
   providers: () => request<ProviderInfo[]>("/providers"),
+  unusedBuiltins: () => request<BuiltinProviderOption[]>("/providers/builtins"),
+  catalog: (id: string) => request<CatalogProvider>(`/providers/${encodeURIComponent(id)}/catalog`),
+  upsertProvider: (
+    id: string,
+    body: {
+      kind: "builtin" | "custom";
+      name?: string;
+      baseUrl?: string;
+      api?: string;
+      apiKey?: string;
+      models?: CatalogModel[];
+    },
+  ) =>
+    request<ProviderInfo>(`/providers/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  removeProvider: (id: string) =>
+    request<{ ok: true }>(`/providers/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  fetchRemoteModels: (body: { baseUrl: string; api: string; apiKey?: string }) =>
+    request<{ id: string }[]>("/providers/fetch-models", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   probe: (providers?: string[]) =>
     request<ProviderProbe[]>(
       `/providers/probe${providers ? `?providers=${providers.join(",")}` : ""}`,

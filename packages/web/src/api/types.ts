@@ -1,6 +1,9 @@
 /** 与服务端共享的类型：直接复用引擎包的类型声明（仅类型，不进 bundle）。 */
 
 export type {
+  BuiltinProviderOption,
+  CatalogModel,
+  CatalogProvider,
   EngineEvent,
   EngineMessage,
   KeelSettings,
