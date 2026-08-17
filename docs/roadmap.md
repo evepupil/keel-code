@@ -6,7 +6,7 @@
 
 做一个「类似 Claude Code / Codex 的编程 agent 工具」，但把一整套开发方法论焊进基础设施：设计先行、review 闭环绑定、强制层拦违规、对话可托管也可随时接管。**核心卖点是下限高**：结构干净、前端不丑、可扩展、可上线，且大幅降低人工监督、纠偏、返工成本。
 
-> 产品级设计（定位、对话与 agent 模型、闭环、强制层、底座选型）归档在 [设计/](设计/README.md)；本表只管里程碑进度。
+> 产品级设计（定位、对话与 agent 模型、闭环、强制层、底座选型、能力档与多工作区、能力插槽）归档在 [设计/](设计/README.md)；本表只管里程碑进度。
 > **2026-08-17 底座已定**：自研工具本体（CLI + 本地服务 + Web 工作台），引擎内核嵌入 pi（`@earendil-works/pi-*`，MIT），全部 keel 逻辑放在自己的层里。原 DeepSeek Harness 插件包路线归档（见 [设计/05](设计/05-底座选型与调研.md)）。
 
 ## 里程碑
@@ -21,11 +21,12 @@
 | [M5](#m5) | 加固与扩展：审批三档、MCP 客户端、压缩策略、`keel run` 无头、文档修剪 job、worktree 并行、workflow 编排（脚本化多 agent） | 进行中 | M4 | [引擎](模块设计/引擎.md) · [文档管理](模块设计/文档管理.md) · [CLI](模块设计/CLI.md) · [MCP](模块设计/MCP.md) | 审批三档 ✅ / `keel run` ✅ / 文档修剪 job ✅ / MCP 客户端 ✅ / workflow 编排 ✅（2026-08-17）；压缩策略沿用 pi 默认自动压缩（真实使用后再调）；worktree 并行待做（当前做法：每个 worktree 各起一份 `keel serve`）；无头回归稳定；真实项目跑通完整流程 |
 | [M7](#m7) | 能力档 + 多工作区：AI 只说档次（轻量 / 标准 / 旗舰）由系统落实并只起能通的；`keel web` 单实例多工作区 | 进行中 | M5 | [对话与名册](模块设计/对话与名册.md) · [服务端](模块设计/服务端.md) · [CLI](模块设计/CLI.md) · [Web界面](模块设计/Web界面.md) | 设置页配档 → AI 建对话按档落实、缺档回退有提示、不通的端点不被选；任意目录 `keel web` 打开含全部工作区的工作台 |
 | [M6](#m6) | 分发：npm 发布、`keel tui`、执行器接口（Claude Code / Codex 只留接口不实现） | 进行中 | M5 | [CLI](模块设计/CLI.md) | 包已设为可发布、Web 产物随 CLI 打包（2026-08-17，未实际发布）；`npm i -g keel-code` → `keel init` → `keel serve` 三步上手 |
+| [M8](#m8) | 能力插槽：默认集（搜索 / 浏览器 / 代码智能 / 回滚）+ 用户可自装 pi 扩展（项目开关 + 留痕 + 警告）+ Skills | 未开始 | M5 | [扩展与技能](模块设计/扩展与技能.md) · [引擎](模块设计/引擎.md) · [MCP](模块设计/MCP.md) · [强制层](模块设计/强制层.md) · [闭环编排器](模块设计/闭环编排器.md) · [CLI](模块设计/CLI.md) · [Web界面](模块设计/Web界面.md) | 开箱有搜索和浏览器；`allowExtra` 默认关，打开必须写理由且弹出警告；skills 可被模型发现；扩展工具仍过三道闸；坏扩展不拖死会话；前端批次在有浏览器能力时必须先看页面再上报 |
 
 ## 阶段说明
 
 ### M0
-pnpm monorepo（TypeScript 7 strict、Biome、vitest），10 个包骨架（engine / methodology / guards / roster / loop / docs / server / web / cli / testkit），门禁脚本 `pnpm gate`。文档：roadmap + 设计 01–05 + 模块设计 10 份。
+pnpm monorepo（TypeScript 7 strict、Biome、vitest），10 个包骨架（engine / methodology / guards / roster / loop / docs / server / web / cli / testkit），门禁脚本 `pnpm gate`。文档：roadmap + 设计 01–05 + 模块设计 10 份（后续增至 01–07、模块设计 11 份）。
 
 ### M1
 2026-08-17：引擎 / 服务端 / Web 最小工作台 / CLI / 方法论 base 全部落地；真实 DeepSeek 冒烟通过（完整闭环）。M1 关闭。运行要求：Node ≥ 22.19（pi 内核要求）。
@@ -60,3 +61,12 @@ pnpm monorepo（TypeScript 7 strict、Biome、vitest），10 个包骨架（engi
 2026-08-17：发布形态准备（publishConfig、prepack 复制 Web 产物、`pnpm keel` 根脚本）；实际 `npm publish`、`keel tui`、执行器接口待做。
 
 npm 发布、`keel tui`（复用 pi 终端界面 + keel 扩展）、执行器接口预留。
+
+### M8
+设计见 [设计/07](设计/07-能力插槽与扩展.md)。借生态补齐搜索 / 浏览器 / LSP / 回滚，强制层和闭环挂钩仍是自己的。
+
+顺序：先打开加载器（隔离目录、keel 扩展仍第一、skills、配置字段）→ 钉默认集四项 → `keel ext` 与设置页开关 / 警告 → 闭环挂钩（先浏览器）→ 失败隔离与 doctor。
+
+不做：dsh / Cordis 适配、自动继承 `~/.pi/agent`、再装一份 pi 的 MCP 扩展、Claude Code 插件市场（后置）。
+
+未进本里程碑、仍要另开需求的：图片输入、上报前自检、读 `AGENTS.md`、worktree 并行、危险命令清单。

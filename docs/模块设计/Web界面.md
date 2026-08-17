@@ -24,7 +24,7 @@ packages/web/src/
     design-doc/     设计文档批注编辑器（CodeMirror 6 markdown、划选批注、diff 预览、冻结）
     board/          看板（roadmap 表格投影 + review credit + 待决策数 + 名册）
     roster/         名册面板（新鲜度、模型、费用）
-    settings/       端点与密钥、模型档次（轻量 / 标准 / 旗舰）与锁定（全局）；项目配置、MCP（当前工作区）
+    settings/       端点与密钥、模型档次（轻量 / 标准 / 旗舰）与锁定（全局）；项目配置、MCP、扩展与 skills（当前工作区）
     workspaces/     工作区切换器（侧栏顶部）、添加工作区对话框（粘路径 / 原生选目录）、无工作区空态
     models/         具体模型下拉与档次常量（跨 feature 共用）
   design-system/  token（色板 / 字体配对 / 间距 / 圆角 / 阴影）+ 基础组件——先于任何业务页面
@@ -66,6 +66,7 @@ packages/web/src/
 - 桌面壳（Tauri / Electron，不在 v1）
 - Trajectory 回放视图
 - 前端重构（二）侧栏多项目分组 /（三）对话区与输入区，按 `docs/设计/原型/web-布局原型.html`
+- **扩展设置区块**（[M8](../roadmap.md#m8)）：默认集四项（开 / 关、版本、健康）；extra 列表；打开 `allowExtra` 的警告对话框（文案见 [设计/07](../设计/07-能力插槽与扩展.md)，不得改软）+ 理由输入；skills 列表。第一版安装入口可以是复制 `keel ext install`。有 `rewind` 时对话头部出「退回上一刀」。
 
 ## 改动历史
 
@@ -79,4 +80,5 @@ packages/web/src/
 | 2026-08-17 | M3：review 卡片与时间线合并 |
 | 2026-08-17 | M4：文档编辑器、看板、设计确认 / 冻结 / 验收卡、侧栏看板入口 |
 | 2026-08-17 | M5：审批卡、项目配置区 |
+| 2026-08-17 | M8 设计：设置页扩展 / skills、rewind 入口 |
 | 2026-08-17 | 前端重构（一）：token 分层与 xl 圆角、Radix 基础组件、设置弹窗 + tab、主题开关、可折叠侧栏、设计系统预览页 |
