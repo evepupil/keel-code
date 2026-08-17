@@ -1,5 +1,6 @@
 import { basename } from "node:path";
 import type { Engine } from "@keel-code/engine";
+import type { McpManager } from "@keel-code/mcp";
 import { Hono } from "hono";
 import type { WSContext } from "hono/ws";
 import { tokenAuth } from "./auth.js";
@@ -21,6 +22,7 @@ export interface AppDeps {
   roster: RosterServices;
   loop: LoopServices;
   approvals: ApprovalServices;
+  mcp: McpManager;
   token: string;
   version: string;
   /** hono 的 upgradeWebSocket（由 node 适配器提供） */
@@ -56,6 +58,7 @@ export function buildApp(deps: AppDeps): Hono {
   api.route("/", docRoutes(deps.engine));
   api.route("/", boardRoutes(deps.engine, deps.roster.store, deps.loop.reviewStateFile));
   api.route("/", approvalRoutes(deps.approvals));
+  api.get("/mcp", (c) => c.json(deps.mcp.status()));
   app.route("/api", api);
 
   app.get(

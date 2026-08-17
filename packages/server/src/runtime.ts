@@ -3,6 +3,7 @@
  * `keel serve`（HTTP + WS）与 `keel run`（无头）共用这一份。
  */
 import { createEngine, type Engine } from "@keel-code/engine";
+import { connectMcpServers, loadMcpConfig, type McpManager } from "@keel-code/mcp";
 import { SessionHub } from "./hub.js";
 import { type ApprovalServices, setupApprovals } from "./services/approvals.js";
 import { setupDocs } from "./services/docs.js";
@@ -23,6 +24,7 @@ export interface KeelRuntime {
   roster: RosterServices;
   loop: LoopServices;
   approvals: ApprovalServices;
+  mcp: McpManager;
   dispose(): Promise<void>;
 }
 
@@ -38,13 +40,20 @@ export async function createKeelRuntime(options: KeelRuntimeOptions): Promise<Ke
   const roster = setupRoster(engine, hub);
   const loop = setupLoop(engine, roster);
   const docs = setupDocs(engine, hub);
+  // MCP：连接失败不阻塞启动
+  const mcp = await connectMcpServers({
+    engine,
+    config: loadMcpConfig(engine.paths.home, engine.cwd),
+  });
   return {
     engine,
     hub,
     roster,
     loop,
     approvals,
+    mcp,
     dispose: async () => {
+      await mcp.dispose();
       approvals.dispose();
       docs.dispose();
       loop.dispose();

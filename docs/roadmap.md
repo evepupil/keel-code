@@ -18,7 +18,7 @@
 | [M2](#m2) | 多对话与名册：主对话创建/列出/发消息/交接其他对话，创建时探测端点选模型；名册与新鲜度；子 agent（clean / fork）一次性委派 | 进行中 | M1 | [对话与名册](模块设计/对话与名册.md) · [方法论](模块设计/方法论.md) | 主对话建对话（自选模型）→ 对话干活 → 用户进入续聊 → 摘要回流名册 ✅（mock 端到端）；clean 子 agent 跑通 ✅、fork 已实现（待用例）；UI 查看子 agent（挂在父对话下）✅ |
 | [M3](#m3) | 闭环编排 + 强制层：批次上报 → 独立 reviewer → 分类路由 → 修复循环 → review-pass → 提交门禁；待决策；验收卡；guard-frontend；lint-on-write | 进行中 | M2 | [闭环编排器](模块设计/闭环编排器.md) · [强制层](模块设计/强制层.md) | 三条路径：修复-通过-提交 ✅（mock 端到端）/ 跳过 review 的提交被拒 ✅ / 待决策挂起落档 ✅ / 连续 3 轮升级（路由单测 ✅，端到端待补）；review 卡片进聊天时间线 ✅ |
 | [M4](#m4) | 设计确认与看板：设计文档批注编辑器 → 回显理解 → 冻结；看板；待决策队列；验收卡动作 | 进行中 | M3 | [Web界面](模块设计/Web界面.md) · [文档管理](模块设计/文档管理.md) | 一个玩具模块从设计批注走到验收全程在 Web 内完成 ✅（mock 目验：确认卡 → 批注 → 回显 → 上报 → review 卡 → 验收卡；冻结工具已实现待目验） |
-| [M5](#m5) | 加固与扩展：审批三档、MCP 客户端、压缩策略、`keel run` 无头、文档修剪 job、worktree 并行、workflow 编排（脚本化多 agent） | 进行中 | M4 | [引擎](模块设计/引擎.md) · [文档管理](模块设计/文档管理.md) · [CLI](模块设计/CLI.md) | 审批三档 ✅ / `keel run` ✅ / 文档修剪 job ✅（2026-08-17）；MCP、压缩策略、worktree 并行、workflow 编排待做；无头回归稳定；真实项目跑通完整流程 |
+| [M5](#m5) | 加固与扩展：审批三档、MCP 客户端、压缩策略、`keel run` 无头、文档修剪 job、worktree 并行、workflow 编排（脚本化多 agent） | 进行中 | M4 | [引擎](模块设计/引擎.md) · [文档管理](模块设计/文档管理.md) · [CLI](模块设计/CLI.md) · [MCP](模块设计/MCP.md) | 审批三档 ✅ / `keel run` ✅ / 文档修剪 job ✅ / MCP 客户端 ✅（2026-08-17）；压缩策略、worktree 并行、workflow 编排待做；无头回归稳定；真实项目跑通完整流程 |
 | [M6](#m6) | 分发：npm 发布、`keel tui`、执行器接口（Claude Code / Codex 只留接口不实现） | 未开始 | M5 | [CLI](模块设计/CLI.md) | `npm i -g keel-code` → `keel init` → `keel serve` 三步上手 |
 
 ## 阶段说明
@@ -47,7 +47,7 @@ pnpm monorepo（TypeScript 7 strict、Biome、vitest），10 个包骨架（engi
 设计确认交互（核心 UX）：Web 内打开设计文档可编辑视图，划选批注；agent 读 diff 逐条回显理解；冻结标记 + 提交。看板（roadmap 投影 + review 记录 + 待决策数 + 名册）。
 
 ### M5
-2026-08-17：运行时组合根 + 审批（edits / ask / yolo，WS 卡片）+ `keel run` + 提交后文档修剪 job + 项目配置区落地，76 用例全绿。
+2026-08-17：运行时组合根 + 审批（edits / ask / yolo，WS 卡片）+ `keel run` + 提交后文档修剪 job + 项目配置区落地；MCP 客户端（`@keel-code/mcp`，mcpServers 配置格式）落地。
 
 审批（ask / 白名单 / 全放）、MCP 客户端、压缩策略调优、`keel run` 无头、文档修剪 job（提交后兜底）、worktree 并行、workflow 编排。
 

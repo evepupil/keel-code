@@ -27,6 +27,9 @@
     },
     {
       "path": "packages/testkit"
+    },
+    {
+      "path": "packages/mcp"
     }
   ]
 }

@@ -6,7 +6,7 @@
 - 模块归档：`docs/模块设计/`（每个包一份，实现时同步更新）
 
 ## 结构
-pnpm monorepo，`packages/*` 十个包（engine / methodology / guards / roster / loop / docs / server / web / cli / testkit）。包名 `@keel-code/<name>`，CLI 发布名 `keel-code`。上层只依赖 `@keel-code/engine` 的 `Engine` 接口，不直接 import pi。
+pnpm monorepo，`packages/*` 十一个包（engine / methodology / guards / roster / loop / docs / mcp / server / web / cli / testkit）。包名 `@keel-code/<name>`，CLI 发布名 `keel-code`。上层只依赖 `@keel-code/engine` 的 `Engine` 接口，不直接 import pi。
 
 ## 规矩
 - TypeScript strict（根 `tsconfig.base.json`），ESM，Node ≥ 22.19（pi 内核要求；本机系统 Node 若偏低，可用便携版 Node 加到 PATH 后再跑 pnpm），不用 Bun，v1 不引入原生模块。

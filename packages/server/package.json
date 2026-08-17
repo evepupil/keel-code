@@ -26,6 +26,7 @@
     "@keel-code/engine": "workspace:*",
     "@keel-code/guards": "workspace:*",
     "@keel-code/loop": "workspace:*",
+    "@keel-code/mcp": "workspace:*",
     "@keel-code/methodology": "workspace:*",
     "@keel-code/roster": "workspace:*",
     "hono": "^4.13.2",

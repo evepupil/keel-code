@@ -20,8 +20,9 @@ packages/
   methodology/  方法论提示词
   guards/       强制层（guard-frontend / lint-on-write / commit-gate / 审批）
   roster/       对话、子 agent、名册、选模型
-  loop/         闭环编排器
-  docs/         设计文档确认、文档修剪、roadmap 解析
+  loop/         闭环编排器（含提交后文档修剪 job）
+  docs/         设计文档确认、roadmap 解析、安全文件 API
+  mcp/          MCP 客户端（mcpServers 配置格式）
   server/       本地 HTTP + WebSocket
   web/          Web 工作台（React + Vite）
   cli/          keel 命令（发布名 keel-code）

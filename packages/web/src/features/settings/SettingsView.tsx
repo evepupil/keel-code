@@ -86,6 +86,8 @@ export function SettingsView() {
 
         <ProjectConfigSection />
 
+        <McpSection />
+
         <section className="space-y-1 text-xs text-ink-faint">
           <div>项目：{project?.cwd}</div>
         </section>
@@ -269,6 +271,47 @@ function ModelLocks() {
           </Field>
         ))}
       </div>
+    </section>
+  );
+}
+
+/** MCP 服务器状态：配置在 ~/.keel/mcp.json 与 <项目>/.keel/mcp.json（mcpServers 格式）。 */
+function McpSection() {
+  const [servers, setServers] = useState<
+    { name: string; connected: boolean; tools: string[]; error?: string }[] | null
+  >(null);
+  useEffect(() => {
+    api
+      .mcp()
+      .then(setServers)
+      .catch(() => setServers([]));
+  }, []);
+  if (!servers) return null;
+  return (
+    <section className="space-y-2">
+      <h2 className="text-sm font-semibold">MCP 服务器</h2>
+      <p className="text-xs text-ink-muted">
+        配置写在 <code className="rounded-sm bg-panel-2 px-1 font-mono">~/.keel/mcp.json</code>{" "}
+        或项目的
+        <code className="mx-1 rounded-sm bg-panel-2 px-1 font-mono">.keel/mcp.json</code>
+        （mcpServers 格式，与 Claude Code 相同），改后重启 keel serve 生效。
+      </p>
+      {servers.length === 0 ? (
+        <p className="text-xs text-ink-faint">没有配置 MCP 服务器。</p>
+      ) : (
+        <ul className="space-y-1 text-xs">
+          {servers.map((s) => (
+            <li key={s.name} className="flex flex-wrap items-center gap-2">
+              <span className="font-medium">{s.name}</span>
+              {s.connected ? (
+                <Badge tone="ok">已连接 · {s.tools.length} 个工具</Badge>
+              ) : (
+                <Badge tone="danger">未连接{s.error ? `：${s.error}` : ""}</Badge>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

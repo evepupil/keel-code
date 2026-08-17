@@ -1,0 +1,31 @@
+{
+  "name": "@keel-code/mcp",
+  "version": "0.0.0",
+  "private": true,
+  "description": "MCP 客户端：读取 mcp.json（mcpServers 格式），连接 stdio / HTTP 服务器，把工具注册进引擎",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@keel-code/engine": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.30.0"
+  },
+  "devDependencies": {
+    "@keel-code/testkit": "workspace:*",
+    "zod": "^4.4.3"
+  }
+}

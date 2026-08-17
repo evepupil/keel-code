@@ -107,6 +107,8 @@ export const api = {
   board: () => request<BoardData>("/board"),
   resolveDecision: (line: number) =>
     request<{ ok: true }>("/decisions/resolve", { method: "POST", body: JSON.stringify({ line }) }),
+  mcp: () =>
+    request<{ name: string; connected: boolean; tools: string[]; error?: string }[]>("/mcp"),
   approvals: () => request<ApprovalRequest[]>("/approvals"),
   resolveApproval: (id: string, decision: "allow" | "deny" | "allow-session") =>
     request<{ ok: true }>(`/approvals/${id}`, {

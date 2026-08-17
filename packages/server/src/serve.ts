@@ -42,12 +42,22 @@ export async function startServer(options: StartServerOptions): Promise<RunningS
     ...(options.homeDir ? { homeDir: options.homeDir } : {}),
     ...(options.engine ? { engine: options.engine } : {}),
   });
-  const { engine, hub, roster, loop, approvals } = runtime;
+  const { engine, hub, roster, loop, approvals, mcp } = runtime;
   const token = options.token ?? randomBytes(16).toString("hex");
   const host = options.host ?? "127.0.0.1";
   const version = options.version ?? "0.0.0";
 
-  const app = buildApp({ engine, hub, roster, loop, approvals, token, version, upgradeWebSocket });
+  const app = buildApp({
+    engine,
+    hub,
+    roster,
+    loop,
+    approvals,
+    mcp,
+    token,
+    version,
+    upgradeWebSocket,
+  });
 
   if (options.staticDir && existsSync(join(options.staticDir, "index.html"))) {
     const root = relative(process.cwd(), options.staticDir) || ".";
