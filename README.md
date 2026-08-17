@@ -39,7 +39,9 @@ pnpm install
 pnpm gate      # lint + typecheck + test（提交前必须全绿）
 ```
 
-要求 Node ≥ 22.12、pnpm 10；Windows 需要 Git for Windows（bash 工具依赖）。
+要求 Node ≥ 22.19（pi 内核要求）、pnpm 10；Windows 需要 Git for Windows（bash 工具依赖）。
+
+本地目验（不需要真 key）：`pnpm build && pnpm tsx scripts/serve-mock.ts`，按打印的地址打开工作台。
 
 进度与设计见 [docs/roadmap.md](docs/roadmap.md)。
 

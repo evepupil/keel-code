@@ -9,7 +9,8 @@
 pnpm monorepo，`packages/*` 十个包（engine / methodology / guards / roster / loop / docs / server / web / cli / testkit）。包名 `@keel-code/<name>`，CLI 发布名 `keel-code`。上层只依赖 `@keel-code/engine` 的 `Engine` 接口，不直接 import pi。
 
 ## 规矩
-- TypeScript strict（根 `tsconfig.base.json`），ESM，Node ≥ 22.12，不用 Bun，v1 不引入原生模块。
+- TypeScript strict（根 `tsconfig.base.json`），ESM，Node ≥ 22.19（pi 内核要求；本机系统 Node 若偏低，可用便携版 Node 加到 PATH 后再跑 pnpm），不用 Bun，v1 不引入原生模块。
+- 引擎测试与服务端测试都靠 `@keel-code/testkit` 的 mock OpenAI 服务，不需要真 key；目验用 `pnpm tsx scripts/serve-mock.ts`。
 - 按职责拆目录 / 文件；判定逻辑写成纯函数并配单测；纯展示层不写单测。
 - 提交前 `pnpm gate` 全绿（Biome + tsc + vitest）。
 - 改模块必同步 `docs/模块设计/<模块>.md`；里程碑状态 / 依赖 / 退出标准变化才改 roadmap；保持 roadmap ↔ 模块文档双向链接。

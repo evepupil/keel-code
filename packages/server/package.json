@@ -17,8 +17,18 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "tsc -b",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "@keel-code/engine": "workspace:*",
+    "@keel-code/methodology": "workspace:*",
+    "hono": "^4.13.2",
+    "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "@keel-code/testkit": "workspace:*",
+    "@types/ws": "^8.18.1"
   }
 }

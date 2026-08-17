@@ -17,11 +17,21 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "tsc -b",
     "test": "vitest run"
   },
   "bin": {
     "keel": "./dist/bin.js"
+  },
+  "dependencies": {
+    "@keel-code/engine": "workspace:*",
+    "@keel-code/server": "workspace:*",
+    "commander": "^15.0.0"
+  },
+  "devDependencies": {
+    "@keel-code/testkit": "workspace:*"
+  },
+  "engines": {
+    "node": ">=22.19.0"
   }
 }

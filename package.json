@@ -7,10 +7,11 @@
   "type": "module",
   "packageManager": "pnpm@10.21.0",
   "engines": {
-    "node": ">=22.12"
+    "node": ">=22.19.0"
   },
   "scripts": {
-    "typecheck": "pnpm -r --if-present typecheck",
+    "build": "tsc -b && pnpm --filter @keel-code/web build",
+    "typecheck": "tsc -b && pnpm --filter @keel-code/web typecheck",
     "test": "vitest run",
     "lint": "biome check .",
     "format": "biome format --write .",
@@ -18,6 +19,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.8",
+    "@keel-code/server": "workspace:*",
+    "@keel-code/testkit": "workspace:*",
     "@types/node": "^22.15.0",
     "tsx": "^4.23.12",
     "typescript": "7.0.2",

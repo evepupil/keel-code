@@ -1,0 +1,32 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "packages/engine"
+    },
+    {
+      "path": "packages/methodology"
+    },
+    {
+      "path": "packages/guards"
+    },
+    {
+      "path": "packages/roster"
+    },
+    {
+      "path": "packages/loop"
+    },
+    {
+      "path": "packages/docs"
+    },
+    {
+      "path": "packages/server"
+    },
+    {
+      "path": "packages/cli"
+    },
+    {
+      "path": "packages/testkit"
+    }
+  ]
+}
