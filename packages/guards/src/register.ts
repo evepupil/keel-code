@@ -6,6 +6,7 @@
  */
 import type { Engine, HookScope, Unsubscribe } from "@keel-code/engine";
 import { isGitRepo, readReviewState, treeHash } from "@keel-code/loop";
+import { changedPaths, isDocsOnlyChange } from "./commit/docs-only.js";
 import { extractCommand, isGitCommit, judgeReviewCredit, runProjectGate } from "./commit/gate.js";
 import { readProjectConfig } from "./config/keel-config.js";
 import { collectPaths, judgeFrontendWrite, WRITE_TOOL_RE } from "./frontend/guard.js";
@@ -43,6 +44,8 @@ export function registerGuards(deps: RegisterGuardsDeps): Unsubscribe {
       const command = extractCommand(i.input);
       if (!command || !isGitCommit(command)) return undefined;
       const cfg = readProjectConfig(cwd);
+      // 纯文档提交（docs/ .keel/ *.md）不需要 review，也不跑项目门禁
+      if (isDocsOnlyChange(await changedPaths(cwd))) return undefined;
       if (cfg.guards.commitGate && cfg.loop) {
         const tree = (await isGitRepo(cwd)) ? await treeHash(cwd) : "no-git";
         const reason = judgeReviewCredit({

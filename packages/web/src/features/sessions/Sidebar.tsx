@@ -1,4 +1,4 @@
-import { Plus, Settings } from "lucide-react";
+import { LayoutGrid, Plus, Settings } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { SessionListItem } from "../../api/types";
 import { Button } from "../../design-system/components/button";
@@ -63,7 +63,15 @@ export function Sidebar() {
         ) : null}
       </nav>
 
-      <div className="border-t border-line p-2">
+      <div className="space-y-1 border-t border-line p-2">
+        <Button
+          variant="ghost"
+          className={cn("w-full justify-start", view === "board" && "bg-panel-2 text-ink")}
+          onClick={() => appStore.setView("board")}
+        >
+          <LayoutGrid className="h-4 w-4" />
+          看板
+        </Button>
         <Button
           variant="ghost"
           className={cn("w-full justify-start", view === "settings" && "bg-panel-2 text-ink")}

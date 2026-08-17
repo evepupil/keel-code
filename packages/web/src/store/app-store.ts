@@ -11,7 +11,7 @@ import type {
 import { WsClient } from "../api/ws";
 import { applyEngineEvent, type ChatState, emptyChat } from "./apply-event";
 
-export type View = "chat" | "settings";
+export type View = "chat" | "settings" | "board" | "doc";
 
 export interface AppState {
   ready: boolean;
@@ -26,6 +26,10 @@ export interface AppState {
   models: ModelInfo[];
   providers: ProviderInfo[];
   notice?: { kind: "error" | "info"; text: string } | undefined;
+  /** 当前打开的设计文档及其来源对话（AI 请求确认时带上） */
+  doc: { path: string; sessionId: string | null } | null;
+  /** 预填到输入框的草稿（验收打回等） */
+  composerDraft: string | null;
 }
 
 type Listener = () => void;
@@ -41,6 +45,8 @@ class AppStore {
     wsConnected: false,
     models: [],
     providers: [],
+    doc: null,
+    composerDraft: null,
   };
   private readonly listeners = new Set<Listener>();
   private ws: WsClient | null = null;
@@ -121,6 +127,14 @@ class AppStore {
 
   setView(view: View): void {
     this.set({ view });
+  }
+
+  openDoc(path: string, sessionId: string | null = this.state.currentId): void {
+    this.set({ view: "doc", doc: { path, sessionId } });
+  }
+
+  setComposerDraft(text: string | null): void {
+    this.set({ composerDraft: text });
   }
 
   selectSession(id: string): void {

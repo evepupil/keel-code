@@ -4,6 +4,7 @@
  * 强制层：guard-frontend、commit-gate（review credit + 项目门禁）、lint-on-write。判定是纯函数，挂载只做适配。
  */
 export const PACKAGE_NAME = "@keel-code/guards" as const;
+export { changedPaths, isDocPath, isDocsOnlyChange } from "./commit/docs-only.js";
 export {
   type CreditJudgeInput,
   extractCommand,

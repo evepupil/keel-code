@@ -24,6 +24,9 @@ export {
   countPendingDecisions,
   DECISIONS_REL,
   decisionsPath,
+  listPendingDecisions,
+  type PendingDecision,
+  resolveDecision,
 } from "./decisions/file.js";
 export {
   type LoopDeps,

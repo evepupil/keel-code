@@ -158,15 +158,17 @@ describe("闭环：修复-通过-提交链 + 跳过 review 被拒", () => {
       switch (toolMsgs) {
         case 0:
           return {
-            toolCalls: [{ name: "bash", arguments: { command: "git commit -q -m nothing" } }],
-          };
-        case 1:
-          return {
             toolCalls: [
               {
                 name: "write",
                 arguments: { path: "src/hello.ts", content: "export const color = '#ff0000';\n" },
               },
+            ],
+          };
+        case 1:
+          return {
+            toolCalls: [
+              { name: "bash", arguments: { command: "git add -A && git commit -q -m nothing" } },
             ],
           };
         case 2:
@@ -223,16 +225,16 @@ describe("闭环：修复-通过-提交链 + 跳过 review 被拒", () => {
 
     const results = toolResults(impl);
     expect(results.map((r) => r.toolName)).toEqual([
-      "bash",
       "write",
+      "bash",
       "keel_batch_report",
       "write",
       "keel_batch_report",
       "bash",
     ]);
-    // 0：无 review 提交被拒
-    expect(results[0]?.isError).toBe(true);
-    expect(results[0]?.text).toContain("没有 review 通过记录");
+    // 1：改了代码但没 review 就提交 → 被拒
+    expect(results[1]?.isError).toBe(true);
+    expect(results[1]?.text).toContain("没有 review 通过记录");
     // 2：第 1 轮 fail → 修复指令
     expect(results[2]?.text).toContain("review 未通过（第 1/3 轮");
     expect(results[2]?.text).toContain("硬编码");

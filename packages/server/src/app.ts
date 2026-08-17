@@ -4,9 +4,12 @@ import { Hono } from "hono";
 import type { WSContext } from "hono/ws";
 import { tokenAuth } from "./auth.js";
 import type { SessionHub } from "./hub.js";
+import { boardRoutes } from "./routes/board.js";
+import { docRoutes } from "./routes/docs.js";
 import { providerRoutes } from "./routes/providers.js";
 import { rosterRoutes } from "./routes/roster.js";
 import { sessionRoutes } from "./routes/sessions.js";
+import type { LoopServices } from "./services/loop.js";
 import type { RosterServices } from "./services/roster.js";
 import { WsHub } from "./ws/ws-hub.js";
 
@@ -14,6 +17,7 @@ export interface AppDeps {
   engine: Engine;
   hub: SessionHub;
   roster: RosterServices;
+  loop: LoopServices;
   token: string;
   version: string;
   /** hono 的 upgradeWebSocket（由 node 适配器提供） */
@@ -46,6 +50,8 @@ export function buildApp(deps: AppDeps): Hono {
   api.route("/", providerRoutes(deps.engine));
   api.route("/", sessionRoutes(deps.hub, deps.engine));
   api.route("/", rosterRoutes(deps.roster.store, deps.engine));
+  api.route("/", docRoutes(deps.engine));
+  api.route("/", boardRoutes(deps.engine, deps.roster.store, deps.loop.reviewStateFile));
   app.route("/api", api);
 
   app.get(

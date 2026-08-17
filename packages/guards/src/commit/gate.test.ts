@@ -29,3 +29,16 @@ describe("judgeReviewCredit", () => {
     ).toBeUndefined();
   });
 });
+
+describe("docs-only", () => {
+  it("isDocPath / isDocsOnlyChange", async () => {
+    const { isDocPath, isDocsOnlyChange } = await import("./docs-only.js");
+    expect(isDocPath("docs/roadmap.md")).toBe(true);
+    expect(isDocPath(".keel/config.json")).toBe(true);
+    expect(isDocPath("README.md")).toBe(true);
+    expect(isDocPath("src/a.ts")).toBe(false);
+    expect(isDocsOnlyChange(["docs/a.md", "README.md"])).toBe(true);
+    expect(isDocsOnlyChange(["docs/a.md", "src/a.ts"])).toBe(false);
+    expect(isDocsOnlyChange([])).toBe(true);
+  });
+});

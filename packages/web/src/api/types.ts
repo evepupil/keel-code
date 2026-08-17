@@ -52,3 +52,45 @@ export interface CreateSessionInput {
   thinkingLevel?: import("@keel-code/engine").ThinkingLevel;
   initialMessage?: string;
 }
+
+export interface DocListItem {
+  path: string;
+  size: number;
+  mtime: string;
+}
+
+export interface DocAnnotation {
+  line: number;
+  stamp: string;
+  text: string;
+  anchor: string;
+}
+
+export interface DocRead {
+  path: string;
+  content: string;
+  annotations: DocAnnotation[];
+  freeze: { commit: string; at: string; note?: string } | null;
+  diff?: string;
+}
+
+export interface BoardData {
+  roadmap: {
+    title: string;
+    goal: string;
+    milestones: {
+      id: string;
+      goal: string;
+      status: string;
+      deps: string;
+      docs: { text: string; href: string }[];
+      exit: string;
+    }[];
+  } | null;
+  review: {
+    roundsSincePass: number;
+    lastPass: { tree: string; at: string; batch: string; sessionId: string } | null;
+  };
+  decisions: { line: number; section: string; text: string }[];
+  roster: import("@keel-code/roster").RosterEntry[];
+}

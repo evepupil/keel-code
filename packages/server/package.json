@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.1.1",
+    "@keel-code/docs": "workspace:*",
     "@keel-code/engine": "workspace:*",
     "@keel-code/guards": "workspace:*",
     "@keel-code/loop": "workspace:*",

@@ -194,6 +194,68 @@ describe("会话", () => {
     expect(names).not.toContain("keel_report_to_main");
   });
 
+  it("文档 API：写（限 docs/）→ 批注 → 读；看板聚合", async () => {
+    const forbidden = await api("/docs/write", {
+      method: "PUT",
+      body: JSON.stringify({ path: "src/evil.md", content: "x" }),
+    });
+    expect(forbidden.status).toBe(400);
+    const w = await api("/docs/write", {
+      method: "PUT",
+      body: JSON.stringify({
+        path: "docs/模块设计/登录.md",
+        content: ["# 登录", "", "## 职责", "", "邮箱密码登录。", ""].join("\n"),
+      }),
+    });
+    expect(w.status).toBe(200);
+    const a = (await (
+      await api("/docs/annotate", {
+        method: "POST",
+        body: JSON.stringify({ path: "docs/模块设计/登录.md", line: 4, text: "还要手机号" }),
+      })
+    ).json()) as { annotations: { text: string; anchor: string }[] };
+    expect(a.annotations[0]).toMatchObject({ text: "还要手机号", anchor: "邮箱密码登录。" });
+    const read = (await (await api("/docs/read?path=docs/模块设计/登录.md&diff=1")).json()) as {
+      content: string;
+      annotations: unknown[];
+      freeze: unknown;
+    };
+    expect(read.content).toContain("[!批注]");
+    expect(read.annotations).toHaveLength(1);
+    expect(read.freeze).toBeNull();
+    const list = (await (await api("/docs")).json()) as { path: string }[];
+    expect(list.map((d) => d.path)).toContain("docs/模块设计/登录.md");
+
+    await api("/docs/write", {
+      method: "PUT",
+      body: JSON.stringify({
+        path: "docs/roadmap.md",
+        content: [
+          "# R",
+          "",
+          "## 目标",
+          "",
+          "做事。",
+          "",
+          "| 里程碑 | 目标 | 状态 | 依赖 | 模块文档 | 退出标准 |",
+          "|---|---|---|---|---|---|",
+          "| M0 | 初始化 | 已完成 | 无 | [登录](模块设计/登录.md) | ok |",
+          "",
+        ].join("\n"),
+      }),
+    });
+    const board = (await (await api("/board")).json()) as {
+      roadmap: { milestones: { id: string }[] } | null;
+      decisions: unknown[];
+      roster: unknown[];
+      review: { lastPass: unknown };
+    };
+    expect(board.roadmap?.milestones[0]?.id).toBe("M0");
+    expect(board.decisions).toEqual([]);
+    expect(board.roster.length).toBeGreaterThan(0);
+    expect(board.review.lastPass).toBeNull();
+  });
+
   it("WS 令牌错误被拒", async () => {
     const ws = new WebSocket(`ws://127.0.0.1:${server.port}/ws?token=wrong`);
     const code = await new Promise<number>((resolve) => {

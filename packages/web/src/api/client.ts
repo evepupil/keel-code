@@ -1,5 +1,8 @@
 import type {
+  BoardData,
   CreateSessionInput,
+  DocListItem,
+  DocRead,
   KeelSettings,
   ModelInfo,
   ProjectInfo,
@@ -87,6 +90,22 @@ export const api = {
       body: JSON.stringify(deliverAs ? { text, deliverAs } : { text }),
     }),
   abort: (id: string) => request<{ ok: true }>(`/sessions/${id}/abort`, { method: "POST" }),
+  docs: (dir = "docs") => request<DocListItem[]>(`/docs?dir=${encodeURIComponent(dir)}`),
+  readDoc: (path: string, diff = false) =>
+    request<DocRead>(`/docs/read?path=${encodeURIComponent(path)}${diff ? "&diff=1" : ""}`),
+  writeDoc: (path: string, content: string) =>
+    request<{ ok: true }>("/docs/write", {
+      method: "PUT",
+      body: JSON.stringify({ path, content }),
+    }),
+  annotateDoc: (path: string, line: number, text: string) =>
+    request<{ ok: true; content: string }>("/docs/annotate", {
+      method: "POST",
+      body: JSON.stringify({ path, line, text }),
+    }),
+  board: () => request<BoardData>("/board"),
+  resolveDecision: (line: number) =>
+    request<{ ok: true }>("/decisions/resolve", { method: "POST", body: JSON.stringify({ line }) }),
   roster: () => request<RosterEntry[]>("/roster"),
   rosterEntry: (id: string) => request<RosterEntry>(`/roster/${id}`),
   settings: () => request<KeelSettings>("/settings"),

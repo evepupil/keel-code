@@ -7,6 +7,7 @@ import { emptyChat } from "../../store/apply-event";
 import { RosterPanel } from "../roster/RosterPanel";
 import { ModelSelect, modelKey, parseModelKey } from "../sessions/NewSessionDialog";
 import { indexToolResults, MessageItem } from "./MessageItem";
+import { AcceptanceCard, DesignConfirmCard, DesignFreezeCard } from "./ProcessCards";
 import { ReviewCard, type ReviewEntryView } from "./ReviewCard";
 
 export function ChatView() {
@@ -130,7 +131,7 @@ export function ChatView() {
           ) : (
             timeline.map((item, i) =>
               item.kind === "entry" ? (
-                <ReviewCard key={item.entry.id} data={item.entry.data as ReviewEntryView} />
+                <EntryCard key={item.entry.id} entry={item.entry} sessionId={meta.id} />
               ) : (
                 <MessageItem
                   // biome-ignore lint/suspicious/noArrayIndexKey: 消息没有稳定 id，列表只追加不重排，index 仅作同毫秒去重
@@ -179,12 +180,22 @@ function Composer({
 }) {
   const [text, setText] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
+  const draft = useAppState((s) => s.composerDraft);
 
   // 切换会话时清空输入
   // biome-ignore lint/correctness/useExhaustiveDependencies: 只在 sessionId 变化时清空
   useEffect(() => {
     setText("");
   }, [sessionId]);
+
+  // 外部预填（验收打回等）
+  useEffect(() => {
+    if (draft !== null) {
+      setText(draft);
+      appStore.setComposerDraft(null);
+      ref.current?.focus();
+    }
+  }, [draft]);
 
   const send = () => {
     const t = text.trim();
@@ -256,7 +267,7 @@ export function buildTimeline(
     at: message.timestamp,
   }));
   for (const entry of entries) {
-    if (entry.customType !== "keel/review") continue;
+    if (!RENDERED_ENTRIES.has(entry.customType)) continue;
     items.push({ kind: "entry", entry, at: entry.timestamp });
   }
   // 稳定排序：同一时间戳保持原顺序（消息在前）
@@ -264,4 +275,44 @@ export function buildTimeline(
     .map((it, idx) => ({ it, idx }))
     .sort((a, b) => a.it.at - b.it.at || a.idx - b.idx)
     .map((x) => x.it);
+}
+
+const RENDERED_ENTRIES = new Set(["keel/review", "keel/design-confirm", "keel/design-freeze"]);
+
+/** 按条目类型选卡片；review 通过的条目后面跟一张验收卡。 */
+function EntryCard({
+  entry,
+  sessionId,
+}: {
+  entry: import("../../api/types").SessionEntry;
+  sessionId: string;
+}) {
+  switch (entry.customType) {
+    case "keel/review": {
+      const data = entry.data as ReviewEntryView;
+      return (
+        <>
+          <ReviewCard data={data} />
+          {data.action === "pass" ? (
+            <AcceptanceCard sessionId={sessionId} batch={data.batch} />
+          ) : null}
+        </>
+      );
+    }
+    case "keel/design-confirm":
+      return (
+        <DesignConfirmCard
+          data={entry.data as { path: string; summary: string; at: string }}
+          sessionId={sessionId}
+        />
+      );
+    case "keel/design-freeze":
+      return (
+        <DesignFreezeCard
+          data={entry.data as { path: string; commit: string; at: string; note?: string }}
+        />
+      );
+    default:
+      return null;
+  }
 }

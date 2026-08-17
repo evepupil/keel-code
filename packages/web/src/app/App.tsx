@@ -1,5 +1,7 @@
 import { useEffect } from "react";
+import { BoardView } from "../features/board/BoardView";
 import { ChatView } from "../features/chat/ChatView";
+import { DocEditor } from "../features/docs/DocEditor";
 import { Sidebar } from "../features/sessions/Sidebar";
 import { SettingsView } from "../features/settings/SettingsView";
 import { cn } from "../lib/cn";
@@ -36,7 +38,15 @@ export function App() {
     <div className="flex h-full">
       <Sidebar />
       <main className="flex min-w-0 flex-1 flex-col">
-        {view === "settings" ? <SettingsView /> : <ChatView />}
+        {view === "settings" ? (
+          <SettingsView />
+        ) : view === "board" ? (
+          <BoardView />
+        ) : view === "doc" ? (
+          <DocEditor />
+        ) : (
+          <ChatView />
+        )}
       </main>
       {notice ? (
         <div
