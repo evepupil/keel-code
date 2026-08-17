@@ -2,7 +2,7 @@
 
 - **模块定位**：`keel` 命令（发布名 `keel-code`）：`init`（初始化项目：`.keel/`、`docs/` 骨架、`.gitignore`）、`web`（任意目录打开含全部工作区的工作台，后台单实例）、`serve`（前台单项目别名）、`run`（无头跑一个任务，走完整闭环，CI 用）、`status` / `doctor`（环境自检：Node、Git Bash、端点连通）、后期 `tui`。
 - **对应代码**：`packages/cli/`（bin：`keel`）
-- **所属里程碑**：[M1 — init / serve / doctor](../roadmap.md#m1) → [M5 — run](../roadmap.md#m5) → [M6 — 分发与 tui](../roadmap.md#m6) → [M7 — keel web 多工作区](../roadmap.md#m7) → [M8 — ext](../roadmap.md#m8)
+- **所属里程碑**：[M1 — init / serve / doctor](../roadmap.md#m1) → [M5 — run](../roadmap.md#m5) → [M6 — 分发与 tui](../roadmap.md#m6) → [M7 — keel web 多工作区](../roadmap.md#m7) → [M8 — ext](../roadmap.md#m8) → [M9](../roadmap.md#m9) / [M10](../roadmap.md#m10)
 - **当前状态**：进行中（init / web / serve / status / doctor / run 已落地）
 - **最近更新**：2026-08-17
 
@@ -46,6 +46,8 @@ packages/cli/src/
 - `keel tui`（M6）
 - 执行器接口（M6 只留接口）
 - **`keel ext`**（[M8](../roadmap.md#m8)）：`install / list / remove`，默认装到 `~/.keel/pi`，`--project` 装到当前项目；打开 `allowExtra` 必须在终端再确认一次警告原文。`keel init` 写出 `extensions` / `skills` 默认段；`keel doctor` 报告默认集是否装齐、哪一项加载失败、`allowExtra` 是否打开。
+- **日常驾驶**（[M9](../roadmap.md#m9)）：`keel init` 写出 `precheck` / `permissions.ask|deny`；`keel doctor` 提一句读到了哪些说明书（没有不当错误）。
+- **并行与安全网**（[M10](../roadmap.md#m10)）：`keel doctor` 报 worktree 能否建、残留副本、钩子清单、通知是否可发；`keel init` 把 `.keel/worktrees/` 写进 gitignore。
 
 ## 改动历史
 
@@ -58,3 +60,4 @@ packages/cli/src/
 | 2026-08-17 | M6 准备：包设为可发布（publishConfig），prepack 复制 Web 产物到 `<cli>/web`，根脚本 `pnpm keel` |
 | 2026-08-17 | run 退出前等待后台子 agent；DeepSeek 真机冒烟通过 |
 | 2026-08-17 | M8 设计：`keel ext` / init 配置段 / doctor 扩展检查 |
+| 2026-08-17 | M9 / M10 设计：init / doctor 覆盖说明书、危险清单、worktree、钩子 |
