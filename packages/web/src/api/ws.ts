@@ -1,10 +1,12 @@
 import { getToken } from "./client";
-import type { EngineEvent } from "./types";
+import type { ApprovalRequest, EngineEvent } from "./types";
 
 type ServerMessage =
   | { type: "hello" }
   | { type: "event"; sessionId: string; event: EngineEvent }
   | { type: "sessions_changed" }
+  | { type: "approval"; request: ApprovalRequest }
+  | { type: "approval_resolved"; id: string; decision: string }
   | { type: "pong" }
   | { type: "error"; message: string };
 
@@ -12,6 +14,8 @@ export interface WsHandlers {
   onEvent(sessionId: string, event: EngineEvent): void;
   onSessionsChanged(): void;
   onStatus(connected: boolean): void;
+  onApproval?(request: ApprovalRequest): void;
+  onApprovalResolved?(id: string): void;
 }
 
 /** WebSocket 客户端：自动重连、断线后重放订阅。 */
@@ -47,6 +51,8 @@ export class WsClient {
       }
       if (msg.type === "event") this.handlers.onEvent(msg.sessionId, msg.event);
       else if (msg.type === "sessions_changed") this.handlers.onSessionsChanged();
+      else if (msg.type === "approval") this.handlers.onApproval?.(msg.request);
+      else if (msg.type === "approval_resolved") this.handlers.onApprovalResolved?.(msg.id);
     };
     ws.onclose = () => {
       this.handlers.onStatus(false);

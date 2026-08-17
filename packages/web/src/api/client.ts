@@ -1,4 +1,5 @@
 import type {
+  ApprovalRequest,
   BoardData,
   CreateSessionInput,
   DocListItem,
@@ -106,6 +107,12 @@ export const api = {
   board: () => request<BoardData>("/board"),
   resolveDecision: (line: number) =>
     request<{ ok: true }>("/decisions/resolve", { method: "POST", body: JSON.stringify({ line }) }),
+  approvals: () => request<ApprovalRequest[]>("/approvals"),
+  resolveApproval: (id: string, decision: "allow" | "deny" | "allow-session") =>
+    request<{ ok: true }>(`/approvals/${id}`, {
+      method: "POST",
+      body: JSON.stringify({ decision }),
+    }),
   roster: () => request<RosterEntry[]>("/roster"),
   rosterEntry: (id: string) => request<RosterEntry>(`/roster/${id}`),
   settings: () => request<KeelSettings>("/settings"),

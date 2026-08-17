@@ -4,7 +4,7 @@
  */
 import type { Engine } from "@keel-code/engine";
 import { readProjectConfig, registerGuards } from "@keel-code/guards";
-import { registerBatchReportTool, reviewStatePath } from "@keel-code/loop";
+import { registerBatchReportTool, registerDocPruneJob, reviewStatePath } from "@keel-code/loop";
 import type { RosterServices } from "./roster.js";
 
 export interface LoopServices {
@@ -25,9 +25,16 @@ export function setupLoop(engine: Engine, roster: RosterServices): LoopServices 
     },
   });
   const offGuards = registerGuards({ engine, reviewStateFile });
+  const offPrune = registerDocPruneJob({
+    engine,
+    gateway: roster.gateway,
+    runner: roster.runner,
+    enabled: () => readProjectConfig(engine.cwd).docPrune,
+  });
   return {
     reviewStateFile,
     dispose: () => {
+      offPrune();
       offLoop();
       offGuards();
     },

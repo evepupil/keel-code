@@ -4,11 +4,13 @@ import { Hono } from "hono";
 import type { WSContext } from "hono/ws";
 import { tokenAuth } from "./auth.js";
 import type { SessionHub } from "./hub.js";
+import { approvalRoutes } from "./routes/approvals.js";
 import { boardRoutes } from "./routes/board.js";
 import { docRoutes } from "./routes/docs.js";
 import { providerRoutes } from "./routes/providers.js";
 import { rosterRoutes } from "./routes/roster.js";
 import { sessionRoutes } from "./routes/sessions.js";
+import type { ApprovalServices } from "./services/approvals.js";
 import type { LoopServices } from "./services/loop.js";
 import type { RosterServices } from "./services/roster.js";
 import { WsHub } from "./ws/ws-hub.js";
@@ -18,6 +20,7 @@ export interface AppDeps {
   hub: SessionHub;
   roster: RosterServices;
   loop: LoopServices;
+  approvals: ApprovalServices;
   token: string;
   version: string;
   /** hono 的 upgradeWebSocket（由 node 适配器提供） */
@@ -32,7 +35,7 @@ export interface AppDeps {
 
 export function buildApp(deps: AppDeps): Hono {
   const app = new Hono();
-  const wsHub = new WsHub(deps.hub);
+  const wsHub = new WsHub(deps.hub, deps.approvals);
 
   const api = new Hono();
   api.use("*", tokenAuth(deps.token));
@@ -52,6 +55,7 @@ export function buildApp(deps: AppDeps): Hono {
   api.route("/", rosterRoutes(deps.roster.store, deps.engine));
   api.route("/", docRoutes(deps.engine));
   api.route("/", boardRoutes(deps.engine, deps.roster.store, deps.loop.reviewStateFile));
+  api.route("/", approvalRoutes(deps.approvals));
   app.route("/api", api);
 
   app.get(

@@ -6,4 +6,12 @@
 export const PACKAGE_NAME = "@keel-code/server" as const;
 export { buildApp } from "./app.js";
 export { type CreateConversationInput, type HubEvent, SessionHub } from "./hub.js";
+export { createKeelRuntime, type KeelRuntime, type KeelRuntimeOptions } from "./runtime.js";
 export { type RunningServer, type StartServerOptions, startServer } from "./serve.js";
+export {
+  type ApprovalDecision,
+  type ApprovalRequest,
+  type ApprovalServices,
+  isSafeCommand,
+  needsApproval,
+} from "./services/approvals.js";

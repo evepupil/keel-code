@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { ApiError, api, bootstrapToken } from "../api/client";
 import type {
+  ApprovalRequest,
   CreateSessionInput,
   EngineEvent,
   ModelInfo,
@@ -30,6 +31,8 @@ export interface AppState {
   doc: { path: string; sessionId: string | null } | null;
   /** 预填到输入框的草稿（验收打回等） */
   composerDraft: string | null;
+  /** 待用户审批的工具调用 */
+  approvals: ApprovalRequest[];
 }
 
 type Listener = () => void;
@@ -47,6 +50,7 @@ class AppStore {
     providers: [],
     doc: null,
     composerDraft: null,
+    approvals: [],
   };
   private readonly listeners = new Set<Listener>();
   private ws: WsClient | null = null;
@@ -93,7 +97,18 @@ class AppStore {
       this.ws = new WsClient({
         onEvent: (sessionId, event) => this.applyEvent(sessionId, event),
         onSessionsChanged: () => void this.refreshSessions(false),
-        onStatus: (connected) => this.set({ wsConnected: connected }),
+        onStatus: (connected) => {
+          this.set({ wsConnected: connected });
+          if (connected) void this.refreshApprovals();
+        },
+        onApproval: (request) =>
+          this.set((s) => ({
+            approvals: s.approvals.some((a) => a.id === request.id)
+              ? s.approvals
+              : [...s.approvals, request],
+          })),
+        onApprovalResolved: (id) =>
+          this.set((s) => ({ approvals: s.approvals.filter((a) => a.id !== id) })),
       });
       this.ws.connect();
       const first =
@@ -123,6 +138,23 @@ class AppStore {
   async refreshModels(): Promise<void> {
     const [providers, models] = await Promise.all([api.providers(), api.models(true)]);
     this.set({ providers, models });
+  }
+
+  async refreshApprovals(): Promise<void> {
+    try {
+      this.set({ approvals: await api.approvals() });
+    } catch {
+      // 忽略
+    }
+  }
+
+  async resolveApproval(id: string, decision: "allow" | "deny" | "allow-session"): Promise<void> {
+    try {
+      await api.resolveApproval(id, decision);
+      this.set((s) => ({ approvals: s.approvals.filter((a) => a.id !== id) }));
+    } catch (e) {
+      this.notify("error", `审批失败：${e instanceof Error ? e.message : String(e)}`);
+    }
   }
 
   setView(view: View): void {

@@ -9,6 +9,7 @@ import { startServer } from "@keel-code/server";
 import { Command } from "commander";
 import { runDoctor } from "./commands/doctor.js";
 import { initProject } from "./commands/init.js";
+import { runHeadless } from "./commands/run.js";
 import { openBrowser } from "./util/open-browser.js";
 import { findWebDist } from "./util/web-dist.js";
 
@@ -81,6 +82,44 @@ export function buildProgram(): Command {
       process.on("SIGINT", () => void shutdown());
       process.on("SIGTERM", () => void shutdown());
     });
+
+  program
+    .command("run")
+    .description("无头跑一个任务：默认发给主对话，过程流到 stdout，空闲即退出（审批自动放行）")
+    .argument("<task>", "任务描述")
+    .option("-c, --conversation <titleOrId>", "发给指定对话（标题或 id）")
+    .option("-n, --new <title>", "新建一条对话来跑")
+    .option("-r, --role <text>", "新建对话的职责段")
+    .option("-m, --model <provider/id>", "指定模型")
+    .option("--json", "按行输出 JSON 事件（机器可读）")
+    .option("--timeout <minutes>", "超时分钟数", "30")
+    .action(
+      async (
+        task: string,
+        o: {
+          conversation?: string;
+          new?: string;
+          role?: string;
+          model?: string;
+          json?: boolean;
+          timeout: string;
+        },
+      ) => {
+        const { cwd, home } = opts();
+        const result = await runHeadless({
+          cwd,
+          ...(home ? { homeDir: home } : {}),
+          task,
+          ...(o.conversation ? { conversation: o.conversation } : {}),
+          ...(o.new ? { newConversation: o.new } : {}),
+          ...(o.role ? { role: o.role } : {}),
+          ...(o.model ? { model: o.model } : {}),
+          ...(o.json ? { json: true } : {}),
+          timeoutMs: Number(o.timeout) * 60 * 1000,
+        });
+        process.exitCode = result.finished === "idle" ? 0 : 1;
+      },
+    );
 
   program
     .command("status")

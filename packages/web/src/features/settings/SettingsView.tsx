@@ -5,6 +5,7 @@ import { Button } from "../../design-system/components/button";
 import { Badge, Card, Field, Input, Spinner } from "../../design-system/components/primitives";
 import { appStore, useAppState } from "../../store/app-store";
 import { ModelSelect, modelKey, parseModelKey } from "../sessions/NewSessionDialog";
+import { ProjectConfigSection } from "./ProjectConfig";
 
 /** 常见 provider 放前面，其余按已配置优先、再按名称。 */
 const PREFERRED = [
@@ -82,6 +83,8 @@ export function SettingsView() {
         </div>
 
         <ModelLocks />
+
+        <ProjectConfigSection />
 
         <section className="space-y-1 text-xs text-ink-faint">
           <div>项目：{project?.cwd}</div>

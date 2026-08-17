@@ -3,7 +3,7 @@
 - **模块定位**：`keel` 命令（发布名 `keel-code`）：`init`（初始化项目：`.keel/`、`docs/` 骨架、`.gitignore`）、`serve`（起本地服务并打开工作台）、`run`（无头跑一个任务，走完整闭环，CI 用）、`status` / `doctor`（环境自检：Node、Git Bash、端点连通）、后期 `tui`。
 - **对应代码**：`packages/cli/`（bin：`keel`）
 - **所属里程碑**：[M1 — init / serve / doctor](../roadmap.md#m1) → [M5 — run](../roadmap.md#m5) → [M6 — 分发与 tui](../roadmap.md#m6)
-- **当前状态**：进行中（M1 init / serve / status / doctor 已落地）
+- **当前状态**：进行中（init / serve / status / doctor / run 已落地）
 - **最近更新**：2026-08-17
 
 ## 职责与边界
@@ -29,6 +29,8 @@ packages/cli/src/
 
 `packages/cli/src/`：`bin.ts`（入口）、`index.ts`（commander：`-C/--cwd`、`--home`）、`commands/init.ts`（`.keel/config.json`（guards 四开关 + loop + acceptance）、`.keel/agents/README.md`、`docs/roadmap.md` 模板、`docs/模块设计/`、`docs/review/`，只补缺不覆盖）、`commands/doctor.ts`（Node ≥ 22.19 / git / Git Bash / 用户目录可写 / 已配置 provider 与可用模型数）、`util/web-dist.ts`（发布形态 `<cli>/web`，monorepo 形态 `packages/web/dist`）、`util/open-browser.ts`。`serve` 默认端口 3131，`--port 0` 自动挑选，`--no-open` 不开浏览器。
 
+`commands/run.ts`：`keel run "<任务>" [-c 对话] [-n 新对话标题 -r 职责] [-m provider/id] [--json] [--timeout 分钟]`——`createKeelRuntime({ headless: true })`（审批全放），默认发给主对话，文本增量流到 stdout、工具调用摘要到 stderr，空闲即退出（退出码 0 = idle）；`--json` 按行输出事件与结果。
+
 ## 验证方式
 
 `commands/init.test.ts`（临时目录：创建 / 跳过 / 不覆盖）、`commands/doctor.test.ts`（版本判定）；实机 `keel doctor` 输出各项检查。
@@ -44,3 +46,4 @@ packages/cli/src/
 |---|---|
 | 2026-08-17 | M0 骨架与设计 |
 | 2026-08-17 | M1：init / serve / status / doctor |
+| 2026-08-17 | M5：run 无头模式；init 配置含 permissions / docPrune |

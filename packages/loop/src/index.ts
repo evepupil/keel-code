@@ -29,6 +29,12 @@ export {
   resolveDecision,
 } from "./decisions/file.js";
 export {
+  DOC_PRUNE_ENTRY,
+  type DocPruneDeps,
+  prunePrompt,
+  registerDocPruneJob,
+} from "./prune/job.js";
+export {
   type LoopDeps,
   REVIEW_ENTRY,
   type ReviewEntryData,

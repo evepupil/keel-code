@@ -4,13 +4,12 @@ import type { AddressInfo } from "node:net";
 import { join, relative } from "node:path";
 import { serve, upgradeWebSocket } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
-import { createEngine, type Engine } from "@keel-code/engine";
+import type { Engine } from "@keel-code/engine";
 import { WebSocketServer } from "ws";
 import { buildApp } from "./app.js";
-import { SessionHub } from "./hub.js";
-import { setupDocs } from "./services/docs.js";
-import { setupLoop } from "./services/loop.js";
-import { type RosterServices, setupRoster } from "./services/roster.js";
+import type { SessionHub } from "./hub.js";
+import { createKeelRuntime, type KeelRuntime } from "./runtime.js";
+import type { RosterServices } from "./services/roster.js";
 
 export interface StartServerOptions {
   cwd: string;
@@ -33,24 +32,22 @@ export interface RunningServer {
   engine: Engine;
   hub: SessionHub;
   roster: RosterServices;
+  runtime: KeelRuntime;
   close(): Promise<void>;
 }
 
 export async function startServer(options: StartServerOptions): Promise<RunningServer> {
-  const engine =
-    options.engine ??
-    (await createEngine(
-      options.homeDir ? { cwd: options.cwd, homeDir: options.homeDir } : { cwd: options.cwd },
-    ));
-  const hub = new SessionHub(engine);
-  const roster = setupRoster(engine, hub);
-  const loop = setupLoop(engine, roster);
-  const docs = setupDocs(engine, hub);
+  const runtime = await createKeelRuntime({
+    cwd: options.cwd,
+    ...(options.homeDir ? { homeDir: options.homeDir } : {}),
+    ...(options.engine ? { engine: options.engine } : {}),
+  });
+  const { engine, hub, roster, loop, approvals } = runtime;
   const token = options.token ?? randomBytes(16).toString("hex");
   const host = options.host ?? "127.0.0.1";
   const version = options.version ?? "0.0.0";
 
-  const app = buildApp({ engine, hub, roster, loop, token, version, upgradeWebSocket });
+  const app = buildApp({ engine, hub, roster, loop, approvals, token, version, upgradeWebSocket });
 
   if (options.staticDir && existsSync(join(options.staticDir, "index.html"))) {
     const root = relative(process.cwd(), options.staticDir) || ".";
@@ -84,13 +81,11 @@ export async function startServer(options: StartServerOptions): Promise<RunningS
     engine,
     hub,
     roster,
+    runtime,
     close: async () => {
-      docs.dispose();
-      loop.dispose();
-      roster.dispose();
       wss.close();
       await new Promise<void>((resolve) => server.close(() => resolve()));
-      if (!options.engine) await engine.dispose();
+      await runtime.dispose();
     },
   };
 }

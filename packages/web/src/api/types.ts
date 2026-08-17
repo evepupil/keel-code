@@ -94,3 +94,13 @@ export interface BoardData {
   decisions: { line: number; section: string; text: string }[];
   roster: import("@keel-code/roster").RosterEntry[];
 }
+
+export interface ApprovalRequest {
+  id: string;
+  sessionId: string;
+  parentId?: string;
+  toolName: string;
+  summary: string;
+  args: Record<string, unknown>;
+  createdAt: string;
+}

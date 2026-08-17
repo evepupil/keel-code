@@ -16,6 +16,8 @@ const DEFAULT_CONFIG = {
   },
   loop: true,
   acceptance: "milestone",
+  permissions: { mode: "edits", allow: [] },
+  docPrune: true,
 };
 
 const AGENTS_README = `# 对话名册

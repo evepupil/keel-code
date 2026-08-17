@@ -14,6 +14,14 @@ export interface KeelProjectConfig {
   /** 闭环整体开关（关掉 = 退化成普通编程 agent） */
   loop: boolean;
   acceptance: "immediate" | "milestone" | "final";
+  /** 审批：yolo 全放；edits 文件读写自动、shell 要问（安全前缀除外）；ask 写入与 shell 都问 */
+  permissions: {
+    mode: "ask" | "edits" | "yolo";
+    /** 额外放行的命令前缀 */
+    allow: string[];
+  };
+  /** 提交后自动跑文档修剪 job */
+  docPrune: boolean;
 }
 
 export const DEFAULT_PROJECT_CONFIG: KeelProjectConfig = {
@@ -21,6 +29,8 @@ export const DEFAULT_PROJECT_CONFIG: KeelProjectConfig = {
   guards: { frontend: true, lintOnWrite: true, commitGate: true, projectGate: true },
   loop: true,
   acceptance: "milestone",
+  permissions: { mode: "edits", allow: [] },
+  docPrune: true,
 };
 
 export function configPath(cwd: string): string {
@@ -36,10 +46,18 @@ export function readProjectConfig(cwd: string): KeelProjectConfig {
     return { ...DEFAULT_PROJECT_CONFIG, guards: { ...DEFAULT_PROJECT_CONFIG.guards } };
   }
   const guards = { ...DEFAULT_PROJECT_CONFIG.guards, ...(raw.guards ?? {}) };
+  const permissions = {
+    mode: raw.permissions?.mode ?? DEFAULT_PROJECT_CONFIG.permissions.mode,
+    allow: Array.isArray(raw.permissions?.allow)
+      ? raw.permissions.allow.filter((x) => typeof x === "string")
+      : [],
+  };
   return {
     version: raw.version ?? 1,
     guards,
     loop: raw.loop ?? true,
     acceptance: raw.acceptance ?? DEFAULT_PROJECT_CONFIG.acceptance,
+    permissions,
+    docPrune: raw.docPrune ?? true,
   };
 }

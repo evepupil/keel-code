@@ -6,6 +6,7 @@ import { appStore, useAppState } from "../../store/app-store";
 import { emptyChat } from "../../store/apply-event";
 import { RosterPanel } from "../roster/RosterPanel";
 import { ModelSelect, modelKey, parseModelKey } from "../sessions/NewSessionDialog";
+import { ApprovalCard } from "./ApprovalCard";
 import { indexToolResults, MessageItem } from "./MessageItem";
 import { AcceptanceCard, DesignConfirmCard, DesignFreezeCard } from "./ProcessCards";
 import { ReviewCard, type ReviewEntryView } from "./ReviewCard";
@@ -15,6 +16,7 @@ export function ChatView() {
   const sessions = useAppState((s) => s.sessions);
   const chats = useAppState((s) => s.chats);
   const models = useAppState((s) => s.models);
+  const approvals = useAppState((s) => s.approvals);
   const item = sessions.find((s) => s.meta.id === currentId);
   const chat = currentId ? (chats[currentId] ?? emptyChat()) : emptyChat();
   const toolResults = useMemo(() => indexToolResults(chat.messages), [chat.messages]);
@@ -153,6 +155,11 @@ export function ChatView() {
                 .join("、")}
             </div>
           ) : null}
+          {approvals
+            .filter((a) => a.sessionId === meta.id || a.parentId === meta.id)
+            .map((a) => (
+              <ApprovalCard key={a.id} request={a} fromSubagent={a.sessionId !== meta.id} />
+            ))}
         </div>
 
         <Composer

@@ -48,6 +48,7 @@ packages/web/src/
 - `features/docs/DocEditor.tsx`：CodeMirror 6 markdown 编辑器（行号 / 历史 / 自动换行 / token 主题），头部：冻结与批注数徽标、批注（在光标行后插块）、保存、「让 AI 读改动」（发提示回来源对话并切回聊天）。
 - `features/board/BoardView.tsx`：roadmap 表（状态徽标、模块文档链接直接打开编辑器）、review 记录、待决策（已解决按钮）、名册表。
 - `features/chat/ProcessCards.tsx`：`DesignConfirmCard`（打开批注）、`DesignFreezeCard`、`AcceptanceCard`（review 通过后：通过 → 发「验收通过」；打回 → 预填输入框）。
+- `features/chat/ApprovalCard.tsx`：审批卡（允许 / 本对话总是允许 / 拒绝），显示在当前对话（含其子 agent）的消息流末尾；`features/settings/ProjectConfig.tsx`：项目配置（审批档位、验收节奏、闭环 / 门禁 / 守卫 / 格式化 / 文档修剪开关），直接写回 `.keel/config.json`。
 - `features/chat/ReviewCard.tsx`：review 卡片（通过 / 未通过待修复 / 待决策挂起 / 升级 / 异常），findings 分类徽标，树指纹，「查看 reviewer 轨迹」跳到子会话；`ChatView.buildTimeline` 把消息与 `keel/review` 条目按时间合并。
 - `features/roster/RosterPanel.tsx`：右侧名册面板（新鲜度徽标 + 原因、状态、费用、消息数、记录字段），对话空闲时刷新；ChatView 头部对非主对话提供「回主对话」。
 - 开发：`vite.config.ts` 把 `/api` `/ws` 代理到 `KEEL_API`（默认 127.0.0.1:3131）；根 `scripts/serve-mock.ts` 起 mock 模型 + keel 服务用于目验。
@@ -72,3 +73,4 @@ packages/web/src/
 | 2026-08-17 | M2：名册面板、模型锁定、回主对话 |
 | 2026-08-17 | M3：review 卡片与时间线合并 |
 | 2026-08-17 | M4：文档编辑器、看板、设计确认 / 冻结 / 验收卡、侧栏看板入口 |
+| 2026-08-17 | M5：审批卡、项目配置区 |

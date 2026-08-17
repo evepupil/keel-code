@@ -7,6 +7,7 @@
  */
 import type { WSContext } from "hono/ws";
 import type { SessionHub } from "../hub.js";
+import type { ApprovalServices } from "../services/approvals.js";
 
 interface ClientState {
   subscriptions: Set<string>;
@@ -15,7 +16,18 @@ interface ClientState {
 export class WsHub {
   private readonly clients = new Map<WSContext, ClientState>();
 
-  constructor(private readonly hub: SessionHub) {
+  constructor(
+    private readonly hub: SessionHub,
+    approvals?: ApprovalServices,
+  ) {
+    approvals?.onRequest((req) => {
+      const payload = JSON.stringify({ type: "approval", request: req });
+      for (const ws of this.clients.keys()) safeSend(ws, payload);
+    });
+    approvals?.onResolved((id, decision) => {
+      const payload = JSON.stringify({ type: "approval_resolved", id, decision });
+      for (const ws of this.clients.keys()) safeSend(ws, payload);
+    });
     hub.onEvent(({ sessionId, event }) => {
       const payload = JSON.stringify({ type: "event", sessionId, event });
       for (const [ws, state] of this.clients) {
