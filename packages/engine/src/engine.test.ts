@@ -2,7 +2,7 @@
  * 引擎端到端：mock OpenAI 服务 + 临时 keel 目录 + 临时项目。
  * 验证：创建会话 → 自定义工具执行 → 守卫拦截 write → 文本收尾 → 持久化 → 重开恢复 → 端点探测。
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   type MockOpenAIServer,
@@ -11,7 +11,7 @@ import {
   startMockOpenAIServer,
   type TempDir,
 } from "@keel-code/testkit";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createEngine } from "./engine.js";
 import { Type } from "./index.js";
 import type { Engine, EngineEvent } from "./types.js";
@@ -93,6 +93,61 @@ describe("提供方目录", () => {
       await e.models.removeProvider("acme");
       expect(e.models.added().map((p) => p.id)).toEqual(["mock"]);
     } finally {
+      await e.dispose();
+      home2.cleanup();
+      project2.cleanup();
+    }
+  });
+  it("uses real models and saved headers for custom Anthropic gateways", async () => {
+    const home2 = makeTempKeelHome({ baseUrl: mock.baseUrl, models: ["mock-1"] });
+    const project2 = makeTempProject({ files: { "README.md": "# x\n" } });
+    const e = await createEngine({ cwd: project2.path, homeDir: home2.path });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (_input, init) => {
+      const headers = new Headers(init?.headers);
+      const ids = headers.has("anthropic-version")
+        ? [{ id: "claude-fable-bad" }]
+        : [{ id: "claude-sonnet-4-20250514" }, { id: "claude-3-7-sonnet" }];
+      return new Response(JSON.stringify({ data: ids }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    try {
+      await e.models.upsertProvider({
+        id: "anthropic-gateway",
+        kind: "custom",
+        name: "Anthropic Gateway",
+        baseUrl: "https://gateway.example",
+        api: "anthropic-messages",
+        apiKey: "k",
+        models: [],
+      });
+      const modelsPath = join(home2.path, "models.json");
+      const raw = JSON.parse(readFileSync(modelsPath, "utf8")) as {
+        providers: Record<string, { headers?: Record<string, string> }>;
+      };
+      raw.providers["anthropic-gateway"].headers = {
+        "x-gateway-mode": "models",
+        "user-agent": "custom-agent",
+      };
+      writeFileSync(modelsPath, `${JSON.stringify(raw, null, 2)}\n`);
+
+      const remote = await e.models.fetchRemoteModels({
+        providerId: "anthropic-gateway",
+        kind: "custom",
+      });
+      expect(remote.models.map((m) => m.id)).toEqual([
+        "claude-sonnet-4-20250514",
+        "claude-3-7-sonnet",
+      ]);
+      expect(remote.models.some((m) => m.id.startsWith("claude-fable-"))).toBe(false);
+      const requestHeaders = new Headers(fetchSpy.mock.calls[0]?.[1]?.headers);
+      expect(requestHeaders.get("anthropic-version")).toBeNull();
+      expect(requestHeaders.get("x-gateway-mode")).toBe("models");
+      expect(requestHeaders.get("user-agent")).toBe("custom-agent");
+      expect(requestHeaders.get("x-api-key")).toBe("k");
+    } finally {
+      fetchSpy.mockRestore();
       await e.dispose();
       home2.cleanup();
       project2.cleanup();

@@ -12,6 +12,19 @@ describe("buildModelsRequest", () => {
     const r = buildModelsRequest("anthropic-messages", "https://proxy/v1/", "k");
     expect(r?.url).toBe("https://proxy/v1/models");
   });
+  it("omits the official Anthropic header for custom gateways", () => {
+    const r = buildModelsRequest(
+      "anthropic-messages",
+      "https://proxy",
+      "k",
+      { "x-gateway-mode": "models", "Anthropic-Version": "custom" },
+      { includeAnthropicVersion: false },
+    );
+    expect(r?.headers["anthropic-version"]).toBeUndefined();
+    expect(r?.headers["Anthropic-Version"]).toBeUndefined();
+    expect(r?.headers["x-gateway-mode"]).toBe("models");
+    expect(r?.headers["x-api-key"]).toBe("k");
+  });
   it("openai 系：/models + Bearer", () => {
     const r = buildModelsRequest("openai-completions", "https://api.deepseek.com", "k");
     expect(r?.url).toBe("https://api.deepseek.com/models");

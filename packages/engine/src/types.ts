@@ -493,6 +493,7 @@ export interface Engine {
       baseUrl?: string;
       api?: string;
       apiKey?: string;
+      kind?: "builtin" | "custom";
     }): Promise<{ url: string; models: { id: string }[] }>;
   };
   readonly sessions: {

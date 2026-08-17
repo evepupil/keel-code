@@ -122,6 +122,7 @@ export const api = {
   removeProvider: (id: string) =>
     request<{ ok: true }>(`/providers/${encodeURIComponent(id)}`, { method: "DELETE" }),
   fetchRemoteModels: (body: {
+    kind: "builtin" | "custom";
     providerId?: string;
     baseUrl?: string;
     api?: string;

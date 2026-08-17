@@ -23,14 +23,20 @@ export function buildModelsRequest(
   baseUrl: string,
   apiKey: string | undefined,
   extraHeaders: Record<string, string> = {},
+  options: { includeAnthropicVersion?: boolean } = {},
 ): { url: string; headers: Record<string, string> } | undefined {
   const base = baseUrl.replace(/\/+$/, "");
   if (api === "anthropic-messages") {
     const url = base.endsWith("/v1") ? `${base}/models` : `${base}/v1/models`;
     const headers: Record<string, string> = {
-      "anthropic-version": "2023-06-01",
+      ...(options.includeAnthropicVersion === false ? {} : { "anthropic-version": "2023-06-01" }),
       ...extraHeaders,
     };
+    if (options.includeAnthropicVersion === false) {
+      for (const key of Object.keys(headers)) {
+        if (key.toLowerCase() === "anthropic-version") delete headers[key];
+      }
+    }
     if (apiKey) headers["x-api-key"] = apiKey;
     return { url, headers };
   }

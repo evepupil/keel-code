@@ -74,6 +74,7 @@ export function providerRoutes(engine: Pick<Engine, "models">): Hono {
       baseUrl?: string;
       api?: string;
       apiKey?: string;
+      kind?: "builtin" | "custom";
     };
     if (!body.providerId && (!body.baseUrl || !body.api)) {
       return c.json({ error: "providerId，或 baseUrl + api 必填" }, 400);
@@ -85,6 +86,7 @@ export function providerRoutes(engine: Pick<Engine, "models">): Hono {
           ...(body.baseUrl ? { baseUrl: body.baseUrl } : {}),
           ...(body.api ? { api: body.api } : {}),
           ...(body.apiKey ? { apiKey: body.apiKey } : {}),
+          ...(body.kind ? { kind: body.kind } : {}),
         }),
       );
     } catch (e) {

@@ -201,6 +201,7 @@ function CatalogEditor({
     setFetching(true);
     try {
       const remote = await api.fetchRemoteModels({
+        kind: values.kind,
         ...(values.id ? { providerId: values.id } : {}),
         ...(values.baseUrl.trim() ? { baseUrl: values.baseUrl.trim() } : {}),
         ...(values.api ? { api: values.api } : {}),

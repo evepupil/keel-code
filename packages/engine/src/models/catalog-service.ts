@@ -137,16 +137,22 @@ export async function fetchRemoteModels(
     baseUrl?: string;
     api?: string;
     apiKey?: string;
+    kind?: "builtin" | "custom";
   },
 ): Promise<{ url: string; models: { id: string }[] }> {
   let baseUrl = input.baseUrl?.trim();
   let api = input.api;
   let apiKey = input.apiKey?.trim();
+  let kind = input.kind ?? (input.providerId ? undefined : "custom");
+  let extraHeaders: Record<string, string> = {};
 
   if (input.providerId) {
     const p = runtime.getProvider(input.providerId);
     const first = runtime.getModels(input.providerId)[0];
     const cat = catalogOf(readModelsFile(modelsPath), input.providerId);
+    if (!kind) {
+      kind = runtime.getRegisteredNativeProvider(input.providerId) ? "builtin" : "custom";
+    }
     const nativeUrl = p?.baseUrl ?? first?.baseUrl;
     const formUrl = input.baseUrl?.trim();
     // 表单若还是官方默认地址，优先用目录里用户改过的端点
@@ -154,6 +160,7 @@ export async function fetchRemoteModels(
       baseUrl = cat?.baseUrl ?? formUrl ?? nativeUrl;
     }
     if (!api) api = cat?.api ?? first?.api;
+    if (cat?.headers) extraHeaders = { ...cat.headers };
     if (!apiKey) {
       try {
         const auth = await runtime.getAuth(input.providerId);
@@ -172,7 +179,9 @@ export async function fetchRemoteModels(
   if (!api) throw new Error("不知道用哪种协议列模型");
   if (!apiKey) throw new Error("没有 API 密钥：先保存提供方，或在表单里填密钥再获取");
 
-  const req = buildModelsRequest(api, baseUrl, apiKey);
+  const req = buildModelsRequest(api, baseUrl, apiKey, extraHeaders, {
+    includeAnthropicVersion: kind !== "custom",
+  });
   if (!req) throw new Error(`协议 ${api} 不知道怎么列模型`);
   const res = await fetch(req.url, { headers: req.headers, signal: AbortSignal.timeout(8000) });
   if (!res.ok) {
