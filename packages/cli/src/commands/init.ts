@@ -12,7 +12,9 @@ const DEFAULT_CONFIG = {
     frontend: true,
     lintOnWrite: true,
     commitGate: true,
+    projectGate: true,
   },
+  loop: true,
   acceptance: "milestone",
 };
 

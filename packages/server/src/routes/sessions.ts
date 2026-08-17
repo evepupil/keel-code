@@ -71,7 +71,15 @@ export function sessionRoutes(hub: SessionHub, engine: Engine): Hono {
   r.get("/sessions/:id", async (c) => {
     try {
       const s = await hub.get(c.req.param("id"));
-      return c.json({ meta: s.meta, messages: s.getMessages(), state: s.getState() });
+      const entries = s
+        .getEntries()
+        .filter(
+          (e) =>
+            e.customType.startsWith("keel/") &&
+            e.customType !== "keel/meta" &&
+            e.customType !== "keel/system-prompt",
+        );
+      return c.json({ meta: s.meta, messages: s.getMessages(), state: s.getState(), entries });
     } catch (e) {
       return c.json({ error: e instanceof Error ? e.message : String(e) }, 404);
     }

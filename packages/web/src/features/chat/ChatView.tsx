@@ -7,6 +7,7 @@ import { emptyChat } from "../../store/apply-event";
 import { RosterPanel } from "../roster/RosterPanel";
 import { ModelSelect, modelKey, parseModelKey } from "../sessions/NewSessionDialog";
 import { indexToolResults, MessageItem } from "./MessageItem";
+import { ReviewCard, type ReviewEntryView } from "./ReviewCard";
 
 export function ChatView() {
   const currentId = useAppState((s) => s.currentId);
@@ -16,6 +17,11 @@ export function ChatView() {
   const item = sessions.find((s) => s.meta.id === currentId);
   const chat = currentId ? (chats[currentId] ?? emptyChat()) : emptyChat();
   const toolResults = useMemo(() => indexToolResults(chat.messages), [chat.messages]);
+  // 消息与 keel 条目按时间合并成一条时间线
+  const timeline = useMemo(
+    () => buildTimeline(chat.messages, chat.entries),
+    [chat.messages, chat.entries],
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
   // 每次对话回到空闲就刷新一次名册面板
@@ -122,15 +128,21 @@ export function ChatView() {
           ) : chat.messages.length === 0 ? (
             <EmptyState title="说点什么开始。" />
           ) : (
-            chat.messages.map((m, i) => (
-              <MessageItem
-                // biome-ignore lint/suspicious/noArrayIndexKey: 消息没有稳定 id，列表只追加不重排，index 仅作同毫秒去重
-                key={`${m.role}-${m.timestamp}-${i}`}
-                message={m}
-                toolResults={toolResults}
-                streaming={chat.streaming && i === chat.messages.length - 1}
-              />
-            ))
+            timeline.map((item, i) =>
+              item.kind === "entry" ? (
+                <ReviewCard key={item.entry.id} data={item.entry.data as ReviewEntryView} />
+              ) : (
+                <MessageItem
+                  // biome-ignore lint/suspicious/noArrayIndexKey: 消息没有稳定 id，列表只追加不重排，index 仅作同毫秒去重
+                  key={`${item.message.role}-${item.message.timestamp}-${i}`}
+                  message={item.message}
+                  toolResults={toolResults}
+                  streaming={
+                    chat.streaming && item.message === chat.messages[chat.messages.length - 1]
+                  }
+                />
+              ),
+            )
           )}
           {chat.streaming && Object.keys(chat.activeTools).length > 0 ? (
             <div className="mx-auto max-w-3xl px-4 text-xs text-ink-faint">
@@ -227,4 +239,29 @@ function Composer({
       </div>
     </div>
   );
+}
+
+type TimelineItem =
+  | { kind: "message"; message: import("../../api/types").EngineMessage; at: number }
+  | { kind: "entry"; entry: import("../../api/types").SessionEntry; at: number };
+
+/** 消息 + review 卡片按时间排序；只渲染 keel/review 条目。 */
+export function buildTimeline(
+  messages: import("../../api/types").EngineMessage[],
+  entries: import("../../api/types").SessionEntry[],
+): TimelineItem[] {
+  const items: TimelineItem[] = messages.map((message) => ({
+    kind: "message",
+    message,
+    at: message.timestamp,
+  }));
+  for (const entry of entries) {
+    if (entry.customType !== "keel/review") continue;
+    items.push({ kind: "entry", entry, at: entry.timestamp });
+  }
+  // 稳定排序：同一时间戳保持原顺序（消息在前）
+  return items
+    .map((it, idx) => ({ it, idx }))
+    .sort((a, b) => a.it.at - b.it.at || a.idx - b.idx)
+    .map((x) => x.it);
 }

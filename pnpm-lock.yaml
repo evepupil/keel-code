@@ -67,9 +67,37 @@ importers:
         specifier: workspace:*
         version: link:../testkit
 
-  packages/guards: {}
+  packages/guards:
+    dependencies:
+      '@keel-code/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@keel-code/loop':
+        specifier: workspace:*
+        version: link:../loop
+    devDependencies:
+      '@keel-code/testkit':
+        specifier: workspace:*
+        version: link:../testkit
 
-  packages/loop: {}
+  packages/loop:
+    dependencies:
+      '@keel-code/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@keel-code/methodology':
+        specifier: workspace:*
+        version: link:../methodology
+      '@keel-code/roster':
+        specifier: workspace:*
+        version: link:../roster
+    devDependencies:
+      '@keel-code/guards':
+        specifier: workspace:*
+        version: link:../guards
+      '@keel-code/testkit':
+        specifier: workspace:*
+        version: link:../testkit
 
   packages/methodology: {}
 
@@ -94,6 +122,12 @@ importers:
       '@keel-code/engine':
         specifier: workspace:*
         version: link:../engine
+      '@keel-code/guards':
+        specifier: workspace:*
+        version: link:../guards
+      '@keel-code/loop':
+        specifier: workspace:*
+        version: link:../loop
       '@keel-code/methodology':
         specifier: workspace:*
         version: link:../methodology

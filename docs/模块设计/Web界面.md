@@ -45,6 +45,7 @@ packages/web/src/
 - `features/sessions/Sidebar.tsx`：项目名 + 连接状态、新建对话、分组列表（主对话 / 对话 / 子 agent 挂父 / 已归档）；`NewSessionDialog.tsx`：标题 / 职责 / 模型（按 provider 分组，含单价）/ 首条消息。
 - `features/chat/ChatView.tsx`：头部（标题 + 职责 + 模型切换）、消息流（自动贴底）、工具执行中提示、`Composer`（Enter 发送 / Shift+Enter 换行 / 运行中排队 / 中止）；`MessageItem.tsx`：用户气泡、assistant markdown（react-markdown + gfm）、思考折叠、`ToolCallCard`（参数 / 结果 / 失败态）。
 - `features/settings/SettingsView.tsx`：provider 列表（常用优先，可展开全部）、粘贴 key 保存 / 移除、探测（可达 / 时延 / 端点模型表）、模型锁定（main / conversation / subagent / reviewer）。
+- `features/chat/ReviewCard.tsx`：review 卡片（通过 / 未通过待修复 / 待决策挂起 / 升级 / 异常），findings 分类徽标，树指纹，「查看 reviewer 轨迹」跳到子会话；`ChatView.buildTimeline` 把消息与 `keel/review` 条目按时间合并。
 - `features/roster/RosterPanel.tsx`：右侧名册面板（新鲜度徽标 + 原因、状态、费用、消息数、记录字段），对话空闲时刷新；ChatView 头部对非主对话提供「回主对话」。
 - 开发：`vite.config.ts` 把 `/api` `/ws` 代理到 `KEEL_API`（默认 127.0.0.1:3131）；根 `scripts/serve-mock.ts` 起 mock 模型 + keel 服务用于目验。
 
@@ -66,3 +67,4 @@ packages/web/src/
 | 2026-08-17 | M0 骨架与设计 |
 | 2026-08-17 | M1：设计 token + 基础组件、最小聊天、设置页，目验通过 |
 | 2026-08-17 | M2：名册面板、模型锁定、回主对话 |
+| 2026-08-17 | M3：review 卡片与时间线合并 |

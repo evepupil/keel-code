@@ -135,6 +135,7 @@ class AppStore {
       this.setChat(id, (c) => ({
         ...c,
         messages: detail.messages,
+        entries: detail.entries ?? [],
         loaded: true,
         streaming: detail.state.isStreaming,
         streamingIndex: null,

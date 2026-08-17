@@ -25,10 +25,18 @@ export interface SessionListItem {
   live: { isStreaming: boolean } | null;
 }
 
+export interface SessionEntry {
+  id: string;
+  customType: string;
+  data: unknown;
+  timestamp: number;
+}
+
 export interface SessionDetail {
   meta: import("@keel-code/engine").SessionMeta;
   messages: import("@keel-code/engine").EngineMessage[];
   state: import("@keel-code/engine").SessionState;
+  entries: SessionEntry[];
 }
 
 export interface ProjectInfo {
