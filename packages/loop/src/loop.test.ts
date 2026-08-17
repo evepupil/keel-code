@@ -22,7 +22,7 @@ import {
   type TempDir,
 } from "@keel-code/testkit";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { readReviewState, reviewStatePath } from "./credit/state.js";
+import { readReviewState, reviewStatePath, writeReviewState } from "./credit/state.js";
 import { treeHash } from "./credit/tree-hash.js";
 import { decisionsPath } from "./decisions/file.js";
 import {
@@ -309,5 +309,71 @@ describe("闭环：修复-通过-提交链 + 跳过 review 被拒", () => {
     );
     const entries = impl.getEntries(REVIEW_ENTRY).map((e) => e.data as ReviewEntryData);
     expect(entries.at(-1)?.action).toBe("suspend");
+  });
+
+  it("连续三轮确定性问题：fix → fix → escalate", async () => {
+    writeReviewState(stateFile, { roundsSincePass: 0, lastPass: null });
+    mock.onRequest((req) => {
+      const toolNames = (req.tools ?? []).map(
+        (tool) => (tool as { function?: { name?: string } }).function?.name,
+      );
+      const lastRole = (req.messages.at(-1) as { role?: string })?.role;
+      if (toolNames.includes("submit_result")) {
+        if (lastRole === "tool") return { text: "review submitted" };
+        return {
+          toolCalls: [
+            {
+              name: "submit_result",
+              arguments: {
+                verdict: "fail",
+                summary: "same deterministic issue remains",
+                findings: [
+                  {
+                    issue: "deterministic issue remains",
+                    category: "deterministic",
+                    file: "src/a.ts",
+                    suggestion: "apply the required fix",
+                  },
+                ],
+              },
+            },
+          ],
+        };
+      }
+      if (!toolNames.includes("keel_batch_report")) return { text: "background complete" };
+      const reportCount = req.messages.filter(
+        (m) => (m as { role?: string }).role === "tool",
+      ).length;
+      if (reportCount < 3) {
+        return {
+          toolCalls: [
+            {
+              name: "keel_batch_report",
+              arguments: { batch: `escalation round ${reportCount + 1}`, scope: "src/a.ts" },
+            },
+          ],
+        };
+      }
+      return { text: "escalation reported" };
+    });
+
+    const impl = await gateway.create({
+      kind: "conversation",
+      title: "three round escalation",
+      role: "implementation conversation",
+      model: { provider: "mock", id: "mock-1" },
+    });
+    await impl.prompt("run three review rounds");
+    await impl.waitForIdle();
+
+    const reports = toolResults(impl).filter((r) => r.toolName === "keel_batch_report");
+    expect(reports).toHaveLength(3);
+    expect(reports[0]?.text).toContain("1/3");
+    expect(reports[1]?.text).toContain("2/3");
+    expect(reports[2]?.text).toContain("3");
+    const entries = impl.getEntries(REVIEW_ENTRY).map((e) => e.data as ReviewEntryData);
+    expect(entries.map((e) => e.action)).toEqual(["fix", "fix", "escalate"]);
+    expect(readReviewState(stateFile)).toMatchObject({ roundsSincePass: 3, lastPass: null });
+    expect(readFileSync(decisionsPath(project.path), "utf8")).toContain("review");
   });
 });

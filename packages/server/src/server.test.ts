@@ -259,6 +259,74 @@ describe("会话", () => {
     expect(board.review.lastPass).toBeNull();
   });
 
+  it("设计冻结：真实会话调用工具并返回卡片所需条目", async () => {
+    const path = "docs/design-freeze.md";
+    const written = await api("/docs/write", {
+      method: "PUT",
+      body: JSON.stringify({ path, content: "# Design freeze\n\napproved design\n" }),
+    });
+    expect(written.status).toBe(200);
+
+    mock.onRequest((req) => {
+      const lastRole = (req.messages.at(-1) as { role?: string })?.role;
+      if (lastRole === "tool") return { text: "freeze complete" };
+      return {
+        toolCalls: [
+          {
+            name: "keel_design_freeze",
+            arguments: { path, note: "accepted in integration test" },
+          },
+        ],
+      };
+    });
+    const before = mock.requests.length;
+    const created = (await (
+      await api("/sessions", {
+        method: "POST",
+        body: JSON.stringify({
+          kind: "conversation",
+          title: "freeze integration",
+          model: { provider: "mock", id: "mock-1" },
+        }),
+      })
+    ).json()) as { meta: { id: string } };
+    const prompt = await api(`/sessions/${created.meta.id}/prompt`, {
+      method: "POST",
+      body: JSON.stringify({ text: "freeze the approved design" }),
+    });
+    expect(prompt.status).toBe(202);
+    await waitFor(() => mock.requests.length >= before + 2, 10_000);
+
+    let detail:
+      | {
+          state: { isStreaming: boolean };
+          entries: { customType: string; data: unknown }[];
+        }
+      | undefined;
+    for (let i = 0; i < 200; i++) {
+      detail = (await (await api(`/sessions/${created.meta.id}`)).json()) as typeof detail;
+      if (!detail.state.isStreaming) break;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    expect(detail?.state.isStreaming).toBe(false);
+    const freezeEntry = detail?.entries.find((e) => e.customType === "keel/design-freeze");
+    expect(freezeEntry?.data).toMatchObject({
+      path,
+      commit: "uncommitted",
+      note: "accepted in integration test",
+    });
+
+    const read = (await (await api(`/docs/read?path=${encodeURIComponent(path)}`)).json()) as {
+      content: string;
+      freeze: { commit: string; note?: string } | null;
+    };
+    expect(read.content).toContain("设计已确认");
+    expect(read.freeze).toMatchObject({
+      commit: "uncommitted",
+      note: "accepted in integration test",
+    });
+  });
+
   it("工作区：列表 / 加入 / 懒加载 / 未知 404 / 移除", async () => {
     const list = (await (await gapi("/workspaces")).json()) as {
       id: string;

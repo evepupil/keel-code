@@ -36,6 +36,7 @@ packages/cli/src/
 ## 验证方式
 
 `commands/init.test.ts`（临时目录：创建 / 跳过 / 不覆盖）、`commands/doctor.test.ts`（版本判定）；实机 `keel doctor` 输出各项检查。
+- 无头完整流程（2026-08-18，`commands/run.test.ts`）：真实写文件 → `keel_batch_report` → reviewer 通过 → `git commit` → 后台文档修剪任务完成，验证 stdout / stderr、提交标题与结果文件。
 
 ## 发布形态
 
@@ -62,3 +63,4 @@ packages/cli/src/
 | 2026-08-17 | run 退出前等待后台子 agent；DeepSeek 真机冒烟通过 |
 | 2026-08-17 | M8 设计：`keel ext` / init 配置段 / doctor 扩展检查 |
 | 2026-08-17 | M9 / M10 设计：init / doctor 覆盖说明书、危险清单、worktree、钩子 |
+| 2026-08-18 | M5 收口：补齐 `keel run` 无头写入、review、提交与后台文档任务的完整 E2E |

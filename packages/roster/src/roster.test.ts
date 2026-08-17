@@ -24,6 +24,7 @@ let project: TempDir;
 let engine: Engine;
 let gateway: ConversationGateway;
 let store: RosterStore;
+let runner: SubagentRunner;
 
 /** 测试用最小网关：直接用引擎（服务端里由 SessionHub 实现同样的接口）。 */
 function makeGateway(e: Engine): ConversationGateway {
@@ -64,7 +65,7 @@ beforeAll(async () => {
   engine = await createEngine({ cwd: project.path, homeDir: home.path });
   gateway = makeGateway(engine);
   store = new RosterStore({ cwd: project.path, gateway });
-  const runner = new SubagentRunner({ engine, gateway, defaultTimeoutMs: 20_000 });
+  runner = new SubagentRunner({ engine, gateway, defaultTimeoutMs: 20_000 });
   registerRosterTools({ engine, gateway, store, runner });
 });
 
@@ -246,6 +247,42 @@ describe("主对话：探测 → 创建对话 → 名册 → 子 agent", () => {
     expect(r?.text).toContain("[a] completed");
     expect(r?.text).toContain("[c] completed");
     expect(r?.text).toContain("AB 都有");
+  });
+
+  it("fork 子 agent：继承父上下文并挂回父对话", async () => {
+    mock.onRequest(() => ({ text: "fork result: context confirmed" }));
+    const parent = await gateway.create({
+      kind: "conversation",
+      title: "fork parent",
+      role: "context owner",
+      model: { provider: "mock", id: "mock-1" },
+    });
+    await parent.prompt("parent context: keep this sentence");
+    await parent.waitForIdle();
+
+    const before = mock.requests.length;
+    const result = await runner.run({
+      parent,
+      mode: "fork",
+      title: "fork acceptance",
+      task: "fork task: use the inherited context",
+      model: { provider: "mock", id: "mock-1" },
+      tools: ["read"],
+      timeoutMs: 20_000,
+    });
+
+    expect(result.finished).toBe("completed");
+    expect(result.text).toContain("fork result");
+    const sub = (await engine.sessions.list()).find((r) => r.meta.id === result.sessionId);
+    expect(sub?.meta.kind).toBe("subagent");
+    expect(sub?.meta.parentId).toBe(parent.id);
+    expect(sub?.meta.extra?.subagentMode).toBe("fork");
+    expect(sub?.meta.extra?.subagentFinished).toBe("completed");
+
+    const forkRequest = mock.requests.slice(before).at(-1);
+    const forkMessages = JSON.stringify(forkRequest?.messages ?? []);
+    expect(forkMessages).toContain("parent context: keep this sentence");
+    expect(forkMessages).toContain("fork task: use the inherited context");
   });
 
   it("普通对话更新名册后，改动代码范围内文件 → 新鲜度变 code-changed", async () => {
