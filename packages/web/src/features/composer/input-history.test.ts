@@ -24,11 +24,13 @@ describe("stepHistory", () => {
 
   it("空输入按上：进到最后一条；再按上往前", () => {
     const up1 = stepHistory(base, "ArrowUp", "");
+    if (!up1) throw new Error("expected ArrowUp to enter history");
     expect(up1?.text).toBe("second");
-    const up2 = stepHistory(up1!.history, "ArrowUp", up1!.text);
+    const up2 = stepHistory(up1.history, "ArrowUp", up1.text);
+    if (!up2) throw new Error("expected ArrowUp to move to the previous entry");
     expect(up2?.text).toBe("first");
     // 顶了再按：停在最旧
-    const up3 = stepHistory(up2!.history, "ArrowUp", up2!.text);
+    const up3 = stepHistory(up2.history, "ArrowUp", up2.text);
     expect(up3?.text).toBe("first");
   });
 
@@ -38,7 +40,8 @@ describe("stepHistory", () => {
 
   it("浏览态按上时草稿保住，下键退到底恢复草稿", () => {
     const up = stepHistory(base, "ArrowUp", "");
-    const down1 = stepHistory(up!.history, "ArrowDown", up!.text);
+    if (!up) throw new Error("expected ArrowUp to enter history");
+    const down1 = stepHistory(up.history, "ArrowDown", up.text);
     expect(down1?.text).toBe("");
     expect(down1?.history.index).toBe(-1);
   });
