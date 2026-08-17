@@ -10,6 +10,7 @@ import { join } from "node:path";
 import type { KeelPaths, SessionMeta, SessionRecord } from "../types.js";
 
 export const KEEL_META_ENTRY = "keel/meta";
+export const KEEL_SYSTEM_PROMPT_ENTRY = "keel/system-prompt";
 
 interface IndexFile {
   version: 1;
@@ -30,7 +31,10 @@ export class SessionIndex {
   private load(): IndexFile {
     try {
       const raw = JSON.parse(readFileSync(this.paths.projectIndexFile, "utf8")) as IndexFile;
-      if (raw && raw.version === 1 && raw.sessions) return raw;
+      if (raw && raw.version === 1 && raw.sessions) {
+        for (const rec of Object.values(raw.sessions)) rec.costUsd = Number(rec.costUsd ?? 0);
+        return raw;
+      }
     } catch {
       // 缺失或损坏 → 重建
     }
@@ -69,11 +73,15 @@ export class SessionIndex {
     this.persist();
   }
 
-  touch(id: string, patch: { messageCount?: number; lastActiveAt?: string }): void {
+  touch(
+    id: string,
+    patch: { messageCount?: number; lastActiveAt?: string; costUsd?: number },
+  ): void {
     const rec = this.data.sessions[id];
     if (!rec) return;
     if (patch.messageCount !== undefined) rec.messageCount = patch.messageCount;
     if (patch.lastActiveAt !== undefined) rec.lastActiveAt = patch.lastActiveAt;
+    if (patch.costUsd !== undefined) rec.costUsd = patch.costUsd;
     this.persist();
   }
 }
@@ -101,6 +109,7 @@ export function readRecordFromFile(file: string): SessionRecord | undefined {
   let meta: SessionMeta | undefined;
   let messageCount = 0;
   let lastActiveAt = "";
+  let costUsd = 0;
   for (const line of text.split("\n")) {
     if (!line.trim()) continue;
     let entry: Record<string, unknown>;
@@ -112,12 +121,18 @@ export function readRecordFromFile(file: string): SessionRecord | undefined {
     if (typeof entry.timestamp === "string" && entry.timestamp > lastActiveAt) {
       lastActiveAt = entry.timestamp;
     }
-    if (entry.type === "message") messageCount += 1;
+    if (entry.type === "message") {
+      messageCount += 1;
+      const msg = entry.message as
+        | { role?: string; usage?: { cost?: { total?: number } } }
+        | undefined;
+      if (msg?.role === "assistant") costUsd += Number(msg.usage?.cost?.total ?? 0);
+    }
     if (entry.type === "custom" && entry.customType === KEEL_META_ENTRY) {
       const data = entry.data as SessionMeta | undefined;
       if (data && typeof data.id === "string") meta = data; // 后写的覆盖先写的
     }
   }
   if (!meta) return undefined;
-  return { meta, file, messageCount, lastActiveAt: lastActiveAt || meta.updatedAt };
+  return { meta, file, messageCount, lastActiveAt: lastActiveAt || meta.updatedAt, costUsd };
 }

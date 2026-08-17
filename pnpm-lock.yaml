@@ -73,7 +73,18 @@ importers:
 
   packages/methodology: {}
 
-  packages/roster: {}
+  packages/roster:
+    dependencies:
+      '@keel-code/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@keel-code/methodology':
+        specifier: workspace:*
+        version: link:../methodology
+    devDependencies:
+      '@keel-code/testkit':
+        specifier: workspace:*
+        version: link:../testkit
 
   packages/server:
     dependencies:
@@ -86,6 +97,9 @@ importers:
       '@keel-code/methodology':
         specifier: workspace:*
         version: link:../methodology
+      '@keel-code/roster':
+        specifier: workspace:*
+        version: link:../roster
       hono:
         specifier: ^4.13.2
         version: 4.13.2
@@ -138,6 +152,9 @@ importers:
       '@keel-code/engine':
         specifier: workspace:*
         version: link:../engine
+      '@keel-code/roster':
+        specifier: workspace:*
+        version: link:../roster
       '@types/react':
         specifier: ^19.2.0
         version: 19.2.18

@@ -114,6 +114,8 @@ export interface SessionRecord {
   file: string;
   messageCount: number;
   lastActiveAt: string;
+  /** 累计估算费用（美元） */
+  costUsd: number;
 }
 
 export interface CreateSessionOptions {
@@ -358,6 +360,17 @@ export type BeforeAgentStartHook = (
   input: BeforeAgentStartInput,
 ) => BeforeAgentStartResult | undefined | Promise<BeforeAgentStartResult | undefined>;
 
+// ---------- 设置 ----------
+
+export interface KeelSettings {
+  /** 用户锁定的模型：键为对话类别（main / conversation / subagent / reviewer） */
+  modelLocks?: Record<string, ModelRef>;
+  /** 提示缓存 TTL（毫秒），按 provider */
+  cacheTtlMs?: Record<string, number>;
+  /** 验收节奏 */
+  acceptance?: "immediate" | "milestone" | "final";
+}
+
 // ---------- Engine ----------
 
 export interface EngineOptions {
@@ -396,6 +409,10 @@ export interface Engine {
   };
   readonly tools: {
     register(def: KeelToolDefinition, scope?: HookScope): Unsubscribe;
+  };
+  readonly settings: {
+    get(): KeelSettings;
+    update(patch: Partial<KeelSettings>): KeelSettings;
   };
   dispose(): Promise<void>;
 }

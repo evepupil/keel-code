@@ -20,11 +20,13 @@ export function ModelSelect({
   onChange,
   models,
   allowEmpty,
+  emptyLabel = "默认（第一个可用模型）",
 }: {
   value: string;
   onChange: (v: string) => void;
   models: ModelInfo[];
   allowEmpty?: boolean;
+  emptyLabel?: string;
 }) {
   const grouped = useMemo(() => {
     const map = new Map<string, ModelInfo[]>();
@@ -37,7 +39,7 @@ export function ModelSelect({
   }, [models]);
   return (
     <Select value={value} onChange={(e) => onChange(e.target.value)}>
-      {allowEmpty ? <option value="">默认（第一个可用模型）</option> : null}
+      {allowEmpty ? <option value="">{emptyLabel}</option> : null}
       {grouped.map(([provider, list]) => (
         <optgroup key={provider} label={provider}>
           {list.map((m) => (

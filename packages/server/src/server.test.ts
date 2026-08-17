@@ -144,6 +144,56 @@ describe("会话", () => {
     expect((await api("/sessions/nope")).status).toBe(404);
   });
 
+  it("名册路由与设置；主对话拿到对话工具", async () => {
+    const roster = (await (await api("/roster")).json()) as {
+      id: string;
+      kind: string;
+      freshness: { level: string };
+      costUsd: number;
+    }[];
+    expect(roster.length).toBeGreaterThanOrEqual(2);
+    expect(roster.every((e) => typeof e.freshness.level === "string")).toBe(true);
+
+    const patched = (await (
+      await api("/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ modelLocks: { reviewer: { provider: "mock", id: "mock-1" } } }),
+      })
+    ).json()) as { modelLocks?: Record<string, { id: string }> };
+    expect(patched.modelLocks?.reviewer?.id).toBe("mock-1");
+    const settings = (await (await api("/settings")).json()) as {
+      modelLocks?: Record<string, unknown>;
+    };
+    expect(settings.modelLocks?.reviewer).toBeDefined();
+
+    const list = (await (await api("/sessions")).json()) as {
+      meta: { id: string; kind: string };
+    }[];
+    const main = list.find((r) => r.meta.kind === "main");
+    if (!main) throw new Error("没有主对话");
+    mock.enqueue({ text: "主对话在此" });
+    await api(`/sessions/${main.meta.id}/prompt`, {
+      method: "POST",
+      body: JSON.stringify({ text: "hi" }),
+    });
+    await waitFor(
+      () =>
+        mock.requests.some((r) =>
+          JSON.stringify(r.tools ?? []).includes("keel_conversation_create"),
+        ),
+      10_000,
+    );
+    const req = mock.requests.find((r) =>
+      JSON.stringify(r.tools ?? []).includes("keel_conversation_create"),
+    );
+    const names = (req?.tools ?? []).map(
+      (t) => (t as { function?: { name?: string } }).function?.name,
+    );
+    expect(names).toContain("keel_providers_probe");
+    expect(names).toContain("keel_agent_run");
+    expect(names).not.toContain("keel_report_to_main");
+  });
+
   it("WS 令牌错误被拒", async () => {
     const ws = new WebSocket(`ws://127.0.0.1:${server.port}/ws?token=wrong`);
     const code = await new Promise<number>((resolve) => {

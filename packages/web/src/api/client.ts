@@ -1,9 +1,11 @@
 import type {
   CreateSessionInput,
+  KeelSettings,
   ModelInfo,
   ProjectInfo,
   ProviderInfo,
   ProviderProbe,
+  RosterEntry,
   SessionDetail,
   SessionListItem,
   SessionMeta,
@@ -85,6 +87,11 @@ export const api = {
       body: JSON.stringify(deliverAs ? { text, deliverAs } : { text }),
     }),
   abort: (id: string) => request<{ ok: true }>(`/sessions/${id}/abort`, { method: "POST" }),
+  roster: () => request<RosterEntry[]>("/roster"),
+  rosterEntry: (id: string) => request<RosterEntry>(`/roster/${id}`),
+  settings: () => request<KeelSettings>("/settings"),
+  patchSettings: (patch: Partial<KeelSettings>) =>
+    request<KeelSettings>("/settings", { method: "PATCH", body: JSON.stringify(patch) }),
   patchSession: (
     id: string,
     patch: {

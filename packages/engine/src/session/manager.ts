@@ -17,7 +17,7 @@ import type {
   SessionRecord,
 } from "../types.js";
 import { type BridgeContext, createKeelExtension, toPiTool } from "./bridge.js";
-import { KEEL_META_ENTRY, SessionIndex } from "./index-store.js";
+import { KEEL_META_ENTRY, KEEL_SYSTEM_PROMPT_ENTRY, SessionIndex } from "./index-store.js";
 import { KeelSession } from "./session.js";
 
 export interface SessionServiceDeps {
@@ -84,11 +84,16 @@ export class SessionService {
     if (!rec) throw new Error(`会话不存在：${id}`);
     const sessionManager = SessionManager.open(rec.file, this.deps.paths.projectSessionsDir);
     const model = await this.resolveModel(rec.meta.model, true);
+    const stored = readStoredSystemPrompt(sessionManager);
     return this.boot(
       sessionManager,
       rec.meta,
       model,
-      { kind: rec.meta.kind, title: rec.meta.title },
+      {
+        kind: rec.meta.kind,
+        title: rec.meta.title,
+        ...(stored !== undefined ? { systemPrompt: stored } : {}),
+      },
       false,
     );
   }
@@ -117,7 +122,15 @@ export class SessionService {
       this.deps.paths.projectSessionsDir,
       { id },
     );
-    return this.boot(sessionManager, meta, model, { kind: meta.kind, ...options }, true);
+    const inherited = readStoredSystemPrompt(sessionManager);
+    const bootOptions = {
+      kind: meta.kind,
+      ...options,
+      ...(options.systemPrompt === undefined && inherited !== undefined
+        ? { systemPrompt: inherited }
+        : {}),
+    };
+    return this.boot(sessionManager, meta, model, bootOptions, true);
   }
 
   private async resolveModel(
@@ -196,11 +209,17 @@ export class SessionService {
 
     if (isNew) {
       agentSession.sessionManager.appendCustomEntry(KEEL_META_ENTRY, meta);
+      if (options.systemPrompt !== undefined) {
+        agentSession.sessionManager.appendCustomEntry(KEEL_SYSTEM_PROMPT_ENTRY, {
+          text: options.systemPrompt,
+        });
+      }
       this.index.upsert({
         meta,
         file: agentSession.sessionFile ?? "",
         messageCount: 0,
         lastActiveAt: meta.updatedAt,
+        costUsd: 0,
       });
     }
     this.live.set(meta.id, session);
@@ -211,4 +230,17 @@ export class SessionService {
     for (const s of this.live.values()) s.dispose();
     this.live.clear();
   }
+}
+
+/** 从会话条目里找回创建时持久化的系统提示（最后一条为准）。 */
+function readStoredSystemPrompt(sessionManager: SessionManager): string | undefined {
+  let found: string | undefined;
+  for (const entry of sessionManager.getEntries()) {
+    const e = entry as unknown as Record<string, unknown>;
+    if (e.type === "custom" && e.customType === KEEL_SYSTEM_PROMPT_ENTRY) {
+      const data = e.data as { text?: unknown } | undefined;
+      if (typeof data?.text === "string") found = data.text;
+    }
+  }
+  return found;
 }

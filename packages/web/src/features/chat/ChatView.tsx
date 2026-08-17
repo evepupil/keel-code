@@ -4,6 +4,7 @@ import { Button } from "../../design-system/components/button";
 import { EmptyState, Spinner, Textarea } from "../../design-system/components/primitives";
 import { appStore, useAppState } from "../../store/app-store";
 import { emptyChat } from "../../store/apply-event";
+import { RosterPanel } from "../roster/RosterPanel";
 import { ModelSelect, modelKey, parseModelKey } from "../sessions/NewSessionDialog";
 import { indexToolResults, MessageItem } from "./MessageItem";
 
@@ -17,6 +18,13 @@ export function ChatView() {
   const toolResults = useMemo(() => indexToolResults(chat.messages), [chat.messages]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
+  // 每次对话回到空闲就刷新一次名册面板
+  const [rosterKey, setRosterKey] = useState(0);
+  const wasStreaming = useRef(false);
+  useEffect(() => {
+    if (wasStreaming.current && !chat.streaming) setRosterKey((k) => k + 1);
+    wasStreaming.current = chat.streaming;
+  }, [chat.streaming]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -46,88 +54,104 @@ export function ChatView() {
   const modelKnown = models.some((m) => modelKey(m) === modelValue);
 
   return (
-    <div className="flex h-full min-w-0 flex-1 flex-col">
-      <header className="flex items-center gap-3 border-b border-line bg-panel px-4 py-2">
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold">{meta.title}</div>
-          {meta.role ? (
-            <div className="truncate text-xs text-ink-faint" title={meta.role}>
-              {meta.role}
+    <div className="flex h-full min-w-0 flex-1">
+      <div className="flex h-full min-w-0 flex-1 flex-col">
+        <header className="flex items-center gap-3 border-b border-line bg-panel px-4 py-2">
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold">{meta.title}</div>
+            {meta.role ? (
+              <div className="truncate text-xs text-ink-faint" title={meta.role}>
+                {meta.role}
+              </div>
+            ) : null}
+          </div>
+          {meta.kind !== "main" ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const main = sessions.find((s) => s.meta.kind === "main" && !s.meta.archived);
+                if (main) appStore.selectSession(main.meta.id);
+              }}
+              title="跨领域的新需求请回主对话创建新对话"
+            >
+              回主对话
+            </Button>
+          ) : null}
+          <div className="w-64">
+            <ModelSelect
+              value={modelValue}
+              onChange={(v) => {
+                const ref = parseModelKey(v);
+                if (ref) void appStore.patchSession(meta.id, { model: ref });
+              }}
+              models={
+                modelKnown
+                  ? models
+                  : [
+                      ...models,
+                      {
+                        ...meta.model,
+                        name: `${meta.model.id}（不可用）`,
+                        api: "",
+                        baseUrl: "",
+                        reasoning: false,
+                        input: ["text"],
+                        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+                        contextWindow: 0,
+                        maxTokens: 0,
+                      },
+                    ]
+              }
+            />
+          </div>
+        </header>
+
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto py-3"
+          onScroll={(e) => {
+            const el = e.currentTarget;
+            stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+          }}
+        >
+          {!chat.loaded ? (
+            <div className="flex justify-center py-8">
+              <Spinner />
+            </div>
+          ) : chat.messages.length === 0 ? (
+            <EmptyState title="说点什么开始。" />
+          ) : (
+            chat.messages.map((m, i) => (
+              <MessageItem
+                // biome-ignore lint/suspicious/noArrayIndexKey: 消息没有稳定 id，列表只追加不重排，index 仅作同毫秒去重
+                key={`${m.role}-${m.timestamp}-${i}`}
+                message={m}
+                toolResults={toolResults}
+                streaming={chat.streaming && i === chat.messages.length - 1}
+              />
+            ))
+          )}
+          {chat.streaming && Object.keys(chat.activeTools).length > 0 ? (
+            <div className="mx-auto max-w-3xl px-4 text-xs text-ink-faint">
+              正在执行：
+              {Object.values(chat.activeTools)
+                .map((t) => t.toolName)
+                .join("、")}
             </div>
           ) : null}
         </div>
-        <div className="w-64">
-          <ModelSelect
-            value={modelValue}
-            onChange={(v) => {
-              const ref = parseModelKey(v);
-              if (ref) void appStore.patchSession(meta.id, { model: ref });
-            }}
-            models={
-              modelKnown
-                ? models
-                : [
-                    ...models,
-                    {
-                      ...meta.model,
-                      name: `${meta.model.id}（不可用）`,
-                      api: "",
-                      baseUrl: "",
-                      reasoning: false,
-                      input: ["text"],
-                      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-                      contextWindow: 0,
-                      maxTokens: 0,
-                    },
-                  ]
-            }
-          />
-        </div>
-      </header>
 
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto py-3"
-        onScroll={(e) => {
-          const el = e.currentTarget;
-          stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-        }}
-      >
-        {!chat.loaded ? (
-          <div className="flex justify-center py-8">
-            <Spinner />
-          </div>
-        ) : chat.messages.length === 0 ? (
-          <EmptyState title="说点什么开始。" />
-        ) : (
-          chat.messages.map((m, i) => (
-            <MessageItem
-              // biome-ignore lint/suspicious/noArrayIndexKey: 消息没有稳定 id，列表只追加不重排，index 仅作同毫秒去重
-              key={`${m.role}-${m.timestamp}-${i}`}
-              message={m}
-              toolResults={toolResults}
-              streaming={chat.streaming && i === chat.messages.length - 1}
-            />
-          ))
-        )}
-        {chat.streaming && Object.keys(chat.activeTools).length > 0 ? (
-          <div className="mx-auto max-w-3xl px-4 text-xs text-ink-faint">
-            正在执行：
-            {Object.values(chat.activeTools)
-              .map((t) => t.toolName)
-              .join("、")}
-          </div>
-        ) : null}
+        <Composer
+          sessionId={meta.id}
+          streaming={chat.streaming}
+          onSend={(text) => {
+            stickToBottom.current = true;
+            void appStore.sendPrompt(meta.id, text);
+          }}
+        />
       </div>
-
-      <Composer
-        sessionId={meta.id}
-        streaming={chat.streaming}
-        onSend={(text) => {
-          stickToBottom.current = true;
-          void appStore.sendPrompt(meta.id, text);
-        }}
-      />
+      <RosterPanel sessionId={meta.id} refreshKey={rosterKey} />
     </div>
   );
 }

@@ -26,11 +26,12 @@ export function makeTempDir(prefix = "keel-test-"): TempDir {
 }
 
 export interface TempProjectOptions {
+  /** git init；有预置文件时顺手提交一次 init */
   git?: boolean;
   files?: Record<string, string>;
 }
 
-/** 建一个临时项目目录，可选 git init 与预置文件。 */
+/** 建一个临时项目目录，可选 git init（含首个 commit）与预置文件。 */
 export function makeTempProject(options: TempProjectOptions = {}): TempDir {
   const dir = makeTempDir("keel-proj-");
   for (const [rel, content] of Object.entries(options.files ?? {})) {
@@ -42,6 +43,11 @@ export function makeTempProject(options: TempProjectOptions = {}): TempDir {
     execFileSync("git", ["init", "-q"], { cwd: dir.path });
     execFileSync("git", ["config", "user.email", "test@keel.local"], { cwd: dir.path });
     execFileSync("git", ["config", "user.name", "keel-test"], { cwd: dir.path });
+    execFileSync("git", ["config", "commit.gpgsign", "false"], { cwd: dir.path });
+    if (options.files && Object.keys(options.files).length > 0) {
+      execFileSync("git", ["add", "-A"], { cwd: dir.path });
+      execFileSync("git", ["commit", "-q", "-m", "init"], { cwd: dir.path });
+    }
   }
   return dir;
 }

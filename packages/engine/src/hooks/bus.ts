@@ -47,15 +47,25 @@ export class HookBus {
     return push(this.beforeAgentStartHooks, { value: hook, scope });
   }
 
+  /**
+   * 注册工具。同名工具允许并存，前提是双方都带作用域（例如按运行 id 区分的一次性工具）；
+   * 无作用域的全局工具不允许重名。某条会话可见多个同名工具时取先注册的。
+   */
   registerTool(def: KeelToolDefinition, scope?: HookScope): Unsubscribe {
-    if (this.toolDefs.some((t) => t.value.name === def.name)) {
-      throw new Error(`工具名重复注册：${def.name}`);
-    }
+    const clash = this.toolDefs.find((t) => t.value.name === def.name && (!t.scope || !scope));
+    if (clash) throw new Error(`工具名重复注册：${def.name}`);
     return push(this.toolDefs, { value: def, scope });
   }
 
   toolsFor(meta: SessionMeta): KeelToolDefinition[] {
-    return this.toolDefs.filter((t) => scopeMatches(t.scope, meta)).map((t) => t.value);
+    const seen = new Set<string>();
+    const out: KeelToolDefinition[] = [];
+    for (const t of this.toolDefs) {
+      if (!scopeMatches(t.scope, meta) || seen.has(t.value.name)) continue;
+      seen.add(t.value.name);
+      out.push(t.value);
+    }
+    return out;
   }
 
   async runToolCall(input: ToolCallGuardInput): Promise<ToolCallGuardResult> {

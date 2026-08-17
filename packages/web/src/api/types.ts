@@ -1,7 +1,9 @@
 /** 与服务端共享的类型：直接复用引擎包的类型声明（仅类型，不进 bundle）。 */
+
 export type {
   EngineEvent,
   EngineMessage,
+  KeelSettings,
   ModelInfo,
   ModelRef,
   ProviderInfo,
@@ -13,6 +15,7 @@ export type {
   ThinkingLevel,
   UsageInfo,
 } from "@keel-code/engine";
+export type { Freshness, RosterEntry, RosterRecord } from "@keel-code/roster";
 
 export interface SessionListItem {
   meta: import("@keel-code/engine").SessionMeta;

@@ -10,6 +10,7 @@ import {
 } from "./models/runtime.js";
 import { ensureKeelDirs, resolveKeelPaths } from "./paths.js";
 import { SessionService } from "./session/manager.js";
+import { mergeSettings, readSettings, writeSettings } from "./settings.js";
 import type { Engine, EngineOptions } from "./types.js";
 
 /** 创建引擎实例：一个项目目录一个实例。 */
@@ -52,6 +53,14 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
     },
     tools: {
       register: (def, scope) => bus.registerTool(def, scope),
+    },
+    settings: {
+      get: () => readSettings(paths.settingsFile),
+      update: (patch) => {
+        const next = mergeSettings(readSettings(paths.settingsFile), patch);
+        writeSettings(paths.settingsFile, next);
+        return next;
+      },
     },
     dispose: () => sessions.disposeAll(),
   };

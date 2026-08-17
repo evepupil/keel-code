@@ -8,6 +8,7 @@ import { createEngine, type Engine } from "@keel-code/engine";
 import { WebSocketServer } from "ws";
 import { buildApp } from "./app.js";
 import { SessionHub } from "./hub.js";
+import { type RosterServices, setupRoster } from "./services/roster.js";
 
 export interface StartServerOptions {
   cwd: string;
@@ -29,6 +30,7 @@ export interface RunningServer {
   token: string;
   engine: Engine;
   hub: SessionHub;
+  roster: RosterServices;
   close(): Promise<void>;
 }
 
@@ -39,11 +41,12 @@ export async function startServer(options: StartServerOptions): Promise<RunningS
       options.homeDir ? { cwd: options.cwd, homeDir: options.homeDir } : { cwd: options.cwd },
     ));
   const hub = new SessionHub(engine);
+  const roster = setupRoster(engine, hub);
   const token = options.token ?? randomBytes(16).toString("hex");
   const host = options.host ?? "127.0.0.1";
   const version = options.version ?? "0.0.0";
 
-  const app = buildApp({ engine, hub, token, version, upgradeWebSocket });
+  const app = buildApp({ engine, hub, roster, token, version, upgradeWebSocket });
 
   if (options.staticDir && existsSync(join(options.staticDir, "index.html"))) {
     const root = relative(process.cwd(), options.staticDir) || ".";
@@ -76,7 +79,9 @@ export async function startServer(options: StartServerOptions): Promise<RunningS
     token,
     engine,
     hub,
+    roster,
     close: async () => {
+      roster.dispose();
       wss.close();
       await new Promise<void>((resolve) => server.close(() => resolve()));
       if (!options.engine) await engine.dispose();

@@ -28,12 +28,15 @@ export interface CreateConversationInput {
   parentId?: string;
   initialMessage?: string;
   extra?: Record<string, unknown>;
+  /** 给了就用它，不再按 kind/role 组装（子 agent 用） */
+  systemPrompt?: string;
+  tools?: CreateSessionOptions["tools"];
 }
 
 export class SessionHub {
   private readonly listeners = new Set<HubListener>();
   private readonly changedListeners = new Set<SessionsChangedListener>();
-  private readonly attached = new Set<string>();
+  private readonly attached = new WeakSet<EngineSession>();
 
   constructor(private readonly engine: Engine) {}
 
@@ -56,8 +59,8 @@ export class SessionHub {
   }
 
   private attach(session: EngineSession): void {
-    if (this.attached.has(session.id)) return;
-    this.attached.add(session.id);
+    if (this.attached.has(session)) return;
+    this.attached.add(session);
     session.subscribe((event) => {
       for (const l of this.listeners) l({ sessionId: session.id, event });
       if (event.type === "meta_updated" || event.type === "idle" || event.type === "agent_start") {
@@ -86,10 +89,13 @@ export class SessionHub {
     const options: CreateSessionOptions = {
       kind: input.kind,
       title: input.title,
-      systemPrompt: assembleSystemPrompt(
-        input.role ? { kind: input.kind, role: input.role } : { kind: input.kind },
-      ),
+      systemPrompt:
+        input.systemPrompt ??
+        assembleSystemPrompt(
+          input.role ? { kind: input.kind, role: input.role } : { kind: input.kind },
+        ),
     };
+    if (input.tools) options.tools = input.tools;
     if (input.role) options.role = input.role;
     if (input.model) options.model = input.model;
     if (input.thinkingLevel) options.thinkingLevel = input.thinkingLevel;

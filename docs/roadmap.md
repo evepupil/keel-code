@@ -15,7 +15,7 @@
 |---|---|---|---|---|---|
 | [M0](#m0) | 项目初始化：monorepo 骨架、门禁、文档体系 | 已完成 | 无 | [测试工具](模块设计/测试工具.md) | `pnpm gate` 全绿；roadmap 与全部模块文档就位；首个 commit（2026-08-17） |
 | [M1](#m1) | 引擎与最小工作台：pi 内核封装、本地服务、最小 Web 聊天、CLI、provider 探测与模型列表、会话持久与恢复 | 进行中 | M0 | [引擎](模块设计/引擎.md) · [服务端](模块设计/服务端.md) · [Web界面](模块设计/Web界面.md) · [CLI](模块设计/CLI.md) · [方法论](模块设计/方法论.md) | Windows 上 `keel serve` 完成一个真实小任务（读/写/编辑/bash）✅（mock 模型 + Playwright 目验，2026-08-17）；重启后会话可恢复 ✅（引擎测试）；Anthropic / OpenAI / DeepSeek 至少两家实测通过（待 key） |
-| [M2](#m2) | 多对话与名册：主对话创建/列出/发消息/交接其他对话，创建时探测端点选模型；名册与新鲜度；子 agent（clean / fork）一次性委派 | 未开始 | M1 | [对话与名册](模块设计/对话与名册.md) · [方法论](模块设计/方法论.md) | 主对话建对话（自选模型）→ 对话干活 → 用户进入续聊 → 摘要回流名册；clean / fork 子 agent 各跑通并可在 UI 查看 |
+| [M2](#m2) | 多对话与名册：主对话创建/列出/发消息/交接其他对话，创建时探测端点选模型；名册与新鲜度；子 agent（clean / fork）一次性委派 | 进行中 | M1 | [对话与名册](模块设计/对话与名册.md) · [方法论](模块设计/方法论.md) | 主对话建对话（自选模型）→ 对话干活 → 用户进入续聊 → 摘要回流名册 ✅（mock 端到端）；clean 子 agent 跑通 ✅、fork 已实现（待用例）；UI 查看子 agent（挂在父对话下）✅ |
 | [M3](#m3) | 闭环编排 + 强制层：批次上报 → 独立 reviewer → 分类路由 → 修复循环 → review-pass → 提交门禁；待决策；验收卡；guard-frontend；lint-on-write | 未开始 | M2 | [闭环编排器](模块设计/闭环编排器.md) · [强制层](模块设计/强制层.md) | 三条路径复现：修复-通过-提交 ✅ / 跳过 review 的提交被拒 ✅ / 连续 3 轮不过升级待决策 ✅ |
 | [M4](#m4) | 设计确认与看板：设计文档批注编辑器 → 回显理解 → 冻结；看板；待决策队列；验收卡动作 | 未开始 | M3 | [Web界面](模块设计/Web界面.md) · [文档管理](模块设计/文档管理.md) | 一个玩具模块从设计批注走到验收全程在 Web 内完成 |
 | [M5](#m5) | 加固与扩展：审批三档、MCP 客户端、压缩策略、`keel run` 无头、文档修剪 job、worktree 并行、workflow 编排（脚本化多 agent） | 未开始 | M4 | [引擎](模块设计/引擎.md) · [文档管理](模块设计/文档管理.md) · [CLI](模块设计/CLI.md) | 无头回归稳定；真实项目跑通完整流程 |
@@ -32,6 +32,8 @@ pnpm monorepo（TypeScript 7 strict、Biome、vitest），10 个包骨架（engi
 `@keel-code/engine` 封装 pi：会话创建/恢复/fork、发消息、事件流、工具注册、`tool_call` 拦截、系统提示组装、模型与凭据、`keel_providers_probe`。`@keel-code/server` 本地 HTTP + WebSocket。`@keel-code/web` 最小聊天（会话列表 + 流式消息 + 工具调用展示）。`keel init / serve / doctor`。方法论 base 提示词接入。
 
 ### M2
+2026-08-17：roster 包落地（主对话工具、子 agent、名册 + 新鲜度 + 投影、模型锁定），服务端与 Web 接入，50 用例全绿。剩：fork 子 agent 用例、真实模型下的调度体验打磨。
+
 对话模型落地：主对话工具（探测端点 → 选模型 → 创建对话 → 发消息 → 交接）；名册事件 + `.keel/agents/*.md` 投影 + 新鲜度（base-commit + code-hash + 缓存 TTL）；子 agent 工具 `keel_agent_run`（clean / fork）。Web：对话树、进入任意对话、名册面板。
 
 ### M3

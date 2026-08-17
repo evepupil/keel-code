@@ -19,5 +19,12 @@
   "scripts": {
     "build": "tsc -b",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "@keel-code/engine": "workspace:*",
+    "@keel-code/methodology": "workspace:*"
+  },
+  "devDependencies": {
+    "@keel-code/testkit": "workspace:*"
   }
 }

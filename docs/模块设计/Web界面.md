@@ -3,7 +3,7 @@
 - **模块定位**：keel 的工作台，产品体验的主入口。对话树与进入任意对话、富节点聊天（工具调用、review 卡、验收卡、待决策）、设计文档批注编辑器、看板、名册、设置。
 - **对应代码**：`packages/web/`（React 19 + Vite + Tailwind v4 + shadcn/ui + CodeMirror 6）
 - **所属里程碑**：[M1 — 最小聊天](../roadmap.md#m1) → [M2 — 对话树与名册](../roadmap.md#m2) → [M4 — 设计确认与看板](../roadmap.md#m4)
-- **当前状态**：进行中（M1 最小工作台已落地并目验；对话树 / 名册在 M2，批注 / 看板在 M4）
+- **当前状态**：进行中（M1 最小工作台 + M2 名册面板 / 模型锁定已落地；批注 / 看板在 M4）
 - **最近更新**：2026-08-17
 
 ## 职责与边界
@@ -44,7 +44,8 @@ packages/web/src/
 - `store/apply-event.ts`：事件 → 本地消息状态的纯函数（流式 start / update / end、工具执行中、idle 校准标记）；`store/app-store.ts`：`useSyncExternalStore` 小仓库（会话列表 / 当前会话 / 视图 / 模型 / 通知）。
 - `features/sessions/Sidebar.tsx`：项目名 + 连接状态、新建对话、分组列表（主对话 / 对话 / 子 agent 挂父 / 已归档）；`NewSessionDialog.tsx`：标题 / 职责 / 模型（按 provider 分组，含单价）/ 首条消息。
 - `features/chat/ChatView.tsx`：头部（标题 + 职责 + 模型切换）、消息流（自动贴底）、工具执行中提示、`Composer`（Enter 发送 / Shift+Enter 换行 / 运行中排队 / 中止）；`MessageItem.tsx`：用户气泡、assistant markdown（react-markdown + gfm）、思考折叠、`ToolCallCard`（参数 / 结果 / 失败态）。
-- `features/settings/SettingsView.tsx`：provider 列表（常用优先，可展开全部）、粘贴 key 保存 / 移除、探测（可达 / 时延 / 端点模型表）。
+- `features/settings/SettingsView.tsx`：provider 列表（常用优先，可展开全部）、粘贴 key 保存 / 移除、探测（可达 / 时延 / 端点模型表）、模型锁定（main / conversation / subagent / reviewer）。
+- `features/roster/RosterPanel.tsx`：右侧名册面板（新鲜度徽标 + 原因、状态、费用、消息数、记录字段），对话空闲时刷新；ChatView 头部对非主对话提供「回主对话」。
 - 开发：`vite.config.ts` 把 `/api` `/ws` 代理到 `KEEL_API`（默认 127.0.0.1:3131）；根 `scripts/serve-mock.ts` 起 mock 模型 + keel 服务用于目验。
 
 ## 验证方式
@@ -64,3 +65,4 @@ packages/web/src/
 |---|---|
 | 2026-08-17 | M0 骨架与设计 |
 | 2026-08-17 | M1：设计 token + 基础组件、最小聊天、设置页，目验通过 |
+| 2026-08-17 | M2：名册面板、模型锁定、回主对话 |

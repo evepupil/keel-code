@@ -39,6 +39,7 @@ export class KeelSession implements EngineSession {
         this.deps.index.touch(this.id, {
           messageCount: this.deps.agentSession.messages.length,
           lastActiveAt: new Date().toISOString(),
+          costUsd: sumUsage(this.getMessages()).costTotal,
         });
       }
     });

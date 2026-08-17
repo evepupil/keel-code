@@ -24,6 +24,7 @@
     "@hono/node-server": "^2.1.1",
     "@keel-code/engine": "workspace:*",
     "@keel-code/methodology": "workspace:*",
+    "@keel-code/roster": "workspace:*",
     "hono": "^4.13.2",
     "ws": "^8.21.3"
   },

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../../api/client";
-import type { ProviderInfo, ProviderProbe } from "../../api/types";
+import type { KeelSettings, ProviderInfo, ProviderProbe } from "../../api/types";
 import { Button } from "../../design-system/components/button";
-import { Badge, Card, Input, Spinner } from "../../design-system/components/primitives";
+import { Badge, Card, Field, Input, Spinner } from "../../design-system/components/primitives";
 import { appStore, useAppState } from "../../store/app-store";
+import { ModelSelect, modelKey, parseModelKey } from "../sessions/NewSessionDialog";
 
 /** 常见 provider 放前面，其余按已配置优先、再按名称。 */
 const PREFERRED = [
@@ -79,6 +80,8 @@ export function SettingsView() {
             <ProviderRow key={p.id} provider={p} probe={probes.find((x) => x.provider === p.id)} />
           ))}
         </div>
+
+        <ModelLocks />
 
         <section className="space-y-1 text-xs text-ink-faint">
           <div>项目：{project?.cwd}</div>
@@ -211,5 +214,58 @@ function ProviderRow({
         </div>
       ) : null}
     </Card>
+  );
+}
+
+const LOCK_KINDS: { key: string; label: string; hint: string }[] = [
+  { key: "main", label: "主对话", hint: "新建主对话时用" },
+  { key: "conversation", label: "普通对话", hint: "主对话创建对话时强制用这个，覆盖它自己的选择" },
+  { key: "subagent", label: "子 agent", hint: "keel_agent_run 强制用这个" },
+  { key: "reviewer", label: "reviewer", hint: "闭环里的独立 reviewer 用这个" },
+];
+
+/** 模型锁定：用户拍板的模型优先于 AI 判断。留空 = 让 AI 按任务挑。 */
+function ModelLocks() {
+  const models = useAppState((s) => s.models);
+  const [settings, setSettings] = useState<KeelSettings | null>(null);
+  useEffect(() => {
+    api
+      .settings()
+      .then(setSettings)
+      .catch(() => setSettings({}));
+  }, []);
+  if (!settings) return null;
+  const locks = settings.modelLocks ?? {};
+  const set = async (key: string, value: string) => {
+    const ref = parseModelKey(value);
+    try {
+      const next = await api.patchSettings({
+        modelLocks: { [key]: ref ?? null } as never,
+      });
+      setSettings(next);
+    } catch (e) {
+      appStore.notify("error", `保存失败：${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
+  return (
+    <section className="space-y-2">
+      <h2 className="text-sm font-semibold">模型锁定</h2>
+      <p className="text-xs text-ink-muted">
+        留空 = 由 AI 按任务性质挑模型（成本优先）；锁定后各类对话强制用你指定的模型。
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {LOCK_KINDS.map((k) => (
+          <Field key={k.key} label={k.label} hint={k.hint}>
+            <ModelSelect
+              value={locks[k.key] ? modelKey(locks[k.key] as { provider: string; id: string }) : ""}
+              onChange={(v) => void set(k.key, v)}
+              models={models}
+              allowEmpty
+              emptyLabel="不锁定（AI 自选）"
+            />
+          </Field>
+        ))}
+      </div>
+    </section>
   );
 }
