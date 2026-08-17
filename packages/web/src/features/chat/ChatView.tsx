@@ -5,6 +5,7 @@ import { Badge, Spinner } from "../../design-system/components/primitives";
 import { appStore, useAppState } from "../../store/app-store";
 import { emptyChat } from "../../store/apply-event";
 import { Composer } from "../composer/Composer";
+import { buildAssistantMetas } from "../composer/stats";
 import { ContextDrawer } from "../context/ContextDrawer";
 import { ApprovalCard } from "./ApprovalCard";
 import { indexToolResults, MessageItem } from "./MessageItem";
@@ -20,6 +21,7 @@ export function ChatView() {
   const item = sessions.find((s) => s.meta.id === currentId);
   const chat = currentId ? (chats[currentId] ?? emptyChat()) : emptyChat();
   const toolResults = useMemo(() => indexToolResults(chat.messages), [chat.messages]);
+  const metas = useMemo(() => buildAssistantMetas(chat.messages), [chat.messages]);
   const timeline = useMemo(
     () => buildTimeline(chat.messages, chat.entries),
     [chat.messages, chat.entries],
@@ -139,6 +141,7 @@ export function ChatView() {
                         key={`${row.message.role}-${row.message.timestamp}-${i}`}
                         message={row.message}
                         toolResults={toolResults}
+                        meta={metas.get(row.message)}
                         streaming={
                           chat.streaming && row.message === chat.messages[chat.messages.length - 1]
                         }

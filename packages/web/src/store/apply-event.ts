@@ -41,6 +41,18 @@ export function applyEngineEvent(chat: ChatState, event: EngineEvent): ChatState
     case "agent_start":
       return { ...chat, streaming: true };
     case "message_start": {
+      // 发送时本地已乐观插入同一条用户消息：引擎回放的同文本消息在 3 秒窗口内视为同一条
+      if (event.message.role === "user") {
+        const last = chat.messages.at(-1);
+        if (
+          last &&
+          last.role === "user" &&
+          Math.abs(last.timestamp - event.message.timestamp) < 3000 &&
+          userText(last) === userText(event.message)
+        ) {
+          return { ...chat, streaming: true };
+        }
+      }
       const messages = [...chat.messages, event.message];
       const isAssistant = event.message.role === "assistant";
       return {
@@ -111,4 +123,10 @@ function sameMessage(a: EngineMessage, b: EngineMessage): boolean {
   if (a.role !== b.role || a.timestamp !== b.timestamp) return false;
   if (a.role === "toolResult" && b.role === "toolResult") return a.toolCallId === b.toolCallId;
   return true;
+}
+
+function userText(m: Extract<EngineMessage, { role: "user" }>): string {
+  return typeof m.content === "string"
+    ? m.content
+    : m.content.map((p) => (p.type === "text" ? p.text : "[图片]")).join("\n");
 }

@@ -54,6 +54,29 @@ describe("applyEngineEvent", () => {
     expect(c.messages).toHaveLength(1);
   });
 
+  it("用户消息：发送时的本地乐观插入与引擎回放去重", () => {
+    const local: EngineMessage = { role: "user", content: "你好", timestamp: 1000 };
+    let c = applyEngineEvent(emptyChat(), { type: "message_start", message: local });
+    // 引擎 2 秒后回放同一条：不追加
+    c = applyEngineEvent(c, {
+      type: "message_start",
+      message: { role: "user", content: "你好", timestamp: 3000 },
+    });
+    expect(c.messages).toHaveLength(1);
+    // 不同文本照常追加
+    c = applyEngineEvent(c, {
+      type: "message_start",
+      message: { role: "user", content: "再来", timestamp: 3100 },
+    });
+    expect(c.messages).toHaveLength(2);
+    // 离得远的同文本（重复发送）也照常追加
+    c = applyEngineEvent(c, {
+      type: "message_start",
+      message: { role: "user", content: "你好", timestamp: 30_000 },
+    });
+    expect(c.messages).toHaveLength(3);
+  });
+
   it("工具执行中的状态随 start / end 增删", () => {
     let c = applyEngineEvent(emptyChat(), {
       type: "tool_execution_start",

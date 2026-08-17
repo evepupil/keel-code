@@ -43,3 +43,31 @@ export function formatTok(n: number): string {
   }
   return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
 }
+
+/** assistant 消息结束后的统计：时刻、用时（取前面最近的用户消息到本消息）、速度、输出量 */
+export interface AssistantMeta {
+  at: number;
+  durationMs: number;
+  tokPerSec: number | null;
+  outputTok: number;
+  outputLabel: string;
+}
+
+export function buildAssistantMetas(messages: EngineMessage[]): Map<EngineMessage, AssistantMeta> {
+  const out = new Map<EngineMessage, AssistantMeta>();
+  let lastUserAt: number | null = null;
+  for (const m of messages) {
+    if (m.role === "user") lastUserAt = m.timestamp;
+    if (m.role !== "assistant") continue;
+    const durationMs = lastUserAt !== null ? Math.max(0, m.timestamp - lastUserAt) : 0;
+    const secs = durationMs / 1000;
+    out.set(m, {
+      at: m.timestamp,
+      durationMs,
+      tokPerSec: secs >= 1 && m.usage.output > 0 ? Math.round(m.usage.output / secs) : null,
+      outputTok: m.usage.output,
+      outputLabel: formatTok(m.usage.output),
+    });
+  }
+  return out;
+}
