@@ -121,7 +121,12 @@ export const api = {
     }),
   removeProvider: (id: string) =>
     request<{ ok: true }>(`/providers/${encodeURIComponent(id)}`, { method: "DELETE" }),
-  fetchRemoteModels: (body: { baseUrl: string; api: string; apiKey?: string }) =>
+  fetchRemoteModels: (body: {
+    providerId?: string;
+    baseUrl?: string;
+    api?: string;
+    apiKey?: string;
+  }) =>
     request<{ id: string }[]>("/providers/fetch-models", {
       method: "POST",
       body: JSON.stringify(body),

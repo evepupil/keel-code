@@ -193,15 +193,16 @@ function CatalogEditor({
   const [newId, setNewId] = useState("");
 
   const fetchList = async () => {
-    if (!values.baseUrl.trim()) {
-      appStore.notify("error", "先填 API 地址");
+    if (!values.id && !values.baseUrl.trim()) {
+      appStore.notify("error", "先选提供方或填 API 地址");
       return;
     }
     setFetching(true);
     try {
       const remote = await api.fetchRemoteModels({
-        baseUrl: values.baseUrl.trim(),
-        api: values.api || "openai-completions",
+        ...(values.id ? { providerId: values.id } : {}),
+        ...(values.baseUrl.trim() ? { baseUrl: values.baseUrl.trim() } : {}),
+        ...(values.api ? { api: values.api } : {}),
         ...(values.apiKey.trim() ? { apiKey: values.apiKey.trim() } : {}),
       });
       const have = new Set(values.models.map((m) => m.id));

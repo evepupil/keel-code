@@ -110,13 +110,46 @@ export async function removeProvider(
   }
 }
 
-export async function fetchRemoteModels(input: {
-  baseUrl: string;
-  api: string;
-  apiKey?: string;
-}): Promise<{ id: string }[]> {
-  const req = buildModelsRequest(input.api, input.baseUrl, input.apiKey);
-  if (!req) throw new Error(`协议 ${input.api} 不知道怎么列模型`);
+export async function fetchRemoteModels(
+  runtime: ModelRuntime,
+  modelsPath: string,
+  input: {
+    providerId?: string;
+    baseUrl?: string;
+    api?: string;
+    apiKey?: string;
+  },
+): Promise<{ id: string }[]> {
+  let baseUrl = input.baseUrl?.trim();
+  let api = input.api;
+  let apiKey = input.apiKey?.trim();
+
+  if (input.providerId) {
+    const p = runtime.getProvider(input.providerId);
+    const first = runtime.getModels(input.providerId)[0];
+    const cat = catalogOf(readModelsFile(modelsPath), input.providerId);
+    const nativeUrl = p?.baseUrl ?? first?.baseUrl;
+    const formUrl = input.baseUrl?.trim();
+    // 表单若还是官方默认地址，优先用目录里用户改过的端点
+    if (!baseUrl || (nativeUrl && formUrl === nativeUrl && cat?.baseUrl)) {
+      baseUrl = cat?.baseUrl ?? formUrl ?? nativeUrl;
+    }
+    if (!api) api = cat?.api ?? first?.api;
+    if (!apiKey) {
+      try {
+        const auth = await runtime.getAuth(input.providerId);
+        apiKey = auth?.auth.apiKey;
+      } catch {
+        // 没存过 key
+      }
+    }
+  }
+
+  if (!baseUrl) throw new Error("没有 API 地址，填了再获取");
+  if (!api) throw new Error("不知道用哪种协议列模型");
+
+  const req = buildModelsRequest(api, baseUrl, apiKey);
+  if (!req) throw new Error(`协议 ${api} 不知道怎么列模型`);
   const res = await fetch(req.url, { headers: req.headers, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`列模型失败：HTTP ${res.status}`);
   const ids = [...parseModelIds((await res.json()) as unknown)];

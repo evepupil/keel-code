@@ -52,7 +52,7 @@ export async function createEngineHost(options: EngineHostOptions = {}): Promise
     catalog: (providerId) => readCatalog(home.modelsFile, providerId),
     upsertProvider: (input) => upsertProvider(runtime, home.modelsFile, input),
     removeProvider: (providerId) => removeProvider(runtime, home.modelsFile, providerId),
-    fetchRemoteModels: (input) => fetchRemoteModels(input),
+    fetchRemoteModels: (input) => fetchRemoteModels(runtime, home.modelsFile, input),
   };
   const settings: Engine["settings"] = {
     get: () => readSettings(home.settingsFile),
