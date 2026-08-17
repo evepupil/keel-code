@@ -1,8 +1,7 @@
 {
   "name": "keel-code",
   "version": "0.0.0",
-  "private": true,
-  "description": "keel CLI：init / serve / run / status / doctor（发布名 keel-code）",
+  "description": "keel-code：把工程方法论焊进基础设施的编程 agent 工具（keel serve / run / init / doctor）",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -14,11 +13,14 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "web",
+    "README.md"
   ],
   "scripts": {
     "build": "tsc -b",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "node ./scripts/copy-web.mjs"
   },
   "bin": {
     "keel": "./dist/bin.js"
@@ -33,5 +35,19 @@
   },
   "engines": {
     "node": ">=22.19.0"
-  }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/evepupil/keel-code"
+  },
+  "keywords": [
+    "ai",
+    "coding-agent",
+    "claude-code",
+    "harness",
+    "keel"
+  ]
 }

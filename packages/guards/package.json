@@ -1,7 +1,6 @@
 {
   "name": "@keel-code/guards",
   "version": "0.0.0",
-  "private": true,
   "description": "强制层：guard-frontend、commit-gate、lint-on-write、审批策略——纯函数 + 钩子适配",
   "license": "MIT",
   "type": "module",
@@ -26,5 +25,12 @@
   },
   "devDependencies": {
     "@keel-code/testkit": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/evepupil/keel-code"
   }
 }

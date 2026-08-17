@@ -27,3 +27,12 @@ export {
 } from "./subagents/run.js";
 export { type RegisterRosterToolsDeps, registerRosterTools } from "./tools/register.js";
 export type * from "./types.js";
+export {
+  renderWorkflowResult,
+  runWorkflow,
+  validateSteps,
+  WORKFLOW_PARAMS,
+  type WorkflowResult,
+  type WorkflowStep,
+  type WorkflowStepResult,
+} from "./workflow/run.js";

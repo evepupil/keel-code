@@ -11,6 +11,12 @@ import { renderRosterDigest } from "../registry/digest.js";
 import type { RosterStore } from "../registry/store.js";
 import { AGENT_RUN_PARAMS, type SubagentRunner } from "../subagents/run.js";
 import type { ConversationGateway, RosterOptions } from "../types.js";
+import {
+  renderWorkflowResult,
+  runWorkflow,
+  WORKFLOW_PARAMS,
+  type WorkflowStep,
+} from "../workflow/run.js";
 
 export interface RegisterRosterToolsDeps {
   engine: Engine;
@@ -335,6 +341,38 @@ export function registerRosterTools(deps: RegisterRosterToolsDeps): Unsubscribe 
             /\n\n+/g,
             "\n",
           );
+        },
+      },
+      talkers,
+    ),
+  );
+
+  offs.push(
+    engine.tools.register(
+      {
+        name: "keel_workflow_run",
+        label: "运行 workflow",
+        description:
+          "声明式编排一组子 agent 步骤：无依赖的并行跑，有 dependsOn 的等前置完成后再跑（前置结论会拼进任务）。适合多维度 review、批量迁移、多方案评审。结果汇总返回。",
+        parameters: WORKFLOW_PARAMS,
+        execute: async (params, ctx) => {
+          const p = params as { steps: WorkflowStep[]; maxParallel?: number };
+          const parent = await gateway.get(ctx.sessionId);
+          const locks = deps.options?.getModelLocks?.();
+          const steps = p.steps.map((s) => ({
+            ...s,
+            ...(applyLock("subagent", s.model, locks).model
+              ? { model: applyLock("subagent", s.model, locks).model }
+              : {}),
+          })) as WorkflowStep[];
+          const r = await runWorkflow({
+            runner,
+            parent,
+            steps,
+            ...(p.maxParallel ? { maxParallel: p.maxParallel } : {}),
+            ...(ctx.signal ? { signal: ctx.signal } : {}),
+          });
+          return renderWorkflowResult(r);
         },
       },
       talkers,

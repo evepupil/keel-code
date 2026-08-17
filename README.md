@@ -44,6 +44,8 @@ pnpm gate      # lint + typecheck + test（提交前必须全绿）
 
 本地目验（不需要真 key）：`pnpm build && pnpm tsx scripts/serve-mock.ts`，按打印的地址打开工作台。
 
+真机使用（monorepo 内）：`pnpm build`，然后 `pnpm keel init -C <项目目录>`、`pnpm keel serve -C <项目目录>`（API key 放环境变量或工作台设置页），无头 `pnpm keel run -C <项目目录> "<任务>"`。
+
 进度与设计见 [docs/roadmap.md](docs/roadmap.md)。
 
 ## License

@@ -201,6 +201,53 @@ describe("主对话：探测 → 创建对话 → 名册 → 子 agent", () => {
     expect(feSession.getMessages().some((m) => m.role === "assistant")).toBe(true);
   });
 
+  it("workflow：a、b 并行，c 依赖两者并拿到它们的结论", async () => {
+    mock.onRequest((req) => {
+      const sys = String((req.messages[0] as { content?: string })?.content ?? "");
+      const lastRole = (req.messages.at(-1) as { role?: string })?.role;
+      const users = req.messages
+        .filter((m) => (m as { role?: string }).role === "user")
+        .map((m) => {
+          const c = (m as { content?: unknown }).content;
+          return typeof c === "string" ? c : JSON.stringify(c ?? "");
+        })
+        .join(" | ");
+      if (sys.includes("你是一次性子 agent")) {
+        if (users.includes("任务 A")) return { text: "A 结论：甲" };
+        if (users.includes("任务 B")) return { text: "B 结论：乙" };
+        if (users.includes("综合"))
+          return {
+            text: `C 综合完成。看到了：${users.includes("A 结论") && users.includes("B 结论") ? "AB 都有" : "缺"}`,
+          };
+        return { text: "ok" };
+      }
+      if (!sys.includes("主对话职责")) return { text: "ok" };
+      if (lastRole === "tool") return { text: "workflow 完成。" };
+      return {
+        toolCalls: [
+          {
+            name: "keel_workflow_run",
+            arguments: {
+              steps: [
+                { id: "a", task: "任务 A", readOnly: true },
+                { id: "b", task: "任务 B", readOnly: true },
+                { id: "c", task: "综合 a 与 b", dependsOn: ["a", "b"] },
+              ],
+            },
+          },
+        ],
+      };
+    });
+    const main2 = await gateway.create({ kind: "main", title: "主对话 2" });
+    await main2.prompt("跑个 workflow");
+    await main2.waitForIdle();
+    const r = toolResults(main2).find((t) => t.toolName === "keel_workflow_run");
+    expect(r?.text).toContain("workflow 全部完成");
+    expect(r?.text).toContain("[a] completed");
+    expect(r?.text).toContain("[c] completed");
+    expect(r?.text).toContain("AB 都有");
+  });
+
   it("普通对话更新名册后，改动代码范围内文件 → 新鲜度变 code-changed", async () => {
     const list = await engine.sessions.list();
     const fe = list.find((r) => r.meta.title === "前端开发");

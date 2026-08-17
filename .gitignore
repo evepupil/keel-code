@@ -9,3 +9,4 @@ coverage/
 *.log
 .DS_Store
 Thumbs.db
+packages/cli/web/

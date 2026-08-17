@@ -1,7 +1,6 @@
 {
   "name": "@keel-code/mcp",
   "version": "0.0.0",
-  "private": true,
   "description": "MCP 客户端：读取 mcp.json（mcpServers 格式），连接 stdio / HTTP 服务器，把工具注册进引擎",
   "license": "MIT",
   "type": "module",
@@ -27,5 +26,12 @@
   "devDependencies": {
     "@keel-code/testkit": "workspace:*",
     "zod": "^4.4.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/evepupil/keel-code"
   }
 }

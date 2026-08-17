@@ -1,7 +1,6 @@
 {
   "name": "@keel-code/docs",
   "version": "0.0.0",
-  "private": true,
   "description": "文档管理：设计文档冻结与批注读取、文档修剪 job、roadmap 解析",
   "license": "MIT",
   "type": "module",
@@ -25,5 +24,12 @@
   },
   "devDependencies": {
     "@keel-code/testkit": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/evepupil/keel-code"
   }
 }

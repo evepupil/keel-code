@@ -1,7 +1,6 @@
 {
   "name": "@keel-code/server",
   "version": "0.0.0",
-  "private": true,
   "description": "本地服务：HTTP + WebSocket API（项目 / 对话 / agent / 事件 / 文件 / git / 设置）",
   "license": "MIT",
   "type": "module",
@@ -35,5 +34,12 @@
   "devDependencies": {
     "@keel-code/testkit": "workspace:*",
     "@types/ws": "^8.18.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/evepupil/keel-code"
   }
 }

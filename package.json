@@ -15,7 +15,8 @@
     "test": "vitest run",
     "lint": "biome check .",
     "format": "biome format --write .",
-    "gate": "pnpm lint && pnpm typecheck && pnpm test"
+    "gate": "pnpm lint && pnpm typecheck && pnpm test",
+    "keel": "node packages/cli/dist/bin.js"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.8",

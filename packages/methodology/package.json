@@ -1,7 +1,6 @@
 {
   "name": "@keel-code/methodology",
   "version": "0.0.0",
-  "private": true,
   "description": "方法论：base 提示词、主对话调度段、职责注入模板、反 AI 味清单、review 分类标准",
   "license": "MIT",
   "type": "module",
@@ -19,5 +18,12 @@
   "scripts": {
     "build": "tsc -b",
     "test": "vitest run"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/evepupil/keel-code"
   }
 }
