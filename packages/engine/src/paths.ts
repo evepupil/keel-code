@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdirSync, realpathSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import type { KeelPaths } from "./types.js";
@@ -41,5 +41,39 @@ export function resolveKeelPaths(cwd: string, homeDir?: string): KeelPaths {
 export function ensureKeelDirs(paths: KeelPaths): void {
   for (const dir of [paths.home, paths.piAgentDir, paths.sessionsRoot, paths.projectSessionsDir]) {
     mkdirSync(dir, { recursive: true });
+  }
+}
+
+/**
+ * 首次启动时把 pi 自己的凭据（~/.pi/agent/auth.json）导入 keel（~/.keel/auth.json）：
+ * 只补 keel 里没有的 provider，不覆盖；任何一步失败都静默跳过。
+ * 返回导入的 provider id 列表。
+ */
+export function importPiCredentials(
+  paths: KeelPaths,
+  piAuthFile = join(homedir(), ".pi", "agent", "auth.json"),
+): string[] {
+  try {
+    if (!existsSync(piAuthFile)) return [];
+    const src = JSON.parse(readFileSync(piAuthFile, "utf8")) as Record<string, unknown>;
+    let dst: Record<string, unknown> = {};
+    if (existsSync(paths.authFile)) {
+      try {
+        dst = JSON.parse(readFileSync(paths.authFile, "utf8")) as Record<string, unknown>;
+      } catch {
+        dst = {};
+      }
+    }
+    const imported: string[] = [];
+    for (const [provider, cred] of Object.entries(src)) {
+      if (cred && typeof cred === "object" && !(provider in dst)) {
+        dst[provider] = cred;
+        imported.push(provider);
+      }
+    }
+    if (imported.length > 0) writeFileSync(paths.authFile, `${JSON.stringify(dst, null, 2)}\n`);
+    return imported;
+  } catch {
+    return [];
   }
 }

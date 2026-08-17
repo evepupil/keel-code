@@ -29,7 +29,7 @@ packages/cli/src/
 
 `packages/cli/src/`：`bin.ts`（入口）、`index.ts`（commander：`-C/--cwd`、`--home`）、`commands/init.ts`（`.keel/config.json`（guards 四开关 + loop + acceptance）、`.keel/agents/README.md`、`docs/roadmap.md` 模板、`docs/模块设计/`、`docs/review/`，只补缺不覆盖）、`commands/doctor.ts`（Node ≥ 22.19 / git / Git Bash / 用户目录可写 / 已配置 provider 与可用模型数）、`util/web-dist.ts`（发布形态 `<cli>/web`，monorepo 形态 `packages/web/dist`）、`util/open-browser.ts`。`serve` 默认端口 3131，`--port 0` 自动挑选，`--no-open` 不开浏览器。
 
-`commands/run.ts`：`keel run "<任务>" [-c 对话] [-n 新对话标题 -r 职责] [-m provider/id] [--json] [--timeout 分钟]`——`createKeelRuntime({ headless: true })`（审批全放），默认发给主对话，文本增量流到 stdout、工具调用摘要到 stderr，空闲即退出（退出码 0 = idle）；`--json` 按行输出事件与结果。
+`commands/run.ts`：`keel run "<任务>" [-c 对话] [-n 新对话标题 -r 职责] [-m provider/id] [--json] [--timeout 分钟]`——`createKeelRuntime({ headless: true })`（审批全放），默认发给主对话，文本增量流到 stdout、工具调用摘要到 stderr，空闲后等后台子 agent（如文档修剪）跑完再退出（封顶 3 分钟）；退出码 0 = idle；`--json` 按行输出事件与结果。
 
 ## 验证方式
 
@@ -52,3 +52,4 @@ packages/cli/src/
 | 2026-08-17 | M1：init / serve / status / doctor |
 | 2026-08-17 | M5：run 无头模式；init 配置含 permissions / docPrune |
 | 2026-08-17 | M6 准备：包设为可发布（publishConfig），prepack 复制 Web 产物到 `<cli>/web`，根脚本 `pnpm keel` |
+| 2026-08-17 | run 退出前等待后台子 agent；DeepSeek 真机冒烟通过 |

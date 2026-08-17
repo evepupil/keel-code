@@ -116,6 +116,8 @@ export async function runHeadless(options: RunOptions): Promise<RunResult> {
       clearTimeout(timer);
       unsub();
     }
+    // 主对话空闲后，等后台子 agent（如提交后的文档修剪）跑完再退出，封顶 3 分钟
+    await waitForBackgroundSubagents(runtime.engine, 3 * 60 * 1000, err);
     const costUsd = session.getState().usage.costTotal;
     const result: RunResult = { sessionId: session.id, finished, text, costUsd, toolCalls };
     if (error) result.error = error;
@@ -141,4 +143,26 @@ function summarizeArgs(args: unknown): string {
   }
   const s = JSON.stringify(a);
   return s.length > 120 ? `${s.slice(0, 120)}…` : s;
+}
+
+async function waitForBackgroundSubagents(
+  engine: import("@keel-code/engine").Engine,
+  capMs: number,
+  err: (text: string) => void,
+): Promise<void> {
+  const deadline = Date.now() + capMs;
+  let announced = false;
+  while (Date.now() < deadline) {
+    const busy = engine.sessions
+      .liveAll()
+      .filter((s) => s.meta.kind === "subagent" && s.getState().isStreaming);
+    if (busy.length === 0) return;
+    if (!announced) {
+      const names = busy.map((s) => s.meta.title).join("、");
+      err(`\n[等待] ${busy.length} 个后台子 agent 还在跑（${names}）\n`);
+      announced = true;
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  err("\n[等待] 后台子 agent 超时未完成，先退出\n");
 }

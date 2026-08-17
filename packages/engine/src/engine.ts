@@ -8,7 +8,7 @@ import {
   listProviders,
   toModelInfo,
 } from "./models/runtime.js";
-import { ensureKeelDirs, resolveKeelPaths } from "./paths.js";
+import { ensureKeelDirs, importPiCredentials, resolveKeelPaths } from "./paths.js";
 import { SessionService } from "./session/manager.js";
 import { mergeSettings, readSettings, writeSettings } from "./settings.js";
 import type { Engine, EngineOptions } from "./types.js";
@@ -17,6 +17,8 @@ import type { Engine, EngineOptions } from "./types.js";
 export async function createEngine(options: EngineOptions): Promise<Engine> {
   const paths = resolveKeelPaths(options.cwd, options.homeDir);
   ensureKeelDirs(paths);
+  // 只在默认用户目录（~/.keel）首次启动时从 pi 导入凭据；测试 / 演示用的临时目录不导，避免误用真 key
+  if (!options.homeDir && !process.env.KEEL_HOME) importPiCredentials(paths);
   const runtimeOptions =
     options.allowModelNetwork === undefined ? {} : { allowModelNetwork: options.allowModelNetwork };
   const runtime = await createModelRuntime(paths, runtimeOptions);
