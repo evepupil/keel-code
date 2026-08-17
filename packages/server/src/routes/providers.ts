@@ -75,15 +75,15 @@ export function providerRoutes(engine: Pick<Engine, "models">): Hono {
       api?: string;
       apiKey?: string;
     };
-    const baseUrl = body.baseUrl;
-    const api = body.api;
-    if (!baseUrl || !api) return c.json({ error: "baseUrl 与 api 必填" }, 400);
+    if (!body.providerId && (!body.baseUrl || !body.api)) {
+      return c.json({ error: "providerId，或 baseUrl + api 必填" }, 400);
+    }
     try {
       return c.json(
         await engine.models.fetchRemoteModels({
-          baseUrl,
-          api,
           ...(body.providerId ? { providerId: body.providerId } : {}),
+          ...(body.baseUrl ? { baseUrl: body.baseUrl } : {}),
+          ...(body.api ? { api: body.api } : {}),
           ...(body.apiKey ? { apiKey: body.apiKey } : {}),
         }),
       );

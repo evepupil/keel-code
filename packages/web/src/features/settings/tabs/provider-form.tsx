@@ -208,13 +208,16 @@ function CatalogEditor({
       const have = new Map(values.models.map((m) => [m.id, m]));
       const next = [...values.models];
       let added = 0;
-      for (const r of remote) {
+      for (const r of remote.models) {
         if (have.has(r.id)) continue;
         next.push({ id: r.id, name: r.id, enabled: false });
         added += 1;
       }
       onChange({ ...values, models: next });
-      appStore.notify("info", added ? `拉到 ${added} 个，勾上要用的` : "没有新模型");
+      appStore.notify(
+        "info",
+        added ? `从 ${remote.url} 拉到 ${added} 个，勾上要用的` : `已是最新（${remote.url}）`,
+      );
     } catch (e) {
       appStore.notify("error", e instanceof Error ? e.message : String(e));
     } finally {

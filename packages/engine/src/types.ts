@@ -489,10 +489,10 @@ export interface Engine {
     removeProvider(providerId: string): Promise<void>;
     fetchRemoteModels(input: {
       providerId?: string;
-      baseUrl: string;
-      api: string;
+      baseUrl?: string;
+      api?: string;
       apiKey?: string;
-    }): Promise<{ id: string }[]>;
+    }): Promise<{ url: string; models: { id: string }[] }>;
   };
   readonly sessions: {
     create(options: CreateSessionOptions): Promise<EngineSession>;

@@ -10,6 +10,7 @@ export { Type } from "typebox";
 export { createEngine, createEngineHost } from "./engine.js";
 export { scopeMatches } from "./hooks/bus.js";
 export { APIS, validateProviderId } from "./models/catalog.js";
+export { scrubInheritedProviderEnv } from "./models/env.js";
 export { buildModelsRequest, parseModelIds } from "./models/probe.js";
 export {
   importPiCredentials,

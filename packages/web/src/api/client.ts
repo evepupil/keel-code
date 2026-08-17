@@ -127,7 +127,7 @@ export const api = {
     api?: string;
     apiKey?: string;
   }) =>
-    request<{ id: string }[]>("/providers/fetch-models", {
+    request<{ url: string; models: { id: string }[] }>("/providers/fetch-models", {
       method: "POST",
       body: JSON.stringify(body),
     }),

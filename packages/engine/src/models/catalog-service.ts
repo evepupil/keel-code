@@ -1,6 +1,7 @@
 /**
  * 设置页用的提供方目录：读写 models.json，并同步到进程内 ModelRuntime。
  */
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import type {
   BuiltinProviderOption,
@@ -93,6 +94,7 @@ export async function upsertProvider(
 
   if (input.apiKey?.trim()) {
     await runtime.setRuntimeApiKey(input.id, input.apiKey.trim());
+    persistApiKey(modelsPath, input.id, input.apiKey.trim());
   }
 
   const info = listProviders(runtime).find((p) => p.id === input.id);
@@ -127,7 +129,7 @@ export async function fetchRemoteModels(
     api?: string;
     apiKey?: string;
   },
-): Promise<{ id: string }[]> {
+): Promise<{ url: string; models: { id: string }[] }> {
   let baseUrl = input.baseUrl?.trim();
   let api = input.api;
   let apiKey = input.apiKey?.trim();
@@ -151,17 +153,41 @@ export async function fetchRemoteModels(
         // 没存过 key
       }
     }
+    if (input.apiKey?.trim()) {
+      await runtime.setRuntimeApiKey(input.providerId, input.apiKey.trim());
+      persistApiKey(modelsPath, input.providerId, input.apiKey.trim());
+    }
   }
 
   if (!baseUrl) throw new Error("没有 API 地址，填了再获取");
   if (!api) throw new Error("不知道用哪种协议列模型");
+  if (!apiKey) throw new Error("没有 API 密钥：先保存提供方，或在表单里填密钥再获取");
 
   const req = buildModelsRequest(api, baseUrl, apiKey);
   if (!req) throw new Error(`协议 ${api} 不知道怎么列模型`);
   const res = await fetch(req.url, { headers: req.headers, signal: AbortSignal.timeout(8000) });
-  if (!res.ok) throw new Error(`列模型失败：HTTP ${res.status}`);
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    const hint = body.slice(0, 200).replace(/\s+/g, " ");
+    throw new Error(`列模型失败：HTTP ${res.status}（${req.url}）${hint ? ` ${hint}` : ""}`);
+  }
   const ids = [...parseModelIds((await res.json()) as unknown)];
-  return ids.map((id) => ({ id }));
+  return { url: req.url, models: ids.map((id) => ({ id })) };
+}
+
+function persistApiKey(modelsPath: string, providerId: string, apiKey: string): void {
+  const authFile = modelsPath.replace(/models\.json$/i, "auth.json");
+  let data: Record<string, unknown> = {};
+  if (existsSync(authFile)) {
+    try {
+      const raw = JSON.parse(readFileSync(authFile, "utf8")) as unknown;
+      if (raw && typeof raw === "object") data = raw as Record<string, unknown>;
+    } catch {
+      data = {};
+    }
+  }
+  data[providerId] = { type: "api_key", key: apiKey };
+  writeFileSync(authFile, `${JSON.stringify(data, null, 2)}\n`);
 }
 
 function decorate(runtime: ModelRuntime, p: ProviderInfo, api?: string): ProviderInfo {

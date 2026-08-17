@@ -75,13 +75,20 @@ describe("提供方目录", () => {
       expect(created.kind).toBe("custom");
       expect(e.models.added().map((p) => p.id)).toEqual(expect.arrayContaining(["mock", "acme"]));
       expect(e.models.list("acme").map((m) => m.id)).toEqual(["acme-1"]);
+      const auth = JSON.parse(readFileSync(join(home2.path, "auth.json"), "utf8")) as {
+        acme?: { key?: string };
+      };
+      expect(auth.acme?.key).toBe("k");
 
       const remote = await e.models.fetchRemoteModels({
         baseUrl: mock.baseUrl,
         api: "openai-completions",
         apiKey: "k",
       });
-      expect(remote.map((m) => m.id)).toEqual(expect.arrayContaining(["mock-1", "mock-cheap"]));
+      expect(remote.url).toContain("/models");
+      expect(remote.models.map((m) => m.id)).toEqual(
+        expect.arrayContaining(["mock-1", "mock-cheap"]),
+      );
 
       await e.models.removeProvider("acme");
       expect(e.models.added().map((p) => p.id)).toEqual(["mock"]);

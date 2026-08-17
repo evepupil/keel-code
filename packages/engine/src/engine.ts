@@ -7,6 +7,7 @@ import {
   unusedBuiltins,
   upsertProvider,
 } from "./models/catalog-service.js";
+import { scrubInheritedProviderEnv } from "./models/env.js";
 import { probeProviders } from "./models/probe.js";
 import {
   availableModels,
@@ -29,6 +30,7 @@ import type { Engine, EngineHost, EngineHostOptions, EngineOptions } from "./typ
 
 /** 创建用户级宿主：凭据 / 模型目录 / 设置一份，多个项目引擎共享。 */
 export async function createEngineHost(options: EngineHostOptions = {}): Promise<EngineHost> {
+  scrubInheritedProviderEnv();
   const home = resolveHomePaths(options.homeDir);
   ensureHomeDirs(home);
   // 只在默认用户目录（~/.keel）首次启动时从 pi 导入凭据；测试 / 演示用的临时目录不导，避免误用真 key
