@@ -47,6 +47,17 @@ describe("rebuildIndex", () => {
           message: { role: "user", content: "hi", timestamp: 1 },
         }) +
         line({
+          type: "message",
+          id: "e2b",
+          parentId: "e2",
+          timestamp: "2026-08-17T00:00:02.500Z",
+          message: {
+            role: "assistant",
+            content: [{ type: "text", text: "ok" }],
+            usage: { input: 100, output: 40, cacheRead: 800, cost: { total: 0.01 } },
+          },
+        }) +
+        line({
           type: "custom",
           id: "e3",
           parentId: "e2",
@@ -60,8 +71,10 @@ describe("rebuildIndex", () => {
     expect(Object.keys(idx.sessions)).toEqual(["abc"]);
     const rec = idx.sessions.abc;
     expect(rec?.meta.title).toBe("改名了");
-    expect(rec?.messageCount).toBe(1);
+    expect(rec?.messageCount).toBe(2);
     expect(rec?.lastActiveAt).toBe("2026-08-17T00:00:03.000Z");
+    expect(rec?.usage).toEqual({ input: 100, output: 40, cacheRead: 800 });
+    expect(rec?.costUsd).toBe(0.01);
   });
 
   it("没有 keel/meta 的文件被忽略", () => {

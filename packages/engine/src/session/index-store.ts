@@ -7,7 +7,18 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import type { KeelPaths, SessionMeta, SessionRecord } from "../types.js";
+import type { KeelPaths, SessionMeta, SessionRecord, SessionUsage } from "../types.js";
+
+export const EMPTY_SESSION_USAGE: SessionUsage = { input: 0, output: 0, cacheRead: 0 };
+
+export function normalizeUsage(raw: unknown): SessionUsage {
+  const u = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  return {
+    input: Number(u.input ?? 0),
+    output: Number(u.output ?? 0),
+    cacheRead: Number(u.cacheRead ?? 0),
+  };
+}
 
 export const KEEL_META_ENTRY = "keel/meta";
 export const KEEL_SYSTEM_PROMPT_ENTRY = "keel/system-prompt";
@@ -32,7 +43,10 @@ export class SessionIndex {
     try {
       const raw = JSON.parse(readFileSync(this.paths.projectIndexFile, "utf8")) as IndexFile;
       if (raw && raw.version === 1 && raw.sessions) {
-        for (const rec of Object.values(raw.sessions)) rec.costUsd = Number(rec.costUsd ?? 0);
+        for (const rec of Object.values(raw.sessions)) {
+          rec.costUsd = Number(rec.costUsd ?? 0);
+          rec.usage = normalizeUsage(rec.usage);
+        }
         return raw;
       }
     } catch {
@@ -75,13 +89,14 @@ export class SessionIndex {
 
   touch(
     id: string,
-    patch: { messageCount?: number; lastActiveAt?: string; costUsd?: number },
+    patch: { messageCount?: number; lastActiveAt?: string; costUsd?: number; usage?: SessionUsage },
   ): void {
     const rec = this.data.sessions[id];
     if (!rec) return;
     if (patch.messageCount !== undefined) rec.messageCount = patch.messageCount;
     if (patch.lastActiveAt !== undefined) rec.lastActiveAt = patch.lastActiveAt;
     if (patch.costUsd !== undefined) rec.costUsd = patch.costUsd;
+    if (patch.usage !== undefined) rec.usage = normalizeUsage(patch.usage);
     this.persist();
   }
 }
@@ -110,6 +125,7 @@ export function readRecordFromFile(file: string): SessionRecord | undefined {
   let messageCount = 0;
   let lastActiveAt = "";
   let costUsd = 0;
+  const usage: SessionUsage = { ...EMPTY_SESSION_USAGE };
   for (const line of text.split("\n")) {
     if (!line.trim()) continue;
     let entry: Record<string, unknown>;
@@ -124,9 +140,22 @@ export function readRecordFromFile(file: string): SessionRecord | undefined {
     if (entry.type === "message") {
       messageCount += 1;
       const msg = entry.message as
-        | { role?: string; usage?: { cost?: { total?: number } } }
+        | {
+            role?: string;
+            usage?: {
+              input?: number;
+              output?: number;
+              cacheRead?: number;
+              cost?: { total?: number };
+            };
+          }
         | undefined;
-      if (msg?.role === "assistant") costUsd += Number(msg.usage?.cost?.total ?? 0);
+      if (msg?.role === "assistant") {
+        costUsd += Number(msg.usage?.cost?.total ?? 0);
+        usage.input += Number(msg.usage?.input ?? 0);
+        usage.output += Number(msg.usage?.output ?? 0);
+        usage.cacheRead += Number(msg.usage?.cacheRead ?? 0);
+      }
     }
     if (entry.type === "custom" && entry.customType === KEEL_META_ENTRY) {
       const data = entry.data as SessionMeta | undefined;
@@ -134,5 +163,12 @@ export function readRecordFromFile(file: string): SessionRecord | undefined {
     }
   }
   if (!meta) return undefined;
-  return { meta, file, messageCount, lastActiveAt: lastActiveAt || meta.updatedAt, costUsd };
+  return {
+    meta,
+    file,
+    messageCount,
+    lastActiveAt: lastActiveAt || meta.updatedAt,
+    costUsd,
+    usage,
+  };
 }

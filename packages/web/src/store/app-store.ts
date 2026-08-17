@@ -33,6 +33,9 @@ export interface AppState {
   workspaceId: string | null;
   project?: ProjectInfo;
   sessions: SessionListItem[];
+  /** 各工作区会话列表（侧栏展开时懒加载） */
+  sessionsByWorkspace: Record<string, SessionListItem[]>;
+  expandedWorkspaces: string[];
   currentId: string | null;
   chats: Record<string, ChatState>;
   view: View;
@@ -62,6 +65,8 @@ const initialState: AppState = {
   workspaces: [],
   workspaceId: null,
   sessions: [],
+  sessionsByWorkspace: {},
+  expandedWorkspaces: [],
   currentId: null,
   chats: {},
   view: "chat",
@@ -83,6 +88,7 @@ class AppStore {
   private pushedHash: string | null = null;
   /** 工作区切换序号：异步加载回来时发现已经切走就丢弃 */
   private switchSeq = 0;
+  private initPromise: Promise<void> | null = null;
 
   getState = (): AppState => this.state;
 
@@ -111,6 +117,12 @@ class AppStore {
   // ---------- 启动 ----------
 
   async init(): Promise<void> {
+    if (this.initPromise) return this.initPromise;
+    this.initPromise = this.doInit();
+    return this.initPromise;
+  }
+
+  private async doInit(): Promise<void> {
     const token = bootstrapToken();
     if (!token) {
       this.set({ tokenMissing: true, ready: true });
@@ -129,6 +141,8 @@ class AppStore {
         },
         onSessionsChanged: (wid) => {
           if (wid === this.state.workspaceId) void this.refreshSessions(false);
+          else if (this.state.expandedWorkspaces.includes(wid))
+            void this.loadWorkspaceSessions(wid);
         },
         onWorkspacesChanged: () => void this.refreshWorkspaces(),
         onStatus: (connected) => {
@@ -259,8 +273,8 @@ class AppStore {
     target: { view?: View; sessionId?: string; docPath?: string } = {},
   ): Promise<void> {
     const same = this.state.workspaceId === id;
-    const seq = ++this.switchSeq;
     if (!same) {
+      const seq = ++this.switchSeq;
       this.ws?.unsubscribeAll();
       setApiWorkspace(id);
       this.set({
@@ -272,6 +286,7 @@ class AppStore {
         approvals: [],
         doc: null,
         view: target.view ?? "chat",
+        expandedWorkspaces: [...new Set([...this.state.expandedWorkspaces, id])],
         pendingByWorkspace: { ...this.state.pendingByWorkspace, [id]: 0 },
       });
       try {
@@ -289,6 +304,11 @@ class AppStore {
       if (seq !== this.switchSeq) return;
       void this.refreshApprovals();
       void this.refreshWorkspaces();
+    } else {
+      if (!this.state.expandedWorkspaces.includes(id)) {
+        this.set({ expandedWorkspaces: [...this.state.expandedWorkspaces, id] });
+      }
+      if (this.state.sessions.length === 0) await this.refreshSessions(true);
     }
     if (target.view === "doc" && target.docPath) {
       this.set({ view: "doc", doc: { path: target.docPath, sessionId: null } });
@@ -364,11 +384,45 @@ class AppStore {
     try {
       const sessions = await api.sessions(ensureMain);
       if (seq !== this.switchSeq) return;
-      this.set({ sessions });
+      const wid = this.state.workspaceId;
+      this.set((s) => ({
+        sessions,
+        sessionsByWorkspace: wid
+          ? { ...s.sessionsByWorkspace, [wid]: sessions }
+          : s.sessionsByWorkspace,
+      }));
     } catch (e) {
       if (seq !== this.switchSeq) return;
       this.notify("error", `加载对话列表失败：${e instanceof Error ? e.message : String(e)}`);
     }
+  }
+
+  async loadWorkspaceSessions(wid: string, ensureMain = false): Promise<void> {
+    try {
+      const sessions = await api.sessionsIn(wid, ensureMain);
+      this.set((s) => ({
+        sessionsByWorkspace: { ...s.sessionsByWorkspace, [wid]: sessions },
+        ...(s.workspaceId === wid ? { sessions } : {}),
+      }));
+    } catch (e) {
+      this.notify("error", `加载对话列表失败：${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  toggleWorkspace(wid: string): void {
+    const open = this.state.expandedWorkspaces.includes(wid);
+    const expandedWorkspaces = open
+      ? this.state.expandedWorkspaces.filter((id) => id !== wid)
+      : [...this.state.expandedWorkspaces, wid];
+    this.set({ expandedWorkspaces });
+    if (!open && this.state.sessionsByWorkspace[wid] === undefined) {
+      void this.loadWorkspaceSessions(wid, true);
+    }
+  }
+
+  async createSessionIn(wid: string, input: CreateSessionInput): Promise<string> {
+    if (wid !== this.state.workspaceId) await this.selectWorkspace(wid);
+    return this.createSession(input);
   }
 
   async refreshModels(): Promise<void> {
@@ -468,8 +522,13 @@ class AppStore {
 
   applyEvent(sessionId: string, event: EngineEvent): void {
     if (event.type === "meta_updated") {
+      const patch = (list: SessionListItem[]) =>
+        list.map((x) => (x.meta.id === sessionId ? { ...x, meta: event.meta } : x));
       this.set((s) => ({
-        sessions: s.sessions.map((x) => (x.meta.id === sessionId ? { ...x, meta: event.meta } : x)),
+        sessions: patch(s.sessions),
+        sessionsByWorkspace: Object.fromEntries(
+          Object.entries(s.sessionsByWorkspace).map(([k, list]) => [k, patch(list)]),
+        ),
       }));
       return;
     }
@@ -524,12 +583,24 @@ class AppStore {
       model?: { provider: string; id: string };
       thinkingLevel?: string;
       archived?: boolean;
+      pinned?: boolean;
     },
+    workspaceId: string | null = this.state.workspaceId,
   ): Promise<void> {
+    if (!workspaceId) return;
     try {
-      const { meta } = await api.patchSession(id, patch);
+      const { meta } =
+        workspaceId === this.state.workspaceId
+          ? await api.patchSession(id, patch)
+          : await api.patchSessionIn(workspaceId, id, patch);
+      const apply = (list: SessionListItem[]) =>
+        list.map((x) => (x.meta.id === id ? { ...x, meta } : x));
       this.set((s) => ({
-        sessions: s.sessions.map((x) => (x.meta.id === id ? { ...x, meta } : x)),
+        sessions: apply(s.sessions),
+        sessionsByWorkspace: {
+          ...s.sessionsByWorkspace,
+          [workspaceId]: apply(s.sessionsByWorkspace[workspaceId] ?? s.sessions),
+        },
       }));
     } catch (e) {
       this.notify("error", `更新失败：${e instanceof Error ? e.message : String(e)}`);

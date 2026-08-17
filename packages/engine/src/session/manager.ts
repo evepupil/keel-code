@@ -220,6 +220,7 @@ export class SessionService {
         messageCount: 0,
         lastActiveAt: meta.updatedAt,
         costUsd: 0,
+        usage: { input: 0, output: 0, cacheRead: 0 },
       });
     }
     this.live.set(meta.id, session);

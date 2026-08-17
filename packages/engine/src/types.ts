@@ -112,13 +112,21 @@ export interface SessionMeta {
   extra?: Record<string, unknown>;
 }
 
+/** 会话累计 token：缓存命中 / 未命中（input）/ 输出。 */
+export interface SessionUsage {
+  input: number;
+  output: number;
+  cacheRead: number;
+}
+
 export interface SessionRecord {
   meta: SessionMeta;
   file: string;
   messageCount: number;
   lastActiveAt: string;
-  /** 累计估算费用（美元） */
+  /** 累计估算费用（美元）；界面不展示，名册等内部仍用 */
   costUsd: number;
+  usage: SessionUsage;
 }
 
 export interface CreateSessionOptions {

@@ -114,6 +114,8 @@ export const api = {
   modelTiers: () => request<TiersOverview>("/models/tiers"),
   sessions: (ensureMain = false) =>
     request<SessionListItem[]>(w(`/sessions${ensureMain ? "?ensureMain=1" : ""}`)),
+  sessionsIn: (workspaceId: string, ensureMain = false) =>
+    request<SessionListItem[]>(`/w/${workspaceId}/sessions${ensureMain ? "?ensureMain=1" : ""}`),
   createSession: (input: CreateSessionInput) =>
     request<{ meta: SessionMeta }>(w("/sessions"), { method: "POST", body: JSON.stringify(input) }),
   session: (id: string) => request<SessionDetail>(w(`/sessions/${id}`)),
@@ -162,9 +164,19 @@ export const api = {
       model?: { provider: string; id: string };
       thinkingLevel?: string;
       archived?: boolean;
+      pinned?: boolean;
     },
   ) =>
     request<{ meta: SessionMeta }>(w(`/sessions/${id}`), {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    }),
+  patchSessionIn: (
+    workspaceId: string,
+    id: string,
+    patch: { archived?: boolean; pinned?: boolean; title?: string },
+  ) =>
+    request<{ meta: SessionMeta }>(`/w/${workspaceId}/sessions/${id}`, {
       method: "PATCH",
       body: JSON.stringify(patch),
     }),

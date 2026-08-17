@@ -43,9 +43,9 @@ packages/web/src/
 - `design-system/tokens.css`：Tailwind v4 `@theme` token（色板 oklch、字体 sans + mono、圆角 sm/md/lg/xl、阴影 sm/md/lg），亮暗两套（系统偏好 + `data-theme`，`lib/theme.ts` 读写 localStorage 并写到 `<html>`），markdown 正文样式 `.prose-keel`。层次：`canvas`（正文，白）/ `side`（侧栏、抽屉、弹窗侧栏，略灰）/ `panel`（卡片、弹层）/ `panel-2`（悬停、徽标、代码底）；`violet` 只给图表分段。
 - `design-system/components/`：`Button`（cva 变体）、`IconButton`（xs / sm / md，active 按下态）、`Chip`（outline 输入框内选择器 / soft 上拉按钮）、`Input / Textarea / Select / Badge / Card / Spinner / Field / EmptyState`、`StatusDot`（运行呼吸 / 完成 / 待处理 / 失败）、`Ring`（进度环）、`Segmented`（分段单选）、以及 Radix 封装：`Dialog`（sm / lg，自定义头部）、`Menu`（DropdownMenu，含单选项）、`Popover`、`HoverCard`、`Tabs`（横 / 竖）、`Switch`、`Tip`（Tooltip）。全部传送门渲染，不受滚动容器裁切。开发构建有预览页 `#/dev/design`（`features/dev/DesignPreview.tsx`）把 token 与全部组件摆在一页。
 - `api/client.ts`：令牌引导（`?token=` → sessionStorage → 抹地址栏）、REST 封装；`api/ws.ts`：自动重连 + 断线重放订阅。
-- `store/apply-event.ts`：事件 → 本地消息状态的纯函数（流式 start / update / end、工具执行中、idle 校准标记）；`store/app-store.ts`：`useSyncExternalStore` 小仓库（工作区列表 / 当前工作区 / 会话列表 / 当前会话 / 视图 / 模型 / 审批 / 通知）。多工作区：`selectWorkspace(id, target?)` 清空会话态、`setApiWorkspace(id)` 让 `api/client.ts` 之后的工作区级请求都打到 `/api/w/<wid>/…`、退掉旧 WS 订阅、拉项目 / 会话 / 审批；异步回包用切换序号防串台；其他工作区的审批只计数（切换器角标）。`app/router.ts`：hash 路由纯函数（`#/w/<wid>` / `#/w/<wid>/c/<sid>` / `#/w/<wid>/board` / `#/w/<wid>/doc/<path>` / `#/settings`），进入时解析地址栏、状态变化时 `replaceState` 回写、监听 `hashchange`。`api/ws.ts`：一条连接，`subscribe(workspaceId, sessionId)`，事件 / 名册变化 / 审批带 workspaceId，`workspaces_changed` 刷新列表。
-- `features/workspaces/WorkspaceSwitcher.tsx`：侧栏顶部当前工作区（名称 / 路径 / 连接状态 / 其他工作区待审批角标）→ 下拉：全部工作区（✓ 当前、已加载点、待审批数、悬停 ✕ 移除）+ 「添加工作区…」；`AddWorkspaceDialog.tsx`：粘路径或「选择文件夹…」（`POST /workspaces/pick` 弹系统对话框）；`WorkspaceEmpty.tsx`：没有工作区时的主区域。
-- `features/sessions/Sidebar.tsx`：工作区切换器、新建对话、分组列表（主对话 / 对话 / 子 agent 挂父 / 已归档）；`NewSessionDialog.tsx`：标题 / 职责 / 模型——先选能力档（三个 chip 显示会落到的模型、单价、回退提示，默认取普通对话默认档），需要钉死再「指定具体模型…」/ 首条消息。`features/models/ModelSelect.tsx`：按 provider 分组的具体模型下拉（provider::id）；`features/models/tiers.ts`：档次常量与单价格式。
+- `store/apply-event.ts`：事件 → 本地消息状态的纯函数（流式 start / update / end、工具执行中、idle 校准标记）；`store/app-store.ts`：`useSyncExternalStore` 小仓库（工作区列表 / 当前工作区 / 按工作区分桶的会话 / 当前会话 / 视图 / 模型 / 审批 / 通知）。`init` 去重，避免 React 严格模式跑两遍把会话列表冲掉。多工作区：`selectWorkspace(id, target?)` 清空会话态、`setApiWorkspace(id)` 让之后的工作区级请求打到 `/api/w/<wid>/…`、退掉旧 WS 订阅、拉项目 / 会话 / 审批；展开其他项目时 `loadWorkspaceSessions` 懒加载。`app/router.ts`：hash 路由纯函数。`api/ws.ts`：一条连接，订阅带 workspaceId。
+- `features/sidebar/`：按项目分组的侧栏。`Sidebar.tsx` 列出全部工作区；`ProjectGroup.tsx` 项目行常驻 `⋯` + 新建，悬停信息卡（名称 / 对话数 / 路径 / 编辑项目）；`SessionRow.tsx` 主对话置顶（锚图标），普通对话悬停出置顶 / 归档，信息卡是职责 + token 三项（缓存命中 / 未命中 / 输出）。子 agent 不进侧栏。`group-sessions.ts` 纯函数分桶。`AddWorkspaceDialog.tsx` 仍在 `features/workspaces/`。
+- `features/sessions/NewSessionDialog.tsx`：标题 / 职责 / 模型——先选能力档，需要钉死再「指定具体模型…」；可指定 `workspaceId` 在别的项目里建。`features/models/ModelSelect.tsx`：按 provider 分组的具体模型下拉；`features/models/tiers.ts`：档次常量。
 - `features/chat/ChatView.tsx`：头部（标题 + 职责 + 模型切换）、消息流（自动贴底）、工具执行中提示、`Composer`（Enter 发送 / Shift+Enter 换行 / 运行中排队 / 中止）；`MessageItem.tsx`：用户气泡、assistant markdown（react-markdown + gfm）、思考折叠、`ToolCallCard`（参数 / 结果 / 失败态）。
 - `features/settings/SettingsDialog.tsx`：全局设置弹窗（`Dialog size=lg`，左侧竖 tab：模型 / 能力档 / 项目 / MCP / 通用；`appStore.openSettings(tab)` 从任何地方打开，`#/settings` 深链也打开它）。`tabs/ModelsTab.tsx`：provider 列表（常用优先，可展开全部）、粘贴 key 保存 / 移除、探测（可达 / 时延 / 端点模型表：上下文 / 推理 / 端点）；`tabs/ProjectTab.tsx` 包 `ProjectConfig`；`tabs/McpTab.tsx`；`tabs/GeneralTab.tsx`：主题（跟随系统 / 亮 / 暗）。`ModelTiers.tsx`：「模型档次」——三档落点卡（模型 / 单价 / 上下文 / 缺档回退）、每个已配置 provider 一张表（每模型：分段按钮 轻量|标准|旗舰、★ 首选、启用）、各类对话默认档下拉、「锁定具体模型…」收起（main / conversation / subagent / reviewer）；每次改动 PATCH `/settings` 后刷新 `/models/tiers`。
 - `features/docs/DocEditor.tsx`：CodeMirror 6 markdown 编辑器（行号 / 历史 / 自动换行 / token 主题），头部：冻结与批注数徽标、批注（在光标行后插块）、保存、「让 AI 读改动」（发提示回来源对话并切回聊天）。
@@ -65,7 +65,7 @@ packages/web/src/
 
 - 桌面壳（Tauri / Electron，不在 v1）
 - Trajectory 回放视图
-- 前端重构（二）侧栏多项目分组 /（三）对话区与输入区，按 `docs/设计/原型/web-布局原型.html`
+- 前端重构（三）对话区与输入区，按 `docs/设计/原型/web-布局原型.html`
 - **扩展设置区块**（[M8](../roadmap.md#m8)）：默认集四项（开 / 关、版本、健康）；extra 列表；打开 `allowExtra` 的警告对话框（文案见 [设计/07](../设计/07-能力插槽与扩展.md)，不得改软）+ 理由输入；skills 列表。第一版安装入口可以是复制 `keel ext install`。有 `rewind` 时对话头部出「退回上一刀」。
 
 ## 改动历史
@@ -82,3 +82,4 @@ packages/web/src/
 | 2026-08-17 | M5：审批卡、项目配置区 |
 | 2026-08-17 | M8 设计：设置页扩展 / skills、rewind 入口 |
 | 2026-08-17 | 前端重构（一）：token 分层与 xl 圆角、Radix 基础组件、设置弹窗 + tab、主题开关、可折叠侧栏、设计系统预览页 |
+| 2026-08-17 | 前端重构（二）：侧栏按项目分组、项目 / 会话悬浮卡、置顶与归档、会话列表带 token 用量 |

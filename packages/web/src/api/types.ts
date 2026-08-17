@@ -13,6 +13,7 @@ export type {
   SessionMeta,
   SessionRecord,
   SessionState,
+  SessionUsage,
   ThinkingLevel,
   UsageInfo,
 } from "@keel-code/engine";
@@ -24,6 +25,8 @@ export interface SessionListItem {
   messageCount: number;
   lastActiveAt: string;
   live: { isStreaming: boolean } | null;
+  costUsd: number;
+  usage: import("@keel-code/engine").SessionUsage;
 }
 
 export interface SessionEntry {

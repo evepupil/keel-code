@@ -9,7 +9,16 @@ import { appStore, useAppState } from "../../store/app-store";
 import { ModelSelect, parseModelKey } from "../models/ModelSelect";
 import { priceOf, TIER_LABEL, TIERS } from "../models/tiers";
 
-export function NewSessionDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function NewSessionDialog({
+  open,
+  onClose,
+  workspaceId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  /** 不传 = 当前工作区 */
+  workspaceId?: string;
+}) {
   const models = useAppState((s) => s.models);
   const [title, setTitle] = useState("");
   const [role, setRole] = useState("");
@@ -48,13 +57,15 @@ export function NewSessionDialog({ open, onClose }: { open: boolean; onClose: ()
     setError(null);
     try {
       const ref = pinModel ? parseModelKey(model) : undefined;
-      await appStore.createSession({
-        kind: "conversation",
+      const input = {
+        kind: "conversation" as const,
         title: title.trim(),
         ...(role.trim() ? { role: role.trim() } : {}),
         ...(ref ? { model: ref } : tier ? { tier } : {}),
         ...(initial.trim() ? { initialMessage: initial.trim() } : {}),
-      });
+      };
+      if (workspaceId) await appStore.createSessionIn(workspaceId, input);
+      else await appStore.createSession(input);
       reset();
       onClose();
     } catch (e) {

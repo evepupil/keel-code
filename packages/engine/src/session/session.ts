@@ -36,10 +36,12 @@ export class KeelSession implements EngineSession {
       const converted = convertEvent(ev);
       if (converted) this.emit(converted);
       if (ev.type === "message_end") {
+        const u = sumUsage(this.getMessages());
         this.deps.index.touch(this.id, {
           messageCount: this.deps.agentSession.messages.length,
           lastActiveAt: new Date().toISOString(),
-          costUsd: sumUsage(this.getMessages()).costTotal,
+          costUsd: u.costTotal,
+          usage: { input: u.input, output: u.output, cacheRead: u.cacheRead },
         });
       }
     });
@@ -149,7 +151,16 @@ export class KeelSession implements EngineSession {
   }
 
   updateMeta(patch: Partial<Omit<SessionMeta, "id" | "createdAt">>): void {
-    this._meta = { ...this._meta, ...patch, updatedAt: new Date().toISOString() };
+    const extra =
+      patch.extra !== undefined
+        ? { ...(this._meta.extra ?? {}), ...patch.extra }
+        : this._meta.extra;
+    this._meta = {
+      ...this._meta,
+      ...patch,
+      ...(extra !== undefined ? { extra } : {}),
+      updatedAt: new Date().toISOString(),
+    };
     this.appendEntry(KEEL_META_ENTRY, this._meta);
     this.deps.index.updateMeta(this.id, this._meta);
     this.emit({ type: "meta_updated", meta: this._meta });

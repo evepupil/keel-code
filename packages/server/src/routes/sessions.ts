@@ -22,6 +22,7 @@ interface PatchBody {
   model?: { provider?: string; id?: string };
   thinkingLevel?: string;
   archived?: boolean;
+  pinned?: boolean;
   role?: string;
 }
 
@@ -134,6 +135,7 @@ export function sessionRoutes(hub: SessionHub, engine: Engine): Hono {
       if (typeof body.title === "string" && body.title.trim()) patch.title = body.title.trim();
       if (typeof body.archived === "boolean") patch.archived = body.archived;
       if (typeof body.role === "string") patch.role = body.role;
+      if (typeof body.pinned === "boolean") patch.extra = { pinned: body.pinned };
       if (Object.keys(patch).length > 0) s.updateMeta(patch);
       return c.json({ meta: s.meta });
     } catch (e) {
