@@ -64,6 +64,48 @@ export interface ProviderInfo {
   configured: boolean;
   authSource?: string;
   modelCount: number;
+  /** 协议（openai-completions / anthropic-messages 等） */
+  api?: string;
+  /** builtin = pi 内置目录；custom = 用户自建端点 */
+  kind: "builtin" | "custom";
+  /** 是否写进了 ~/.keel/models.json（设置页只列这些） */
+  added: boolean;
+}
+
+/** 设置页「添加提供方」下拉：pi 内置、还没加过的。 */
+export interface BuiltinProviderOption {
+  id: string;
+  name: string;
+  baseUrl?: string;
+}
+
+/** models.json 里一条提供方（不含密钥；密钥走 auth.json）。 */
+export interface CatalogProvider {
+  id: string;
+  name?: string;
+  baseUrl?: string;
+  api?: string;
+  models?: CatalogModel[];
+}
+
+export interface CatalogModel {
+  id: string;
+  name?: string;
+  reasoning?: boolean;
+  input?: ("text" | "image")[];
+  cost?: ModelCost;
+  contextWindow?: number;
+  maxTokens?: number;
+}
+
+export interface UpsertProviderInput {
+  id: string;
+  kind: "builtin" | "custom";
+  name?: string;
+  baseUrl?: string;
+  api?: string;
+  apiKey?: string;
+  models?: CatalogModel[];
 }
 
 export interface ProbeOptions {
@@ -436,6 +478,19 @@ export interface Engine {
     setApiKey(providerId: string, apiKey: string): Promise<void>;
     removeApiKey(providerId: string): Promise<void>;
     probe(options?: ProbeOptions): Promise<ProviderProbe[]>;
+    /** 设置页只列用户加过的（写进 models.json 的）。 */
+    added(): ProviderInfo[];
+    /** pi 内置、还没加过的，给「添加提供方」下拉。 */
+    unusedBuiltins(): BuiltinProviderOption[];
+    catalog(providerId: string): CatalogProvider | undefined;
+    upsertProvider(input: UpsertProviderInput): Promise<ProviderInfo>;
+    removeProvider(providerId: string): Promise<void>;
+    fetchRemoteModels(input: {
+      providerId?: string;
+      baseUrl: string;
+      api: string;
+      apiKey?: string;
+    }): Promise<{ id: string }[]>;
   };
   readonly sessions: {
     create(options: CreateSessionOptions): Promise<EngineSession>;

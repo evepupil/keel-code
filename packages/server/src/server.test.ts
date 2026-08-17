@@ -298,6 +298,49 @@ describe("会话", () => {
   });
 });
 
+describe("提供方目录 API", () => {
+  it("添加 / 列目录 / 删除自定义提供方", async () => {
+    const home2 = makeTempKeelHome({ baseUrl: mock.baseUrl, models: ["mock-1"] });
+    const project2 = makeTempProject();
+    const s = await startServer({ cwd: project2.path, homeDir: home2.path, port: 0, idleMs: 0 });
+    const req = (path: string, init: RequestInit = {}) =>
+      fetch(`http://127.0.0.1:${s.port}/api${path}`, {
+        ...init,
+        headers: {
+          "content-type": "application/json",
+          "x-keel-token": s.token,
+          ...(init.headers ?? {}),
+        },
+      });
+    try {
+      const created = await req("/providers/acme", {
+        method: "PUT",
+        body: JSON.stringify({
+          kind: "custom",
+          name: "Acme",
+          baseUrl: mock.baseUrl,
+          api: "openai-completions",
+          apiKey: "k",
+          models: [{ id: "acme-1" }],
+        }),
+      });
+      expect(created.status).toBe(200);
+      const list = (await (await req("/providers")).json()) as { id: string }[];
+      expect(list.map((p) => p.id)).toContain("acme");
+      const cat = (await (await req("/providers/acme/catalog")).json()) as { id: string };
+      expect(cat.id).toBe("acme");
+      expect((await req("/providers/acme", { method: "DELETE" })).status).toBe(200);
+      const after = (await (await req("/providers")).json()) as { id: string }[];
+      expect(after.map((p) => p.id)).not.toContain("acme");
+      expect(after.map((p) => p.id)).toContain("mock");
+    } finally {
+      await s.close();
+      home2.cleanup();
+      project2.cleanup();
+    }
+  });
+});
+
 async function waitFor(pred: () => boolean, timeoutMs: number): Promise<void> {
   const start = Date.now();
   while (!pred()) {

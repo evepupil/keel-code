@@ -54,6 +54,45 @@ describe("模型与端点", () => {
   });
 });
 
+describe("提供方目录", () => {
+  it("added 只列 models.json 里的；upsert / 拉远端 / 删除闭环", async () => {
+    const home2 = makeTempKeelHome({ baseUrl: mock.baseUrl, models: ["mock-1"] });
+    const project2 = makeTempProject({ files: { "README.md": "# x\n" } });
+    const e = await createEngine({ cwd: project2.path, homeDir: home2.path });
+    try {
+      expect(e.models.added().map((p) => p.id)).toEqual(["mock"]);
+      expect(e.models.unusedBuiltins().some((p) => p.id === "mock")).toBe(false);
+
+      const created = await e.models.upsertProvider({
+        id: "acme",
+        kind: "custom",
+        name: "Acme",
+        baseUrl: mock.baseUrl,
+        api: "openai-completions",
+        apiKey: "k",
+        models: [{ id: "acme-1", name: "Acme 1" }],
+      });
+      expect(created.kind).toBe("custom");
+      expect(e.models.added().map((p) => p.id)).toEqual(expect.arrayContaining(["mock", "acme"]));
+      expect(e.models.list("acme").map((m) => m.id)).toEqual(["acme-1"]);
+
+      const remote = await e.models.fetchRemoteModels({
+        baseUrl: mock.baseUrl,
+        api: "openai-completions",
+        apiKey: "k",
+      });
+      expect(remote.map((m) => m.id)).toEqual(expect.arrayContaining(["mock-1", "mock-cheap"]));
+
+      await e.models.removeProvider("acme");
+      expect(e.models.added().map((p) => p.id)).toEqual(["mock"]);
+    } finally {
+      await e.dispose();
+      home2.cleanup();
+      project2.cleanup();
+    }
+  });
+});
+
 describe("会话闭环", () => {
   it("创建 → 工具 → 守卫 → 收尾 → 持久化 → 重开", async () => {
     // 自定义工具：只对 main 会话可见

@@ -1,4 +1,12 @@
 import { HookBus } from "./hooks/bus.js";
+import {
+  addedProviders,
+  fetchRemoteModels,
+  readCatalog,
+  removeProvider,
+  unusedBuiltins,
+  upsertProvider,
+} from "./models/catalog-service.js";
 import { probeProviders } from "./models/probe.js";
 import {
   availableModels,
@@ -39,6 +47,12 @@ export async function createEngineHost(options: EngineHostOptions = {}): Promise
     setApiKey: (providerId, apiKey) => runtime.setRuntimeApiKey(providerId, apiKey),
     removeApiKey: (providerId) => runtime.removeRuntimeApiKey(providerId),
     probe: (probeOptions) => probeProviders(runtime, probeOptions),
+    added: () => addedProviders(runtime, home.modelsFile),
+    unusedBuiltins: () => unusedBuiltins(runtime, home.modelsFile),
+    catalog: (providerId) => readCatalog(home.modelsFile, providerId),
+    upsertProvider: (input) => upsertProvider(runtime, home.modelsFile, input),
+    removeProvider: (providerId) => removeProvider(runtime, home.modelsFile, providerId),
+    fetchRemoteModels: (input) => fetchRemoteModels(input),
   };
   const settings: Engine["settings"] = {
     get: () => readSettings(home.settingsFile),

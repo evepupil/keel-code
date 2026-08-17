@@ -41,6 +41,8 @@ export function listProviders(runtime: ModelRuntime): ProviderInfo[] {
       name: p.name,
       configured: status.configured,
       modelCount: runtime.getModels(p.id).length,
+      kind: runtime.getRegisteredNativeProvider(p.id) ? "builtin" : "custom",
+      added: false,
     };
     if (p.baseUrl) info.baseUrl = p.baseUrl;
     if (status.label) info.authSource = status.label;
