@@ -18,7 +18,7 @@ export function Sidebar() {
   const groups = useMemo(() => groupSessions(sessions), [sessions]);
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-line bg-panel">
+    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-line bg-side">
       <WorkspaceSwitcher />
 
       <div className="px-3 pb-2">
@@ -62,8 +62,8 @@ export function Sidebar() {
         </Button>
         <Button
           variant="ghost"
-          className={cn("w-full justify-start", view === "settings" && "bg-panel-2 text-ink")}
-          onClick={() => appStore.setView("settings")}
+          className="w-full justify-start"
+          onClick={() => appStore.openSettings()}
         >
           <Settings className="h-4 w-4" />
           设置

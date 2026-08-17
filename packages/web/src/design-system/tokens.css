@@ -2,36 +2,42 @@
 
 /*
  * keel 设计 token：单一数据源。颜色 / 字体 / 圆角 / 阴影 全部从这里取，组件里禁止散落硬编码。
+ * 层次：canvas = 主内容（白）；side = 侧栏 / 抽屉 / 弹窗侧栏（略灰）；panel = 卡片 / 弹层（白）；panel-2 = 悬停 / 徽标 / 代码底。
  * 亮暗两套：系统偏好 + data-theme 显式覆盖。
  */
 @theme {
   --font-sans: ui-sans-serif, system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
 
-  --color-canvas: oklch(98.5% 0.003 250);
+  --color-canvas: oklch(100% 0 0);
+  --color-side: oklch(97.6% 0.004 250);
+  --color-side-2: oklch(94.5% 0.006 250);
   --color-panel: oklch(100% 0 0);
   --color-panel-2: oklch(96.5% 0.004 250);
   --color-line: oklch(90% 0.006 250);
   --color-line-strong: oklch(80% 0.01 250);
   --color-ink: oklch(22% 0.02 250);
   --color-ink-muted: oklch(50% 0.02 250);
-  --color-ink-faint: oklch(68% 0.015 250);
+  --color-ink-faint: oklch(66% 0.015 250);
   --color-accent: oklch(52% 0.13 235);
   --color-accent-ink: oklch(99% 0 0);
   --color-accent-soft: oklch(94% 0.03 235);
+  --color-violet: oklch(62% 0.15 300);
   --color-danger: oklch(55% 0.19 27);
   --color-danger-soft: oklch(95% 0.03 27);
   --color-ok: oklch(55% 0.14 150);
   --color-ok-soft: oklch(95% 0.04 150);
-  --color-warn: oklch(65% 0.15 75);
+  --color-warn: oklch(62% 0.15 75);
   --color-warn-soft: oklch(96% 0.05 85);
 
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 18px;
 
   --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.06);
   --shadow-md: 0 4px 12px oklch(0% 0 0 / 0.08);
+  --shadow-lg: 0 10px 30px oklch(0% 0 0 / 0.14);
 }
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
@@ -41,8 +47,10 @@
   :root:not([data-theme="light"]) {
     @media (prefers-color-scheme: dark) {
       --color-canvas: oklch(17% 0.012 250);
+      --color-side: oklch(19.5% 0.012 250);
+      --color-side-2: oklch(25% 0.012 250);
       --color-panel: oklch(21% 0.012 250);
-      --color-panel-2: oklch(25% 0.012 250);
+      --color-panel-2: oklch(26% 0.012 250);
       --color-line: oklch(30% 0.012 250);
       --color-line-strong: oklch(40% 0.015 250);
       --color-ink: oklch(93% 0.01 250);
@@ -51,18 +59,24 @@
       --color-accent: oklch(72% 0.11 235);
       --color-accent-ink: oklch(15% 0.02 235);
       --color-accent-soft: oklch(30% 0.05 235);
+      --color-violet: oklch(72% 0.12 300);
       --color-danger: oklch(70% 0.16 27);
       --color-danger-soft: oklch(28% 0.06 27);
       --color-ok: oklch(72% 0.13 150);
       --color-ok-soft: oklch(28% 0.05 150);
       --color-warn: oklch(78% 0.13 80);
       --color-warn-soft: oklch(30% 0.06 85);
+      --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.4);
+      --shadow-md: 0 4px 12px oklch(0% 0 0 / 0.45);
+      --shadow-lg: 0 10px 30px oklch(0% 0 0 / 0.55);
     }
   }
   :root[data-theme="dark"] {
     --color-canvas: oklch(17% 0.012 250);
+    --color-side: oklch(19.5% 0.012 250);
+    --color-side-2: oklch(25% 0.012 250);
     --color-panel: oklch(21% 0.012 250);
-    --color-panel-2: oklch(25% 0.012 250);
+    --color-panel-2: oklch(26% 0.012 250);
     --color-line: oklch(30% 0.012 250);
     --color-line-strong: oklch(40% 0.015 250);
     --color-ink: oklch(93% 0.01 250);
@@ -71,12 +85,16 @@
     --color-accent: oklch(72% 0.11 235);
     --color-accent-ink: oklch(15% 0.02 235);
     --color-accent-soft: oklch(30% 0.05 235);
+    --color-violet: oklch(72% 0.12 300);
     --color-danger: oklch(70% 0.16 27);
     --color-danger-soft: oklch(28% 0.06 27);
     --color-ok: oklch(72% 0.13 150);
     --color-ok-soft: oklch(28% 0.05 150);
     --color-warn: oklch(78% 0.13 80);
     --color-warn-soft: oklch(30% 0.06 85);
+    --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.4);
+    --shadow-md: 0 4px 12px oklch(0% 0 0 / 0.45);
+    --shadow-lg: 0 10px 30px oklch(0% 0 0 / 0.55);
   }
 
   html,
@@ -91,6 +109,7 @@
     font-size: 14px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    overflow: hidden;
   }
   * {
     border-color: var(--color-line);
@@ -98,6 +117,33 @@
   ::selection {
     background: var(--color-accent-soft);
   }
+  /* 细滚动条：工具型界面里粗滚动条很抢眼 */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+}
+
+/* 状态点呼吸 / 加载旋转：只用于表达状态 */
+@keyframes keel-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+@keyframes keel-blink {
+  50% {
+    opacity: 0;
+  }
+}
+.animate-pulse-dot {
+  animation: keel-pulse 1.6s ease-in-out infinite;
+}
+.animate-blink {
+  animation: keel-blink 1s steps(1) infinite;
 }
 
 /* markdown 正文 */

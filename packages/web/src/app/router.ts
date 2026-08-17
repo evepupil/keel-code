@@ -4,11 +4,13 @@
  *   #/w/<wid>/c/<sid>    对话
  *   #/w/<wid>/board      看板
  *   #/w/<wid>/doc/<path> 设计文档
- *   #/settings           全局设置
+ *   #/settings           打开全局设置弹窗（深链；打开后地址栏回到工作区路由）
+ *   #/dev/design         设计系统预览页（仅开发构建）
  */
 export type Route =
   | { kind: "home" }
   | { kind: "settings" }
+  | { kind: "design" }
   | { kind: "workspace"; workspaceId: string }
   | { kind: "chat"; workspaceId: string; sessionId: string }
   | { kind: "board"; workspaceId: string }
@@ -19,6 +21,7 @@ export function parseRoute(hash: string): Route {
   const parts = h.split("/").filter(Boolean).map(decodeURIComponent);
   if (parts.length === 0) return { kind: "home" };
   if (parts[0] === "settings") return { kind: "settings" };
+  if (parts[0] === "dev" && parts[1] === "design") return { kind: "design" };
   if (parts[0] === "w" && parts[1]) {
     const workspaceId = parts[1];
     const sub = parts[2];
@@ -40,6 +43,8 @@ export function formatRoute(route: Route): string {
       return "#/";
     case "settings":
       return "#/settings";
+    case "design":
+      return "#/dev/design";
     case "workspace":
       return `#/w/${enc(route.workspaceId)}`;
     case "chat":

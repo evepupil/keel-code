@@ -1037,14 +1037,13 @@ function renderHeader() {
   } else if (state.sub !== null) {
     const sub = s.subs[state.sub];
     const [lbl, tone] = SUB_STATUS[sub.s];
-    h += `<button class="iconbtn" title="返回" onclick="selectSession('${state.sid}')">${I.back}</button>
-      <div class="crumb"><button class="lnk" onclick="selectSession('${state.sid}')">${s.title}</button><span class="sep">›</span><span class="title">${sub.n}</span></div>
+    h += `<div class="crumb"><button class="lnk" onclick="selectSession('${state.sid}')">${s.title}</button><span class="sep">›</span><span class="title">${sub.n}</span></div>
       <span class="badge ${tone}">${lbl}</span><span class="role">${sub.m} · ${sub.tok} · ${sub.dur}</span>
-      <span class="spacer"></span>${drawerBtn}`;
+      <span class="spacer"></span>
+      <button class="btn outline" onclick="selectSession('${state.sid}')">${I.back}返回对话</button>${drawerBtn}`;
   } else {
     h += `<div class="hd2"><div class="ttl">${s.title}</div><div class="desc">${s.role}</div></div>
-      <span class="spacer"></span>${drawerBtn}
-      ${s.kind !== 'main' ? `<button class="btn ghost" onclick="selectSession('${MAIN_OF[s.proj]}')">回主对话</button>` : ''}`;
+      <span class="spacer"></span>${drawerBtn}`;
   }
   document.getElementById('topbar').innerHTML = h;
 }

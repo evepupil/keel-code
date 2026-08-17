@@ -6,6 +6,7 @@ describe("hash 路由", () => {
     const routes: Route[] = [
       { kind: "home" },
       { kind: "settings" },
+      { kind: "design" },
       { kind: "workspace", workspaceId: "keel-code-abc123" },
       { kind: "chat", workspaceId: "w1", sessionId: "s1" },
       { kind: "board", workspaceId: "w1" },

@@ -12,14 +12,22 @@ import type {
 } from "../api/types";
 import { WsClient } from "../api/ws";
 import { formatRoute, parseRoute, type Route } from "../app/router";
+import { readPref, writePref } from "../lib/prefs";
 import { applyEngineEvent, type ChatState, emptyChat } from "./apply-event";
 
-export type View = "chat" | "settings" | "board" | "doc";
+/** design = 设计系统预览页（仅开发构建可达） */
+export type View = "chat" | "board" | "doc" | "design";
+export type SettingsTab = "models" | "tiers" | "project" | "mcp" | "general";
 
 export interface AppState {
   ready: boolean;
   tokenMissing: boolean;
   fatal?: string;
+  /** 外壳：侧栏折叠 / 右侧上下文抽屉 / 设置弹窗 */
+  navCollapsed: boolean;
+  drawerOpen: boolean;
+  settingsOpen: boolean;
+  settingsTab: SettingsTab;
   workspaces: WorkspaceInfo[];
   /** 当前工作区；null = 还没选（没有工作区或在全局设置页） */
   workspaceId: string | null;
@@ -47,6 +55,10 @@ type Listener = () => void;
 const initialState: AppState = {
   ready: false,
   tokenMissing: false,
+  navCollapsed: readPref("navCollapsed", false),
+  drawerOpen: readPref("drawerOpen", window.innerWidth >= 1440),
+  settingsOpen: false,
+  settingsTab: "models",
   workspaces: [],
   workspaceId: null,
   sessions: [],
@@ -174,8 +186,18 @@ class AppStore {
   /** 按地址栏进入：工作区不存在就回到首个工作区 */
   private async applyRoute(route: Route): Promise<void> {
     if (route.kind === "settings") {
-      this.set({ view: "settings" });
-      this.syncHash();
+      // 深链：打开设置弹窗，底下照常进工作区，地址栏随后回写为工作区路由
+      this.set({ settingsOpen: true });
+      await this.applyRoute({ kind: "home" });
+      return;
+    }
+    if (route.kind === "design") {
+      if (import.meta.env.DEV) {
+        this.set({ view: "design" });
+        this.syncHash();
+        return;
+      }
+      await this.applyRoute({ kind: "home" });
       return;
     }
     if (route.kind === "home") {
@@ -204,7 +226,7 @@ class AppStore {
   private syncHash(): void {
     const s = this.state;
     let route: Route;
-    if (s.view === "settings") route = { kind: "settings" };
+    if (s.view === "design") route = { kind: "design" };
     else if (!s.workspaceId) route = { kind: "home" };
     else if (s.view === "board") route = { kind: "board", workspaceId: s.workspaceId };
     else if (s.view === "doc" && s.doc)
@@ -378,6 +400,31 @@ class AppStore {
   setView(view: View): void {
     this.set({ view });
     this.syncHash();
+  }
+
+  // ---------- 外壳 ----------
+
+  toggleNav(): void {
+    const navCollapsed = !this.state.navCollapsed;
+    writePref("navCollapsed", navCollapsed);
+    this.set({ navCollapsed });
+  }
+
+  setDrawer(open: boolean): void {
+    writePref("drawerOpen", open);
+    this.set({ drawerOpen: open });
+  }
+
+  openSettings(tab?: SettingsTab): void {
+    this.set((s) => ({ settingsOpen: true, settingsTab: tab ?? s.settingsTab }));
+  }
+
+  setSettingsTab(tab: SettingsTab): void {
+    this.set({ settingsTab: tab });
+  }
+
+  closeSettings(): void {
+    this.set({ settingsOpen: false });
   }
 
   openDoc(path: string, sessionId: string | null = this.state.currentId): void {

@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
-import { api } from "../../api/client";
-import type { ProviderInfo, ProviderProbe } from "../../api/types";
-import { Button } from "../../design-system/components/button";
-import { Badge, Card, Input, Spinner } from "../../design-system/components/primitives";
-import { appStore, useAppState } from "../../store/app-store";
-import { ModelTiersSection } from "./ModelTiers";
-import { ProjectConfigSection } from "./ProjectConfig";
+/**
+ * 设置 › 模型：provider 列表（常用优先，可展开全部）、粘贴 key 保存 / 移除、探测（可达 / 时延 / 端点模型表）。
+ */
+import { useState } from "react";
+import { api } from "../../../api/client";
+import type { ProviderInfo, ProviderProbe } from "../../../api/types";
+import { Button } from "../../../design-system/components/button";
+import { Badge, Card, Input, Spinner } from "../../../design-system/components/primitives";
+import { appStore, useAppState } from "../../../store/app-store";
 
 /** 常见 provider 放前面，其余按已配置优先、再按名称。 */
 const PREFERRED = [
@@ -29,16 +30,12 @@ export function sortProviders(list: ProviderInfo[]): ProviderInfo[] {
   });
 }
 
-export function SettingsView() {
+export function ModelsTab() {
   const providers = useAppState((s) => s.providers);
-  const models = useAppState((s) => s.models);
-  const project = useAppState((s) => s.project);
-  const workspaceId = useAppState((s) => s.workspaceId);
   const [probing, setProbing] = useState(false);
   const [probes, setProbes] = useState<ProviderProbe[]>([]);
   const [showAll, setShowAll] = useState(false);
 
-  const configured = providers.filter((p) => p.configured);
   const list = sortProviders(
     showAll ? providers : providers.filter((p) => p.configured || PREFERRED.includes(p.id)),
   );
@@ -55,45 +52,28 @@ export function SettingsView() {
   };
 
   return (
-    <div className="h-full min-w-0 flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-3xl space-y-6 p-6">
-        <section className="space-y-2">
-          <h1 className="text-base font-semibold">模型端点</h1>
-          <p className="text-xs text-ink-muted">
-            填入 API key 后即可用。也可以用环境变量（ANTHROPIC_API_KEY / OPENAI_API_KEY /
-            DEEPSEEK_API_KEY…），或在
-            <code className="mx-1 rounded-sm bg-panel-2 px-1 font-mono">~/.keel/models.json</code>
-            里加自定义 OpenAI 兼容端点。当前可用模型 {models.length} 个，已配置 provider{" "}
-            {configured.length} 个。
-          </p>
-          <div className="flex items-center gap-2">
-            <Button onClick={() => void runProbe()} disabled={probing}>
-              {probing ? <Spinner /> : null}
-              探测已配置端点
-            </Button>
-            <Button variant="ghost" onClick={() => setShowAll((v) => !v)}>
-              {showAll ? "只看常用" : `显示全部 ${providers.length} 个`}
-            </Button>
-          </div>
-        </section>
-
-        <div className="space-y-2">
-          {list.map((p) => (
-            <ProviderRow key={p.id} provider={p} probe={probes.find((x) => x.provider === p.id)} />
-          ))}
-        </div>
-
-        <ModelTiersSection />
-
-        {workspaceId && project ? (
-          <div key={workspaceId} className="space-y-6 border-t border-line pt-6">
-            <div className="text-xs text-ink-faint" title={project.cwd}>
-              以下为当前工作区：{project.name}
-            </div>
-            <ProjectConfigSection />
-            <McpSection />
-          </div>
-        ) : null}
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-[15px] font-semibold">模型</h2>
+        <p className="mt-0.5 text-xs text-ink-muted">
+          填入 API key 即可使用该端点的模型；也可以用环境变量，或在{" "}
+          <code className="rounded-sm bg-panel-2 px-1 font-mono">~/.keel/models.json</code>{" "}
+          里加自定义 OpenAI 兼容端点。
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button onClick={() => void runProbe()} disabled={probing}>
+          {probing ? <Spinner /> : null}
+          探测已配置端点
+        </Button>
+        <Button variant="ghost" onClick={() => setShowAll((v) => !v)}>
+          {showAll ? "只看常用" : `显示全部 ${providers.length} 个`}
+        </Button>
+      </div>
+      <div className="space-y-2">
+        {list.map((p) => (
+          <ProviderRow key={p.id} provider={p} probe={probes.find((x) => x.provider === p.id)} />
+        ))}
       </div>
     </div>
   );
@@ -200,7 +180,7 @@ function ProviderRow({
               <tr>
                 <th className="py-1 pr-2 font-normal">模型</th>
                 <th className="py-1 pr-2 font-normal">上下文</th>
-                <th className="py-1 pr-2 font-normal">输入 / 输出（$ 每百万）</th>
+                <th className="py-1 pr-2 font-normal">推理</th>
                 <th className="py-1 pr-2 font-normal">端点</th>
               </tr>
             </thead>
@@ -209,10 +189,10 @@ function ProviderRow({
                 <tr key={m.id} className="border-t border-line">
                   <td className="py-1 pr-2 font-mono">{m.id}</td>
                   <td className="py-1 pr-2">
-                    {m.contextWindow ? `${Math.round(m.contextWindow / 1000)}k` : "?"}
+                    {m.contextWindow ? `${Math.round(m.contextWindow / 1000)}K` : "?"}
                   </td>
                   <td className="py-1 pr-2">
-                    {m.catalogKnown ? `${m.cost.input} / ${m.cost.output}` : "未知"}
+                    {m.catalogKnown ? (m.reasoning ? "是" : "否") : "?"}
                   </td>
                   <td className="py-1 pr-2">{m.listedByEndpoint ? "有" : "无"}</td>
                 </tr>
@@ -222,46 +202,5 @@ function ProviderRow({
         </div>
       ) : null}
     </Card>
-  );
-}
-
-/** MCP 服务器状态：配置在 ~/.keel/mcp.json 与 <项目>/.keel/mcp.json（mcpServers 格式）。 */
-function McpSection() {
-  const [servers, setServers] = useState<
-    { name: string; connected: boolean; tools: string[]; error?: string }[] | null
-  >(null);
-  useEffect(() => {
-    api
-      .mcp()
-      .then(setServers)
-      .catch(() => setServers([]));
-  }, []);
-  if (!servers) return null;
-  return (
-    <section className="space-y-2">
-      <h2 className="text-sm font-semibold">MCP 服务器</h2>
-      <p className="text-xs text-ink-muted">
-        配置写在 <code className="rounded-sm bg-panel-2 px-1 font-mono">~/.keel/mcp.json</code>{" "}
-        或项目的
-        <code className="mx-1 rounded-sm bg-panel-2 px-1 font-mono">.keel/mcp.json</code>
-        （mcpServers 格式，与 Claude Code 相同），改后重启 keel web 生效。
-      </p>
-      {servers.length === 0 ? (
-        <p className="text-xs text-ink-faint">没有配置 MCP 服务器。</p>
-      ) : (
-        <ul className="space-y-1 text-xs">
-          {servers.map((s) => (
-            <li key={s.name} className="flex flex-wrap items-center gap-2">
-              <span className="font-medium">{s.name}</span>
-              {s.connected ? (
-                <Badge tone="ok">已连接 · {s.tools.length} 个工具</Badge>
-              ) : (
-                <Badge tone="danger">未连接{s.error ? `：${s.error}` : ""}</Badge>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
   );
 }

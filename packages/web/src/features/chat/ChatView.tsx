@@ -51,7 +51,7 @@ export function ChatView() {
         }
         action={
           sessions.length === 0 ? (
-            <Button onClick={() => appStore.setView("settings")}>打开设置</Button>
+            <Button onClick={() => appStore.openSettings()}>打开设置</Button>
           ) : undefined
         }
       />
