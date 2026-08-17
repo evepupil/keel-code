@@ -1,6 +1,6 @@
 {
   "name": "@keel-code/loop",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "闭环编排器：批次上报 → 独立 reviewer → 分类路由 → 修复循环 → review-pass → 待决策 → 验收",
   "license": "MIT",
   "type": "module",

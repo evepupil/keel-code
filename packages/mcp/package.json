@@ -1,6 +1,6 @@
 {
   "name": "@keel-code/mcp",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "MCP 客户端：读取 mcp.json（mcpServers 格式），连接 stdio / HTTP 服务器，把工具注册进引擎",
   "license": "MIT",
   "type": "module",

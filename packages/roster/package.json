@@ -1,6 +1,6 @@
 {
   "name": "@keel-code/roster",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "对话与名册：对话生命周期、名册 schema/存储/投影、新鲜度、模型选择",
   "license": "MIT",
   "type": "module",

@@ -1,6 +1,6 @@
 {
   "name": "@keel-code/server",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "本地服务：HTTP + WebSocket API（项目 / 对话 / agent / 事件 / 文件 / git / 设置）",
   "license": "MIT",
   "type": "module",
