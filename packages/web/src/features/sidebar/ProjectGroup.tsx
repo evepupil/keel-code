@@ -48,7 +48,10 @@ export function ProjectGroup({ workspace }: { workspace: WorkspaceInfo }) {
             <button
               type="button"
               className="flex min-w-0 flex-1 items-center gap-1.5 px-1.5 py-1.5 text-left text-sm font-medium"
-              onClick={() => appStore.toggleWorkspace(workspace.id)}
+              onClick={() => {
+                if (workspace.id === workspaceId) appStore.toggleWorkspace(workspace.id);
+                else void appStore.selectWorkspace(workspace.id);
+              }}
             >
               {expanded ? (
                 <FolderOpen className="h-3.5 w-3.5 shrink-0 text-ink-muted" />
