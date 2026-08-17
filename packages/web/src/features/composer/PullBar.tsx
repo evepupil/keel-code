@@ -2,12 +2,12 @@
  * 输入框上方：看板 / 子 agent / 任务。同一时间只开一个上拉。
  */
 import { Bot, CheckCircle2, Circle, LayoutGrid, ListChecks, Loader2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { cloneElement, useEffect, useMemo, useState } from "react";
 import { api } from "../../api/client";
 import type { BoardData, SessionListItem } from "../../api/types";
 import { Chip } from "../../design-system/components/chip";
 import { StatusDot } from "../../design-system/components/dot";
-import { Popover, PopoverContent, PopoverTrigger } from "../../design-system/components/popover";
+import { Popover, PopoverAnchor, PopoverContent } from "../../design-system/components/popover";
 import { Badge } from "../../design-system/components/primitives";
 import { cn } from "../../lib/cn";
 import { formatTokens } from "../../lib/format";
@@ -51,20 +51,24 @@ export function PullBar({ sessionId }: { sessionId: string }) {
       : String(subs.length)
     : undefined;
 
+  // Radix trigger 自带的 pointerdown 切换 + 外部 dismiss 与共享状态打架（面板开了又被关），
+  // 改为完全受控：chip 只做锚点，点击切换由自己的 onClick 管；面板只认 Esc 与非 chip 的外部点击。
+  const pull = (key: "board" | "subs" | "tasks") => ({
+    open: open === key,
+    chipActive: open === key,
+    chipProps: {
+      "data-pull-chip": key,
+      onClick: () => setOpen((prev) => (prev === key ? null : key)),
+    },
+    onOpenChange: (v: boolean) => setOpen(v ? key : (prev) => (prev === key ? null : prev)),
+  });
+
   return (
     <div className="mb-2 flex items-center gap-1.5">
       <Pull
-        open={open === "board"}
-        onOpenChange={(v) => setOpen(v ? "board" : null)}
+        {...pull("board")}
         chip={
-          <Chip
-            variant="soft"
-            icon={<LayoutGrid />}
-            label="看板"
-            status={boardSt}
-            caret="up"
-            active={open === "board"}
-          >
+          <Chip variant="soft" icon={<LayoutGrid />} label="看板" status={boardSt} caret="up">
             {board && board.decisions.length > 0 ? <StatusDot state="pending" /> : null}
           </Chip>
         }
@@ -73,17 +77,9 @@ export function PullBar({ sessionId }: { sessionId: string }) {
         <BoardPanel data={board} />
       </Pull>
       <Pull
-        open={open === "subs"}
-        onOpenChange={(v) => setOpen(v ? "subs" : null)}
+        {...pull("subs")}
         chip={
-          <Chip
-            variant="soft"
-            icon={<Bot />}
-            label="子 agent"
-            status={subSt}
-            caret="up"
-            active={open === "subs"}
-          >
+          <Chip variant="soft" icon={<Bot />} label="子 agent" status={subSt} caret="up">
             {running ? <StatusDot state="run" /> : null}
           </Chip>
         }
@@ -93,18 +89,8 @@ export function PullBar({ sessionId }: { sessionId: string }) {
       </Pull>
       <span className="flex-1" />
       <Pull
-        open={open === "tasks"}
-        onOpenChange={(v) => setOpen(v ? "tasks" : null)}
-        chip={
-          <Chip
-            variant="soft"
-            icon={<ListChecks />}
-            label="任务"
-            status={taskSt}
-            caret="up"
-            active={open === "tasks"}
-          />
-        }
+        {...pull("tasks")}
+        chip={<Chip variant="soft" icon={<ListChecks />} label="任务" status={taskSt} caret="up" />}
         width="w-[28rem]"
         align="end"
       >
@@ -117,6 +103,8 @@ export function PullBar({ sessionId }: { sessionId: string }) {
 function Pull({
   open,
   onOpenChange,
+  chipActive,
+  chipProps,
   chip,
   children,
   width,
@@ -124,18 +112,27 @@ function Pull({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  chip: React.ReactNode;
+  chipActive: boolean;
+  chipProps: { "data-pull-chip": string; onClick: () => void };
+  chip: React.ReactElement<{ active?: boolean } & Record<string, unknown>>;
   children: React.ReactNode;
   width: string;
   align?: "start" | "end";
 }) {
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>{chip}</PopoverTrigger>
+      <PopoverAnchor asChild>
+        {cloneElement(chip, { ...chipProps, active: chipActive })}
+      </PopoverAnchor>
       <PopoverContent
         side="top"
         align={align}
         className={`${width} max-h-[62vh] overflow-y-auto p-1.5`}
+        onInteractOutside={(e) => {
+          // 点另一个 chip 由它自己的 onClick 切换；其余外部点击才收起
+          const el = e.target instanceof Element ? e.target : null;
+          if (!el?.closest("[data-pull-chip]")) onOpenChange(false);
+        }}
       >
         {children}
       </PopoverContent>
