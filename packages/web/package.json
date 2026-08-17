@@ -1,0 +1,24 @@
+{
+  "name": "@keel-code/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Web 工作台：对话树、富节点聊天、设计文档批注、看板、名册、设置（React + Vite）",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^6.0.5",
+    "vite": "^8.2.1"
+  }
+}

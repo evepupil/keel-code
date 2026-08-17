@@ -1,0 +1,26 @@
+{
+  "name": "keel-code-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "keel-code：把工程方法论焊进基础设施的编程 agent 工具（自研工作台 + 引擎内核封装）",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@10.21.0",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "vitest run",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "gate": "pnpm lint && pnpm typecheck && pnpm test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.8",
+    "@types/node": "^22.15.0",
+    "tsx": "^4.23.12",
+    "typescript": "7.0.2",
+    "vitest": "^4.1.10"
+  }
+}

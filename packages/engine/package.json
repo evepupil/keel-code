@@ -1,0 +1,24 @@
+{
+  "name": "@keel-code/engine",
+  "version": "0.0.0",
+  "private": true,
+  "description": "引擎层：封装 pi 内核（会话、消息、事件流、工具、钩子、模型与凭据），对外只暴露 Engine 接口",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  }
+}

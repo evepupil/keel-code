@@ -1,0 +1,24 @@
+{
+  "name": "@keel-code/docs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "文档管理：设计文档冻结与批注读取、文档修剪 job、roadmap 解析",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  }
+}
