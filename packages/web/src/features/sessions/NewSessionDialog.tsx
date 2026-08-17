@@ -7,7 +7,7 @@ import { Field, Input, Textarea } from "../../design-system/components/primitive
 import { cn } from "../../lib/cn";
 import { appStore, useAppState } from "../../store/app-store";
 import { ModelSelect, parseModelKey } from "../models/ModelSelect";
-import { priceOf, TIER_LABEL, TIERS } from "../models/tiers";
+import { TIER_LABEL, TIERS } from "../models/tiers";
 
 export function NewSessionDialog({
   open,
@@ -126,9 +126,9 @@ export function NewSessionDialog({
                       {view?.resolved ? view.resolved.id : overview ? "无可用" : "…"}
                     </div>
                     {view?.resolved ? (
-                      <div className="text-[10px] text-ink-faint">
-                        {priceOf(view.resolved)}
-                        {view.fallbackTo ? ` · 回退自${TIER_LABEL[view.fallbackTo]}档` : ""}
+                      <div className="truncate text-[10px] text-ink-faint">
+                        {view.resolved.name || view.resolved.id}
+                        {view.fallbackTo ? ` · 回退${TIER_LABEL[view.fallbackTo]}档` : ""}
                       </div>
                     ) : null}
                   </button>

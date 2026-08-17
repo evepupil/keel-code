@@ -42,8 +42,7 @@ export function ModelSelect({
         <optgroup key={provider} label={provider}>
           {list.map((m) => (
             <option key={modelKey(m)} value={modelKey(m)}>
-              {m.name}
-              {m.cost.input || m.cost.output ? `　$${m.cost.input}/${m.cost.output} 每百万` : ""}
+              {m.name || m.id}
             </option>
           ))}
         </optgroup>

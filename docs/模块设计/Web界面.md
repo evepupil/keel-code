@@ -47,7 +47,7 @@ packages/web/src/
 - `features/sidebar/`：按项目分组的侧栏。`Sidebar.tsx` 列出全部工作区；`ProjectGroup.tsx` 项目行常驻 `⋯` + 新建，悬停信息卡（名称 / 对话数 / 路径 / 编辑项目）；`SessionRow.tsx` 主对话置顶（锚图标），普通对话悬停出置顶 / 归档，信息卡是职责 + token 三项（缓存命中 / 未命中 / 输出）。子 agent 不进侧栏。`group-sessions.ts` 纯函数分桶。`AddWorkspaceDialog.tsx` 仍在 `features/workspaces/`。
 - `features/sessions/NewSessionDialog.tsx`：标题 / 职责 / 模型——先选能力档，需要钉死再「指定具体模型…」；可指定 `workspaceId` 在别的项目里建。`features/models/ModelSelect.tsx`：按 provider 分组的具体模型下拉；`features/models/tiers.ts`：档次常量。
 - `features/chat/ChatView.tsx`：头部只留标题 + 一行职责、右上上下文抽屉开关；空对话居中字标 + 输入卡；有消息后时间线贴底、输入卡贴底。子 agent 只读，头部面包屑 +「返回对话」，无输入框。`MessageItem.tsx`：用户气泡灰底圆角（右下小角）、assistant markdown + 悬停信息行（复制 / 时刻·用时·速度·输出量）、思考行与工具行都是 30px 边框行（点开看详情），流式光标。`features/composer/`：`Composer`（卡片、权限 chip、模型 + 思考档菜单、上下文环、发送 / 停止）、`PullBar`（看板 / 子 agent / 任务，互斥上拉）、`stats.ts`（轮 / 步 / token / 缓存命中）。`features/context/ContextDrawer.tsx`：可关的右侧抽屉，名册记录 + token，无费用。
-- `features/settings/SettingsDialog.tsx`：全局设置弹窗（`Dialog size=lg`，左侧竖 tab：模型 / 能力档 / 项目 / MCP / 通用；`appStore.openSettings(tab)` 从任何地方打开，`#/settings` 深链也打开它）。`tabs/ModelsTab.tsx`：只列用户加过的提供方（行：名称 / 内置|自定义 / 状态点 / 编辑 / 删除）；底部「添加提供方」「添加自定义提供方」点开后换成灰底卡片（内置下拉选 pi 目录 + 密钥 + 可展开自定义设置；自定义按参考图填 ID / 名称 / 地址 / 协议 / 密钥；编辑预填同一张卡，ID 锁住）；模型目录：「获取模型列表」「添加模型」、空目录提示「选择器不显示，目录外仍可发」。`tabs/ProjectTab.tsx` 包 `ProjectConfig`；`tabs/McpTab.tsx`；`tabs/GeneralTab.tsx`：主题（跟随系统 / 亮 / 暗）。`ModelTiers.tsx`：「模型档次」——三档落点卡（模型 / 单价 / 上下文 / 缺档回退）、每个已配置 provider 一张表（每模型：分段按钮 轻量|标准|旗舰、★ 首选、启用）、各类对话默认档下拉、「锁定具体模型…」收起（main / conversation / subagent / reviewer）；每次改动 PATCH `/settings` 后刷新 `/models/tiers`。
+- `features/settings/SettingsDialog.tsx`：全局设置弹窗（`Dialog size=lg`，左侧竖 tab：模型 / 能力档 / 项目 / MCP / 通用；`appStore.openSettings(tab)` 从任何地方打开，`#/settings` 深链也打开它）。`tabs/ModelsTab.tsx`：只列用户加过的提供方（行：名称 / 内置|自定义 / 状态点 / 编辑 / 删除）；底部「添加提供方」「添加自定义提供方」点开后换成灰底卡片（内置下拉选 pi 目录 + 密钥 + 可展开自定义设置；自定义按参考图填 ID / 名称 / 地址 / 协议 / 密钥；编辑预填同一张卡，ID 锁住）；模型目录：「获取模型列表」「添加模型」、空目录提示「选择器不显示，目录外仍可发」。`tabs/ProjectTab.tsx` 包 `ProjectConfig`；`tabs/McpTab.tsx`；`tabs/GeneralTab.tsx`：主题（跟随系统 / 亮 / 暗）。`ModelTiers.tsx`：三档各选「供应商 + 模型」（模型来自已添加提供方，不标价格），记为该档首选；各类对话默认档；「锁定具体模型…」收起。
 - `features/docs/DocEditor.tsx`：CodeMirror 6 markdown 编辑器（行号 / 历史 / 自动换行 / token 主题），头部：冻结与批注数徽标、批注（在光标行后插块）、保存、「让 AI 读改动」（发提示回来源对话并切回聊天）。
 - `features/board/BoardView.tsx`：roadmap 表（状态徽标、模块文档链接直接打开编辑器）、review 记录、待决策（已解决按钮）、名册表。
 - `features/chat/ProcessCards.tsx`：`DesignConfirmCard`（打开批注）、`DesignFreezeCard`、`AcceptanceCard`（review 通过后：通过 → 发「验收通过」；打回 → 预填输入框）。
@@ -86,4 +86,4 @@ packages/web/src/
 | 2026-08-17 | 对话主界面按原型重写：空状态居中、输入卡、上拉三面板、上下文抽屉 |
 | 2026-08-17 | 消息区：修用户气泡重复（乐观插入与引擎回放去重）、工具行 / 思考行 / 悬停统计 |
 | 2026-08-17 | 任务清单闭环：`keel_tasks_update` 工具 + `keel/tasks` 条目 + 方法论规则，「任务」上拉真数据 |
-| 2026-08-17 | 设置 › 模型：默认不列内置提供方；底部添加 / 添加自定义切灰底卡片（下拉 / 手填 / 编辑共用），模型目录可拉远端或手加 |
+| 2026-08-17 | 能力档改成按档选供应商 + 模型下拉（来自已添加提供方），去掉价格与逐模型分档表 |
