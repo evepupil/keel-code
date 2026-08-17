@@ -102,7 +102,11 @@ export class SubagentRunner {
       }
 
       const title = input.title ?? `子 agent（${input.mode}）：${input.task.slice(0, 24)}`;
-      const extra = { [RUN_ID_KEY]: runId, subagentMode: input.mode };
+      const extra = {
+        [RUN_ID_KEY]: runId,
+        subagentMode: input.mode,
+        task: input.task.slice(0, 200),
+      };
       // 模型：显式 > 按档落实（selector）> 继承父对话
       let model = input.model;
       let modelNote: string | undefined;

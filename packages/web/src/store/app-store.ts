@@ -47,6 +47,8 @@ export interface AppState {
   doc: { path: string; sessionId: string | null } | null;
   /** 预填到输入框的草稿（验收打回等） */
   composerDraft: string | null;
+  /** 各会话当前上下文占用（来自会话详情 state，idle 后校准） */
+  context: Record<string, { used?: number; window?: number }>;
   /** 当前工作区待用户审批的工具调用 */
   approvals: ApprovalRequest[];
   /** 其他工作区的待审批数（工作区切换器上标角标） */
@@ -75,6 +77,7 @@ const initialState: AppState = {
   providers: [],
   doc: null,
   composerDraft: null,
+  context: {},
   approvals: [],
   pendingByWorkspace: {},
 };
@@ -510,6 +513,15 @@ class AppStore {
         streaming: detail.state.isStreaming,
         streamingIndex: null,
         needsResync: false,
+      }));
+      this.set((s) => ({
+        context: {
+          ...s.context,
+          [id]: {
+            used: detail.state.contextTokens,
+            window: detail.state.contextWindow,
+          },
+        },
       }));
       this.set((s) => ({
         sessions: s.sessions.map((x) => (x.meta.id === id ? { ...x, meta: detail.meta } : x)),

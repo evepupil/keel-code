@@ -25,8 +25,8 @@ const ACTION: Record<
   ReviewEntryView["action"],
   { label: string; tone: "ok" | "warn" | "danger" | "accent" | "neutral" }
 > = {
-  pass: { label: "review 通过", tone: "ok" },
-  fix: { label: "review 未通过 · 待修复", tone: "warn" },
+  pass: { label: "通过", tone: "ok" },
+  fix: { label: "未通过 · 待修复", tone: "warn" },
   suspend: { label: "待决策 · 已挂起", tone: "accent" },
   escalate: { label: "升级 · 需用户介入", tone: "danger" },
   error: { label: "reviewer 异常", tone: "danger" },
@@ -36,64 +36,50 @@ export function ReviewCard({ data }: { data: ReviewEntryView }) {
   const [open, setOpen] = useState(data.action !== "pass");
   const a = ACTION[data.action] ?? ACTION.error;
   return (
-    <div className="mx-auto max-w-3xl px-4 py-2">
-      <div className="rounded-md border border-line bg-panel text-xs">
-        <button
-          type="button"
-          className="flex w-full flex-wrap items-center gap-2 px-3 py-2 text-left hover:bg-panel-2"
-          onClick={() => setOpen((v) => !v)}
-        >
-          <Badge tone={a.tone}>{a.label}</Badge>
-          <span className="text-ink-muted">第 {data.round} 轮</span>
-          <span className="min-w-0 flex-1 truncate">{data.batch}</span>
-          {data.reviewerModel ? (
-            <span className="font-mono text-ink-faint">
-              {data.reviewerModel.provider}/{data.reviewerModel.id}
-            </span>
+    <div className="rounded-lg border border-line bg-panel text-xs">
+      <button
+        type="button"
+        className="flex w-full flex-wrap items-center gap-2 px-3.5 py-2.5 text-left hover:bg-panel-2"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="font-medium">review · {data.batch}</span>
+        <Badge tone={a.tone}>{a.label}</Badge>
+        <span className="ml-auto font-normal text-ink-faint">
+          {data.reviewerModel ? `${data.reviewerModel.id} · ` : ""}第 {data.round} 轮
+          {data.treeHash ? ` · ${data.treeHash.slice(0, 7)}` : ""}
+        </span>
+      </button>
+      {open ? (
+        <div className="space-y-2 border-t border-line px-3.5 py-2.5">
+          {data.summary ? <p>{data.summary}</p> : null}
+          {data.findings && data.findings.length > 0 ? (
+            <ul className="list-disc space-y-1.5 pl-4 text-ink-muted">
+              {data.findings.map((f) => (
+                <li key={`${f.category}-${f.file ?? ""}-${f.issue}`}>
+                  <Badge tone={f.category === "decision" ? "accent" : "warn"} className="mr-1.5">
+                    {f.category === "decision" ? "待决策" : "确定性"}
+                  </Badge>
+                  {f.file ? <span className="mr-1 font-mono text-ink-faint">{f.file}</span> : null}
+                  {f.issue}
+                  {f.suggestion ? <div>→ {f.suggestion}</div> : null}
+                </li>
+              ))}
+            </ul>
           ) : null}
-          {typeof data.costUsd === "number" ? (
-            <span className="text-ink-faint">${data.costUsd.toFixed(4)}</span>
-          ) : null}
-        </button>
-        {open ? (
-          <div className="space-y-2 border-t border-line px-3 py-2">
-            {data.summary ? <p>{data.summary}</p> : null}
-            {data.findings && data.findings.length > 0 ? (
-              <ol className="space-y-1.5">
-                {data.findings.map((f) => (
-                  <li key={`${f.category}-${f.file ?? ""}-${f.issue}`} className="flex gap-2">
-                    <Badge tone={f.category === "decision" ? "accent" : "warn"}>
-                      {f.category === "decision" ? "待决策" : "确定性"}
-                    </Badge>
-                    <div className="min-w-0 flex-1">
-                      <div>
-                        {f.file ? (
-                          <span className="mr-1 font-mono text-ink-faint">{f.file}</span>
-                        ) : null}
-                        {f.issue}
-                      </div>
-                      {f.suggestion ? <div className="text-ink-muted">→ {f.suggestion}</div> : null}
-                    </div>
-                  </li>
-                ))}
-              </ol>
+          <div className="flex flex-wrap items-center gap-3 text-ink-faint">
+            {data.reviewerSessionId ? (
+              <button
+                type="button"
+                className="text-accent hover:underline"
+                onClick={() => appStore.selectSession(data.reviewerSessionId ?? "")}
+              >
+                查看 reviewer 轨迹
+              </button>
             ) : null}
-            <div className="flex flex-wrap items-center gap-3 text-ink-faint">
-              {data.treeHash ? <span className="font-mono">tree {data.treeHash}</span> : null}
-              {data.reviewerSessionId ? (
-                <button
-                  type="button"
-                  className="text-accent hover:underline"
-                  onClick={() => appStore.selectSession(data.reviewerSessionId ?? "")}
-                >
-                  查看 reviewer 轨迹
-                </button>
-              ) : null}
-              <span>{data.at.replace("T", " ").slice(0, 19)}</span>
-            </div>
+            <span>{data.at.replace("T", " ").slice(0, 19)}</span>
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }

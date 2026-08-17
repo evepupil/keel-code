@@ -12,12 +12,16 @@ export function DesignConfirmCard({
   sessionId: string;
 }) {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-2">
-      <div className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-panel px-3 py-2 text-xs">
-        <Badge tone="accent">设计待确认</Badge>
-        <FileText className="h-3.5 w-3.5 text-ink-faint" />
-        <span className="font-mono">{data.path}</span>
-        <span className="min-w-0 flex-1 text-ink-muted">{data.summary}</span>
+    <div className="rounded-lg border border-line bg-panel p-3.5 text-xs">
+      <div className="flex flex-wrap items-center gap-2">
+        <FileText className="h-4 w-4 text-ink-faint" />
+        <span className="font-medium">
+          设计待确认 · <span className="font-mono">{data.path}</span>
+        </span>
+        <Badge tone="accent">等你批注</Badge>
+      </div>
+      <p className="mt-1.5 text-ink-muted">{data.summary}</p>
+      <div className="mt-2.5">
         <Button size="sm" variant="primary" onClick={() => appStore.openDoc(data.path, sessionId)}>
           打开批注
         </Button>
@@ -33,20 +37,18 @@ export function DesignFreezeCard({
   data: { path: string; commit: string; at: string; note?: string };
 }) {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-1">
-      <div className="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
-        <Lock className="h-3.5 w-3.5" />
-        <span>设计已冻结</span>
-        <button
-          type="button"
-          className="font-mono text-accent hover:underline"
-          onClick={() => appStore.openDoc(data.path, null)}
-        >
-          {data.path}
-        </button>
-        <span className="font-mono">{data.commit}</span>
-        {data.note ? <span>{data.note}</span> : null}
-      </div>
+    <div className="flex flex-wrap items-center gap-2 px-1 py-1 text-xs text-ink-muted">
+      <Lock className="h-3.5 w-3.5" />
+      <span>设计已冻结</span>
+      <button
+        type="button"
+        className="font-mono text-accent hover:underline"
+        onClick={() => appStore.openDoc(data.path, null)}
+      >
+        {data.path}
+      </button>
+      <span className="font-mono">{data.commit}</span>
+      {data.note ? <span>{data.note}</span> : null}
     </div>
   );
 }
@@ -54,10 +56,12 @@ export function DesignFreezeCard({
 /** review 通过后的验收卡：用户自己验，只给「通过 / 打回」两个动作。 */
 export function AcceptanceCard({ sessionId, batch }: { sessionId: string; batch: string }) {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-2">
-      <div className="flex flex-wrap items-center gap-2 rounded-md border border-ok/40 bg-ok-soft/40 px-3 py-2 text-xs">
-        <Badge tone="ok">待验收</Badge>
-        <span className="min-w-0 flex-1">{batch}</span>
+    <div className="rounded-lg border border-ok/40 bg-ok-soft/40 p-3.5 text-xs">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-medium">验收 · {batch}</span>
+        <Badge tone="ok">等你验收</Badge>
+      </div>
+      <div className="mt-2.5 flex flex-wrap gap-2">
         <Button
           size="sm"
           variant="primary"

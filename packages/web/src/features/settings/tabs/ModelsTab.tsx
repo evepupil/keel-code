@@ -1,10 +1,11 @@
 /**
- * 设置 › 模型：provider 列表（常用优先，可展开全部）、粘贴 key 保存 / 移除、探测（可达 / 时延 / 端点模型表）。
+ * 设置 › 模型：provider 卡片（状态 + 探测结果），点「编辑」展开表单（key / 探测模型表）。
  */
 import { useState } from "react";
 import { api } from "../../../api/client";
 import type { ProviderInfo, ProviderProbe } from "../../../api/types";
 import { Button } from "../../../design-system/components/button";
+import { StatusDot } from "../../../design-system/components/dot";
 import { Badge, Card, Input, Spinner } from "../../../design-system/components/primitives";
 import { appStore, useAppState } from "../../../store/app-store";
 
@@ -35,6 +36,7 @@ export function ModelsTab() {
   const [probing, setProbing] = useState(false);
   const [probes, setProbes] = useState<ProviderProbe[]>([]);
   const [showAll, setShowAll] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
 
   const list = sortProviders(
     showAll ? providers : providers.filter((p) => p.configured || PREFERRED.includes(p.id)),
@@ -72,19 +74,29 @@ export function ModelsTab() {
       </div>
       <div className="space-y-2">
         {list.map((p) => (
-          <ProviderRow key={p.id} provider={p} probe={probes.find((x) => x.provider === p.id)} />
+          <ProviderCard
+            key={p.id}
+            provider={p}
+            probe={probes.find((x) => x.provider === p.id)}
+            expanded={editing === p.id}
+            onToggle={() => setEditing((cur) => (cur === p.id ? null : p.id))}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function ProviderRow({
+function ProviderCard({
   provider,
   probe,
+  expanded,
+  onToggle,
 }: {
   provider: ProviderInfo;
   probe: ProviderProbe | undefined;
+  expanded: boolean;
+  onToggle: () => void;
 }) {
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
@@ -117,88 +129,111 @@ function ProviderRow({
     }
   };
 
+  const canRemove =
+    provider.configured &&
+    provider.authSource !== undefined &&
+    /auth|stored|runtime/i.test(provider.authSource);
+
   return (
-    <Card className="p-3">
+    <Card className="px-3.5 py-2.5">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{provider.name}</span>
-            <span className="font-mono text-[11px] text-ink-faint">{provider.id}</span>
-            {provider.configured ? (
-              <Badge tone="ok">已配置{provider.authSource ? `：${provider.authSource}` : ""}</Badge>
-            ) : (
-              <Badge>未配置</Badge>
-            )}
-            {probe ? (
-              probe.reachable ? (
-                <Badge tone="ok">可达 {probe.latencyMs}ms</Badge>
-              ) : (
-                <Badge tone="danger">不可达{probe.error ? `：${probe.error}` : ""}</Badge>
-              )
-            ) : null}
-          </div>
-          <div className="truncate text-[11px] text-ink-faint">
-            {provider.baseUrl ?? ""}　目录模型 {provider.modelCount} 个
-            {probe ? `，端点列出 ${probe.models.filter((m) => m.listedByEndpoint).length} 个` : ""}
-          </div>
-        </div>
-        <Input
-          type="password"
-          value={key}
-          onChange={(e) => setKey(e.target.value)}
-          placeholder="粘贴 API key"
-          className="w-56"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") void save();
-          }}
-        />
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => void save()}
-          disabled={busy || !key.trim()}
-        >
-          保存
-        </Button>
-        {provider.configured &&
-        provider.authSource !== undefined &&
-        /auth|stored|runtime/i.test(provider.authSource) ? (
-          <Button variant="ghost" size="sm" onClick={() => void remove()} disabled={busy}>
-            移除
-          </Button>
+        <StatusDot state={provider.configured ? "ok" : "idle"} />
+        <span className="text-sm font-medium">{provider.name}</span>
+        {provider.configured ? (
+          <Badge tone="ok">{provider.authSource ?? "已配置"}</Badge>
+        ) : (
+          <Badge>未配置</Badge>
+        )}
+        {probe ? (
+          probe.reachable ? (
+            <Badge tone="ok">可达 {probe.latencyMs}ms</Badge>
+          ) : (
+            <Badge tone="danger">不可达{probe.error ? `：${probe.error}` : ""}</Badge>
+          )
         ) : null}
-        {probe && probe.models.length > 0 ? (
-          <Button variant="ghost" size="sm" onClick={() => setOpenModels((v) => !v)}>
-            {openModels ? "收起模型" : "看模型"}
+        <span className="ml-auto flex shrink-0 items-center gap-1.5">
+          <Button size="sm" onClick={onToggle}>
+            {expanded ? "收起" : "编辑"}
           </Button>
-        ) : null}
+          {canRemove ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-danger"
+              onClick={() => void remove()}
+              disabled={busy}
+            >
+              移除
+            </Button>
+          ) : null}
+        </span>
       </div>
-      {openModels && probe ? (
-        <div className="mt-2 overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="text-ink-faint">
-              <tr>
-                <th className="py-1 pr-2 font-normal">模型</th>
-                <th className="py-1 pr-2 font-normal">上下文</th>
-                <th className="py-1 pr-2 font-normal">推理</th>
-                <th className="py-1 pr-2 font-normal">端点</th>
-              </tr>
-            </thead>
-            <tbody>
-              {probe.models.map((m) => (
-                <tr key={m.id} className="border-t border-line">
-                  <td className="py-1 pr-2 font-mono">{m.id}</td>
-                  <td className="py-1 pr-2">
-                    {m.contextWindow ? `${Math.round(m.contextWindow / 1000)}K` : "?"}
-                  </td>
-                  <td className="py-1 pr-2">
-                    {m.catalogKnown ? (m.reasoning ? "是" : "否") : "?"}
-                  </td>
-                  <td className="py-1 pr-2">{m.listedByEndpoint ? "有" : "无"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="mt-0.5 truncate text-[11px] text-ink-faint">
+        {provider.baseUrl ?? ""}　目录模型 {provider.modelCount} 个
+        {probe ? `，端点列出 ${probe.models.filter((m) => m.listedByEndpoint).length} 个` : ""}
+      </div>
+
+      {expanded ? (
+        <div className="mt-3 space-y-3 border-t border-line pt-3">
+          <div className="flex items-center gap-2">
+            <Input
+              type="password"
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              placeholder="粘贴 API key"
+              className="flex-1"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void save();
+              }}
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => void save()}
+              disabled={busy || !key.trim()}
+            >
+              保存
+            </Button>
+          </div>
+          {probe && probe.models.length > 0 ? (
+            <div>
+              <button
+                type="button"
+                className="text-xs text-accent hover:underline"
+                onClick={() => setOpenModels((v) => !v)}
+              >
+                {openModels ? "收起模型表" : `模型表（${probe.models.length}）`}
+              </button>
+              {openModels ? (
+                <div className="mt-2 overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="text-ink-faint">
+                      <tr>
+                        <th className="py-1 pr-2 font-normal">模型</th>
+                        <th className="py-1 pr-2 font-normal">上下文</th>
+                        <th className="py-1 pr-2 font-normal">推理</th>
+                        <th className="py-1 pr-2 font-normal">端点</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {probe.models.map((m) => (
+                        <tr key={m.id} className="border-t border-line">
+                          <td className="py-1 pr-2 font-mono">{m.id}</td>
+                          <td className="py-1 pr-2">
+                            {m.contextWindow ? `${Math.round(m.contextWindow / 1000)}K` : "?"}
+                          </td>
+                          <td className="py-1 pr-2">
+                            {m.catalogKnown ? (m.reasoning ? "是" : "否") : "?"}
+                          </td>
+                          <td className="py-1 pr-2">{m.listedByEndpoint ? "有" : "无"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </Card>

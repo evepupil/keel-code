@@ -52,10 +52,11 @@ export function Composer({
   const ref = useRef<HTMLTextAreaElement>(null);
   const draft = useAppState((s) => s.composerDraft);
   const stats = runStatsOf(messages);
+  const ctx = useAppState((s) => s.context[session.meta.id]);
   const model = models.find((m) => modelKey(m) === modelKey(session.meta.model));
-  const windowSize = model?.contextWindow ?? 0;
-  const used = stats.input + stats.output + stats.cacheRead;
-  const pct = windowSize > 0 ? Math.round((used / windowSize) * 100) : 0;
+  const windowSize = ctx?.window ?? model?.contextWindow ?? 0;
+  const used = ctx?.used ?? stats.input + stats.output + stats.cacheRead;
+  const pct = windowSize > 0 ? Math.min(100, Math.round((used / windowSize) * 100)) : 0;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: 只在切会话时清空
   useEffect(() => {
@@ -237,6 +238,9 @@ export function Composer({
                     ~{formatTok(used)} / {windowSize ? formatTok(windowSize) : "?"}
                   </span>
                 </div>
+                {ctx?.used !== undefined ? (
+                  <div className="text-ink-muted">当前上下文 {formatTok(ctx.used)}</div>
+                ) : null}
                 <div className="text-ink-muted">累计输入 {formatTok(stats.input)}</div>
                 <div className="text-ink-muted">累计输出 {formatTok(stats.output)}</div>
                 <div className="text-ink-muted">缓存命中 {formatTok(stats.cacheRead)}</div>
