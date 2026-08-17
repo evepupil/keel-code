@@ -23,5 +23,7 @@ export default defineConfig({
     })),
     passWithNoTests: true,
     testTimeout: 30_000,
+    // 测试封闭性：剥掉宿主环境的 provider 变量，避免外部真端点（如代理）混进 mock 测试
+    setupFiles: [fileURLToPath(new URL("./scripts/vitest-scrub-env.ts", import.meta.url))],
   },
 });

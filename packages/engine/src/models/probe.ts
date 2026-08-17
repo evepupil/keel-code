@@ -8,7 +8,13 @@ interface EndpointListing {
   reachable: boolean;
   latencyMs: number;
   ids: Set<string>;
+  status?: number;
   error?: string;
+}
+
+/** HTTP 状态码是否表示认证 / 授权被拒——端点能连上，但拿它发消息必被拒。 */
+export function isAuthFailureStatus(status: number): boolean {
+  return status === 401 || status === 403;
 }
 
 /** 根据 api 类型拼出「列模型」的 URL 与请求头。返回 undefined 表示不知道怎么列。 */
@@ -66,6 +72,7 @@ async function listEndpointModels(
         reachable: true,
         latencyMs,
         ids: new Set(),
+        status: res.status,
         error: `HTTP ${res.status}`,
       };
     }
@@ -138,6 +145,9 @@ export async function probeProviders(
         probe.reachable = listing.reachable;
         probe.latencyMs = listing.latencyMs;
         if (listing.error) probe.error = listing.error;
+        if (listing.status !== undefined && isAuthFailureStatus(listing.status)) {
+          probe.authFailed = true;
+        }
       }
       const endpointIds = listing?.ids ?? new Set<string>();
 

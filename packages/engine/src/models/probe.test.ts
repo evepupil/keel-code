@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildModelsRequest, parseModelIds } from "./probe.js";
+import { buildModelsRequest, isAuthFailureStatus, parseModelIds } from "./probe.js";
 
 describe("buildModelsRequest", () => {
   it("anthropic：/v1/models + x-api-key", () => {
@@ -31,5 +31,15 @@ describe("parseModelIds", () => {
     expect([...parseModelIds([{ id: "c" }])]).toEqual(["c"]);
     expect([...parseModelIds({ nope: 1 })]).toEqual([]);
     expect([...parseModelIds(null)]).toEqual([]);
+  });
+});
+
+describe("isAuthFailureStatus", () => {
+  it("401/403 算认证失败，其余不算", () => {
+    expect(isAuthFailureStatus(401)).toBe(true);
+    expect(isAuthFailureStatus(403)).toBe(true);
+    expect(isAuthFailureStatus(404)).toBe(false);
+    expect(isAuthFailureStatus(500)).toBe(false);
+    expect(isAuthFailureStatus(200)).toBe(false);
   });
 });

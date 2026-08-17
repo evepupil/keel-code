@@ -16,21 +16,31 @@ const model = (provider: string, id: string, input = 1): ModelInfo => ({
 });
 
 /** 假引擎：只实现选择器用到的三样——available / probe / settings */
-function fakeEngine(models: ModelInfo[], settings: KeelSettings, unreachable: string[] = []) {
+function fakeEngine(
+  models: ModelInfo[],
+  settings: KeelSettings,
+  unreachable: string[] = [],
+  authFailed: string[] = [],
+) {
   const probes: string[] = [];
   const engine = {
     models: {
       available: async () => models,
       probe: async (o: { providers?: string[] }): Promise<ProviderProbe[]> => {
         probes.push(...(o.providers ?? []));
-        return (o.providers ?? []).map((p) => ({
-          provider: p,
-          name: p,
-          configured: true,
-          reachable: !unreachable.includes(p),
-          models: [],
-          ...(unreachable.includes(p) ? { error: "timeout" } : { latencyMs: 10 }),
-        }));
+        return (o.providers ?? []).map((p) => {
+          const auth = authFailed.includes(p);
+          const down = unreachable.includes(p);
+          return {
+            provider: p,
+            name: p,
+            configured: true,
+            reachable: !down,
+            ...(auth ? { authFailed: true, error: "HTTP 403" } : {}),
+            models: [],
+            ...(down ? { error: "timeout" } : !auth ? { latencyMs: 10 } : {}),
+          };
+        });
       },
     },
     settings: { get: () => settings, update: () => settings },
@@ -70,6 +80,18 @@ describe("ModelSelector", () => {
     const n = probes.length;
     await sel.resolve({ tier: "flagship" });
     expect(probes.length).toBe(n);
+  });
+
+  it("网络可达但认证失败（401/403）的 provider 不选，落到下一个", async () => {
+    const { engine } = fakeEngine(
+      [A, B],
+      { modelTiers: { "a/a-big": "flagship", "b/b-mid": "flagship" } },
+      [],
+      ["a"],
+    );
+    const sel = new ModelSelector(engine);
+    const r = await sel.resolve({ tier: "flagship" });
+    expect(r?.model.id).toBe("b-mid");
   });
 
   it("避开实现者：同档有别的就换，只剩它就用它", async () => {

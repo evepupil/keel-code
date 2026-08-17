@@ -145,8 +145,10 @@ function ProviderCard({
           <Badge>未配置</Badge>
         )}
         {probe ? (
-          probe.reachable ? (
+          probe.reachable && !probe.authFailed ? (
             <Badge tone="ok">可达 {probe.latencyMs}ms</Badge>
+          ) : probe.reachable && probe.authFailed ? (
+            <Badge tone="warn">认证失败：{probe.error ?? "被端点拒绝"}</Badge>
           ) : (
             <Badge tone="danger">不可达{probe.error ? `：${probe.error}` : ""}</Badge>
           )

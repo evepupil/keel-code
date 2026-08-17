@@ -86,6 +86,8 @@ export interface ProviderProbe {
   api?: string;
   configured: boolean;
   reachable: boolean;
+  /** 网络可达但认证被拒（HTTP 401/403）：能连上，但发消息会被拒，选档时视为不可用。 */
+  authFailed?: boolean;
   latencyMs?: number;
   error?: string;
   models: ProbedModel[];

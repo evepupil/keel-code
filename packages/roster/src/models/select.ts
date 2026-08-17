@@ -88,18 +88,20 @@ export class ModelSelector {
     private readonly options: ModelSelectorOptions = {},
   ) {}
 
-  /** 某 provider 是否可达（缓存过期就复探）。 */
+  /** 某 provider 是否当前可用（缓存过期就复探）。网络可达但认证被拒（401/403）同样算不可用——拿它发消息必被拒。 */
   async providerReachable(providerId: string, now = Date.now()): Promise<boolean> {
     const ttl = this.options.probeTtlMs ?? 5 * 60 * 1000;
     const hit = this.cache.get(providerId);
     if (hit && now - hit.at < ttl) return hit.reachable;
+    let usable = false;
     try {
       const [p] = await this.engine.models.probe({
         providers: [providerId],
         timeoutMs: this.options.probeTimeoutMs ?? 5000,
       });
+      usable = (p?.reachable ?? false) && !p?.authFailed;
       const entry: ProbeCacheEntry = {
-        reachable: p?.reachable ?? false,
+        reachable: usable,
         at: now,
         ...(p?.latencyMs !== undefined ? { latencyMs: p.latencyMs } : {}),
         ...(p?.error ? { error: p.error } : {}),
