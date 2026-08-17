@@ -19,6 +19,7 @@
 | [M3](#m3) | 闭环编排 + 强制层：批次上报 → 独立 reviewer → 分类路由 → 修复循环 → review-pass → 提交门禁；待决策；验收卡；guard-frontend；lint-on-write | 进行中 | M2 | [闭环编排器](模块设计/闭环编排器.md) · [强制层](模块设计/强制层.md) | 三条路径：修复-通过-提交 ✅（mock 端到端）/ 跳过 review 的提交被拒 ✅ / 待决策挂起落档 ✅ / 连续 3 轮升级（路由单测 ✅，端到端待补）；review 卡片进聊天时间线 ✅ |
 | [M4](#m4) | 设计确认与看板：设计文档批注编辑器 → 回显理解 → 冻结；看板；待决策队列；验收卡动作 | 进行中 | M3 | [Web界面](模块设计/Web界面.md) · [文档管理](模块设计/文档管理.md) | 一个玩具模块从设计批注走到验收全程在 Web 内完成 ✅（mock 目验：确认卡 → 批注 → 回显 → 上报 → review 卡 → 验收卡；冻结工具已实现待目验） |
 | [M5](#m5) | 加固与扩展：审批三档、MCP 客户端、压缩策略、`keel run` 无头、文档修剪 job、worktree 并行、workflow 编排（脚本化多 agent） | 进行中 | M4 | [引擎](模块设计/引擎.md) · [文档管理](模块设计/文档管理.md) · [CLI](模块设计/CLI.md) · [MCP](模块设计/MCP.md) | 审批三档 ✅ / `keel run` ✅ / 文档修剪 job ✅ / MCP 客户端 ✅ / workflow 编排 ✅（2026-08-17）；压缩策略沿用 pi 默认自动压缩（真实使用后再调）；worktree 并行待做（当前做法：每个 worktree 各起一份 `keel serve`）；无头回归稳定；真实项目跑通完整流程 |
+| [M7](#m7) | 能力档 + 多工作区：AI 只说档次（轻量 / 标准 / 旗舰）由系统落实并只起能通的；`keel web` 单实例多工作区 | 进行中 | M5 | [对话与名册](模块设计/对话与名册.md) · [服务端](模块设计/服务端.md) · [CLI](模块设计/CLI.md) · [Web界面](模块设计/Web界面.md) | 设置页配档 → AI 建对话按档落实、缺档回退有提示、不通的端点不被选；任意目录 `keel web` 打开含全部工作区的工作台 |
 | [M6](#m6) | 分发：npm 发布、`keel tui`、执行器接口（Claude Code / Codex 只留接口不实现） | 进行中 | M5 | [CLI](模块设计/CLI.md) | 包已设为可发布、Web 产物随 CLI 打包（2026-08-17，未实际发布）；`npm i -g keel-code` → `keel init` → `keel serve` 三步上手 |
 
 ## 阶段说明
@@ -50,6 +51,9 @@ pnpm monorepo（TypeScript 7 strict、Biome、vitest），10 个包骨架（engi
 2026-08-17：运行时组合根 + 审批（edits / ask / yolo，WS 卡片）+ `keel run` + 提交后文档修剪 job + 项目配置区落地；MCP 客户端（`@keel-code/mcp`，mcpServers 配置格式）落地。
 
 审批（ask / 白名单 / 全放）、MCP 客户端、压缩策略调优、`keel run` 无头、文档修剪 job（提交后兜底）、worktree 并行、workflow 编排。
+
+### M7
+设计见 [设计/06](设计/06-模型档次与多工作区.md)。顺序：先能力档，再多工作区，最后前端整体重构。
 
 ### M6
 2026-08-17：发布形态准备（publishConfig、prepack 复制 Web 产物、`pnpm keel` 根脚本）；实际 `npm publish`、`keel tui`、执行器接口待做。

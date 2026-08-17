@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>keel Web 布局原型</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;
+  --side:oklch(97.6% 0.004 250);
+  --hover:oklch(94.5% 0.006 250);
+  --panel-2:oklch(96.5% 0.004 250);
+  --line:oklch(90% 0.006 250);
+  --line-strong:oklch(80% 0.01 250);
+  --ink:oklch(22% 0.02 250);
+  --muted:oklch(50% 0.02 250);
+  --faint:oklch(66% 0.015 250);
+  --accent:oklch(52% 0.13 235);
+  --accent-soft:oklch(94% 0.03 235);
+  --ok:oklch(55% 0.14 150);
+  --ok-soft:oklch(95% 0.04 150);
+  --warn:oklch(62% 0.15 75);
+  --warn-soft:oklch(96% 0.05 85);
+  --danger:oklch(55% 0.19 27);
+  --danger-soft:oklch(95% 0.03 27);
+  --r-sm:6px;--r-md:10px;--r-lg:12px;--r-xl:18px;
+  --sans:ui-sans-serif,system-ui,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,"Cascadia Code","JetBrains Mono",Consolas,monospace;
+}
+html,body{height:100%}
+body{font-family:var(--sans);font-size:14px;line-height:1.5;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+code{font-family:var(--mono);font-size:12.5px}
+.ic{display:inline-flex;align-items:center;flex:none}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.i.sm{width:14px;height:14px}
+.spacer{flex:1}
+
+/* ---------- 布局 ---------- */
+.app{display:flex;height:100%}
+
+/* ---------- 侧栏 ---------- */
+.sidebar{width:264px;flex:none;background:var(--side);border-right:1px solid var(--line);overflow:hidden;transition:width .18s ease}
+.app.nav-collapsed .sidebar{width:0;border-right-color:transparent}
+.sb-inner{width:264px;height:100%;display:flex;flex-direction:column}
+.sb-top{display:flex;align-items:center;justify-content:space-between;padding:12px 10px 6px 16px}
+.wordmark{font-weight:650;font-size:16px;letter-spacing:.01em}
+.newbtn{margin:6px 12px 10px;height:36px;border:1px solid var(--line-strong);border-radius:var(--r-md);background:var(--bg);display:flex;align-items:center;justify-content:center;gap:6px;font-weight:500}
+.newbtn:hover{background:var(--hover)}
+.sb-sec{display:flex;align-items:center;gap:2px;padding:6px 10px 2px 16px;color:var(--faint);font-size:12px}
+.sb-list{flex:1;overflow-y:auto;padding:0 8px 8px}
+.proj{margin-bottom:2px}
+.proj-head{display:flex;align-items:center;gap:6px;width:100%;padding:6px 6px;border-radius:var(--r-sm);font-weight:500;text-align:left}
+.proj-head:hover{background:var(--hover)}
+.proj-head .chev{color:var(--faint);transition:transform .15s}
+.proj.open .proj-head .chev{transform:rotate(90deg)}
+.proj-head .cnt{margin-left:auto;color:var(--faint);font-size:11px;font-weight:400}
+.proj-body{display:none;padding:2px 0 6px}
+.proj.open .proj-body{display:block}
+.row{display:flex;align-items:center;gap:6px;width:100%;padding:5px 8px 5px 30px;border-radius:var(--r-sm);text-align:left;color:var(--ink)}
+.row:hover{background:var(--hover)}
+.row.active{background:var(--accent-soft)}
+.row .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .time{color:var(--faint);font-size:11px;flex:none}
+.row.main{padding-left:8px;font-weight:500}
+.row.main .ic{color:var(--muted)}
+.hair{height:1px;background:var(--line);margin:3px 8px 4px 30px}
+.dot{width:7px;height:7px;border-radius:50%;flex:none}
+.dot.run{background:var(--ok);animation:pulse 1.6s ease-in-out infinite}
+.dot.pend{background:var(--warn)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.row.more,.row.arch{color:var(--faint);font-size:12px}
+.row.archived{opacity:.6}
+.more-list,.arch-list{display:none}
+.more-list.open,.arch-list.open{display:block}
+.sb-bottom{border-top:1px solid var(--line);padding:8px}
+.sb-bottom .row{padding-left:8px;gap:8px}
+
+/* ---------- 主区 ---------- */
+.workarea{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--bg)}
+.topbar{height:48px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--line)}
+.app:not(.nav-collapsed) #expandNav{display:none}
+.crumb{display:flex;align-items:center;gap:6px;min-width:0;flex:none}
+.crumb .pl,.crumb .sep{color:var(--faint)}
+.crumb .lnk{color:var(--muted);padding:2px 4px;border-radius:var(--r-sm)}
+.crumb .lnk:hover{background:var(--hover);color:var(--ink)}
+.crumb .title{font-weight:600;display:inline-flex;align-items:center;gap:2px;padding:2px 4px;border-radius:var(--r-sm)}
+button.title:hover{background:var(--hover)}
+.role{color:var(--faint);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.chip{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:12.5px;color:var(--ink);white-space:nowrap}
+.chip:hover{background:var(--hover)}
+.chip .chev{color:var(--faint)}
+.iconbtn{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-sm);color:var(--muted);flex:none}
+.iconbtn:hover{background:var(--hover);color:var(--ink)}
+.iconbtn.on{background:var(--accent-soft);color:var(--accent)}
+.btn{height:28px;padding:0 10px;border-radius:var(--r-sm);font-size:12.5px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.btn.ghost:hover{background:var(--hover)}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.outline{border:1px solid var(--line)}
+.btn.outline:hover{background:var(--hover)}
+.btn.danger{color:var(--danger)}
+.btn.sm{height:24px;padding:0 8px;font-size:12px}
+
+.content{flex:1;min-height:0;display:flex;flex-direction:column}
+.view{flex:1;min-height:0;display:flex;flex-direction:column}
+.view[hidden]{display:none}
+.timeline{flex:1;overflow-y:auto;padding:22px 0 12px}
+.col{max-width:760px;margin:0 auto;padding:0 20px;display:flex;flex-direction:column;gap:14px}
+.msg-user{align-self:flex-end;max-width:78%;background:var(--panel-2);border-radius:14px 14px 4px 14px;padding:8px 12px}
+.msg-ai{align-self:stretch}
+.msg-ai p+p,.msg-ai ul+p,.msg-ai p+ul{margin-top:.5em}
+.msg-ai ul{padding-left:1.25em}
+.cursor{display:inline-block;width:7px;height:14px;background:var(--ink);vertical-align:-2px;margin-left:2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.tools{display:flex;flex-direction:column;gap:6px;align-self:stretch}
+.tool{display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;color:var(--muted);max-width:100%}
+.tool .nm{font-weight:500;color:var(--ink);flex:none}
+.tool code{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.tool .st{margin-left:auto;font-size:11px;flex:none;display:inline-flex;align-items:center;gap:4px}
+.tool .st.ok{color:var(--ok)}
+.tool .st.run{color:var(--accent)}
+.card{border:1px solid var(--line);border-radius:var(--r-lg);padding:12px 14px;background:var(--bg)}
+.card .hd{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-weight:500}
+.card .hd .meta{margin-left:auto;color:var(--faint);font-size:11.5px;font-weight:400}
+.card p{font-size:13px}
+.card ul{padding-left:1.2em;color:var(--muted);font-size:12.5px;margin-top:4px}
+.card .actions{display:flex;gap:8px;margin-top:10px;align-items:center}
+.card .cmd{display:block;background:var(--panel-2);border-radius:8px;padding:6px 10px;margin:6px 0}
+.badge{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:5px;font-size:11px;font-weight:500;background:var(--panel-2);color:var(--muted);white-space:nowrap}
+.badge.ok{background:var(--ok-soft);color:var(--ok)}
+.badge.accent{background:var(--accent-soft);color:var(--accent)}
+.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.badge.danger{background:var(--danger-soft);color:var(--danger)}
+.note{text-align:center;color:var(--faint);font-size:12px;padding:10px 20px 18px}
+
+/* ---------- 输入框 ---------- */
+.composer-wrap{flex:none;padding:8px 20px 18px}
+.composer{max-width:760px;margin:0 auto;border:1px solid var(--line);border-radius:var(--r-xl);background:var(--bg);box-shadow:0 2px 12px oklch(0% 0 0/.05);padding:10px 12px 8px}
+.composer textarea{width:100%;border:0;outline:0;resize:none;font:inherit;background:transparent;min-height:46px;line-height:1.5;padding:2px 4px;color:var(--ink)}
+.composer textarea::placeholder{color:var(--faint)}
+.composer-bar{display:flex;align-items:center;gap:6px;margin-top:4px}
+.send{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.send.stop{background:var(--ink)}
+.send.stop svg{fill:#fff;stroke:#fff}
+
+/* ---------- 空对话 ---------- */
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 20px 8vh}
+.empty .wordmark{font-size:28px;margin-bottom:22px;color:var(--ink)}
+.empty .composer{width:100%;box-shadow:0 8px 30px oklch(0% 0 0/.07)}
+
+/* ---------- 右侧抽屉 ---------- */
+.drawer{width:296px;flex:none;border-left:1px solid var(--line);background:var(--side);overflow-y:auto;padding:12px 14px;font-size:12.5px}
+.drawer[hidden]{display:none}
+.drawer .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-weight:600;font-size:13px}
+.drawer .badges{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px;color:var(--faint)}
+.drawer dl{display:grid;gap:9px}
+.drawer dt{color:var(--faint);font-size:11.5px}
+.drawer dd{white-space:pre-wrap}
+.drawer dd.mono{font-family:var(--mono);font-size:12px;word-break:break-all}
+.drawer dd ul{padding-left:1.1em}
+
+/* ---------- 弹出菜单 ---------- */
+.pop-wrap{position:relative;display:inline-flex}
+.pop{position:absolute;top:calc(100% + 6px);right:0;min-width:270px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px oklch(0% 0 0/.10);padding:6px;z-index:20;display:none}
+.pop.open{display:block}
+.pop.up{top:auto;bottom:calc(100% + 6px)}
+.pop.left{right:auto;left:0}
+.pop .item{display:flex;align-items:center;gap:8px;width:100%;padding:7px 8px;border-radius:8px;text-align:left}
+.pop .item:hover{background:var(--hover)}
+.pop .item .n{flex:1;min-width:0}
+.pop .item .m{color:var(--faint);font-size:11.5px;flex:none}
+.pop .item .ck{color:var(--accent);width:16px;flex:none}
+.pop .grp{padding:6px 8px 2px;color:var(--faint);font-size:11px}
+.pop .sub{color:var(--faint);font-size:11.5px;display:block;font-weight:400}
+.pop hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.seg{display:flex;gap:4px;padding:6px 8px 4px;align-items:center}
+.seg .lb{color:var(--faint);font-size:11.5px;margin-right:4px}
+.seg button{flex:1;height:24px;border:1px solid var(--line);border-radius:6px;font-size:11.5px}
+.seg button.on{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+
+/* ---------- 看板 ---------- */
+.board{flex:1;overflow-y:auto;padding:20px}
+.board .wrap{max-width:980px;margin:0 auto;display:grid;gap:16px}
+.board h3{font-size:13px;font-weight:600;margin-bottom:8px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th{font-weight:500;color:var(--faint);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.tbl{border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:12px}
+.lnk2{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+
+/* ---------- 设置弹窗 ---------- */
+.backdrop{position:fixed;inset:0;background:oklch(20% 0.02 250/.35);display:none;align-items:center;justify-content:center;z-index:50}
+.backdrop.open{display:flex}
+.modal{width:900px;max-width:calc(100vw - 40px);height:620px;max-height:calc(100vh - 40px);background:var(--bg);border-radius:var(--r-xl);box-shadow:0 20px 60px oklch(0% 0 0/.2);display:flex;flex-direction:column;overflow:hidden}
+.modal-top{height:52px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px 0 20px;border-bottom:1px solid var(--line)}
+.modal-top .t{font-weight:600}
+.modal-top .path{color:var(--faint);font-size:12px;font-family:var(--mono)}
+.modal-body{flex:1;min-height:0;display:flex}
+.tabs{width:176px;flex:none;background:var(--side);border-right:1px solid var(--line);padding:10px 8px;display:flex;flex-direction:column;gap:2px}
+.tabs button{display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;border-radius:8px;text-align:left;color:var(--muted)}
+.tabs button:hover{background:var(--hover)}
+.tabs button.on{background:var(--bg);box-shadow:0 1px 2px oklch(0% 0 0/.06);font-weight:500;color:var(--ink)}
+.pane{flex:1;min-width:0;overflow-y:auto;padding:20px 24px}
+.pane[hidden]{display:none}
+.pane h2{font-size:15px;font-weight:600;margin-bottom:4px}
+.pane .desc{color:var(--muted);font-size:12.5px;margin-bottom:14px}
+.pane h4{font-size:12.5px;font-weight:600;margin:18px 0 8px;color:var(--muted)}
+.prov{border:1px solid var(--line);border-radius:var(--r-lg);padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.prov .n{font-weight:500}
+.prov .meta{color:var(--faint);font-size:12px}
+.sd{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+.sd.off{background:var(--line-strong)}
+.form{border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;background:var(--side);margin:-2px 0 12px;display:grid;gap:10px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.field .hint{font-size:11.5px;color:var(--faint);margin-top:4px}
+.input{height:32px;width:100%;border:1px solid var(--line);border-radius:8px;padding:0 10px;background:var(--bg);font:inherit;color:var(--ink)}
+.input::placeholder{color:var(--faint)}
+.form .foot{display:flex;justify-content:flex-end;gap:8px}
+.form .row2{display:flex;align-items:center;gap:8px}
+.form details summary{cursor:pointer;color:var(--muted);font-size:12.5px;list-style:none;display:flex;align-items:center;gap:4px}
+.form details summary .chev{transition:transform .15s}
+.form details[open] summary .chev{transform:rotate(90deg)}
+.form details .inner{display:grid;gap:10px;margin-top:10px}
+.mini{border:1px dashed var(--line-strong);border-radius:8px;padding:8px 10px;color:var(--faint);font-size:12px;text-align:center}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:12px 16px;align-items:center;font-size:13px}
+.kv .k{color:var(--muted)}
+.switch{width:32px;height:18px;border-radius:9px;background:var(--accent);position:relative;display:inline-block;flex:none}
+.switch::after{content:"";position:absolute;top:2px;left:16px;width:14px;height:14px;border-radius:50%;background:#fff}
+.switch.off{background:var(--line-strong)}
+.switch.off::after{left:2px}
+.radio-row{display:flex;gap:8px}
+.radio-row button{flex:1;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12.5px;text-align:left}
+.radio-row button.on{border-color:var(--accent);background:var(--accent-soft)}
+.radio-row .sub{display:block;color:var(--faint);font-size:11.5px}
+.list li{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);list-style:none;font-size:13px}
+.list li:last-child{border-bottom:0}
+
+/* ---------- 原型说明 ---------- */
+.legend{position:fixed;right:16px;bottom:16px;max-width:380px;background:var(--ink);color:#fff;border-radius:10px;padding:10px 30px 10px 12px;font-size:12px;line-height:1.6;z-index:60;box-shadow:0 8px 24px oklch(0% 0 0/.25)}
+.legend b{font-weight:600}
+.legend .x{position:absolute;top:6px;right:6px;color:#fff;opacity:.7;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px}
+.legend .x:hover{opacity:1;background:oklch(100% 0 0/.12)}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ================= 侧栏 ================= -->
+  <aside class="sidebar">
+    <div class="sb-inner">
+      <div class="sb-top">
+        <span class="wordmark">keel</span>
+        <button class="iconbtn" title="折叠侧栏（Ctrl+B）" onclick="toggleNav()"><span class="ic" data-i="panel"></span></button>
+      </div>
+      <button class="newbtn"><span class="ic" data-i="plus"></span>新对话</button>
+
+      <div class="sb-sec">
+        <span>项目</span>
+        <span class="spacer"></span>
+        <button class="iconbtn" title="搜索会话"><span class="ic" data-i="search"></span></button>
+        <button class="iconbtn" title="添加项目"><span class="ic" data-i="folderPlus"></span></button>
+      </div>
+
+      <div class="sb-list" id="sbList">
+        <!-- 项目：keel-code -->
+        <div class="proj open">
+          <button class="proj-head" onclick="toggleProj(this)">
+            <span class="ic chev" data-i="chev"></span>
+            <span class="ic" data-i="folder"></span>
+            <span>keel-code</span>
+            <span class="cnt">7</span>
+          </button>
+          <div class="proj-body">
+            <button class="row main" data-sid="keel-main"><span class="ic" data-i="anchor"></span><span class="t">主对话</span><span class="time">3分钟</span></button>
+            <div class="hair"></div>
+            <button class="row active" data-sid="keel-frontend"><span class="t">前端对话</span><span class="dot run" title="运行中"></span><span class="time">刚刚</span></button>
+            <button class="row" data-sid="keel-engine"><span class="t">引擎对话</span><span class="dot pend" title="有待审批"></span><span class="time">2小时</span></button>
+            <button class="row" data-sid="keel-req"><span class="t">需求讨论</span><span class="time">1天</span></button>
+            <button class="row" data-sid="keel-misc"><span class="t">杂活</span><span class="time">1天</span></button>
+            <button class="row more" onclick="expandMore(this)">展开其余 2 个对话</button>
+            <div class="more-list">
+              <button class="row" data-sid="keel-infra"><span class="t">Infra 对话</span><span class="time">3天</span></button>
+              <button class="row" data-sid="keel-bug"><span class="t">Bug：会话恢复丢消息</span><span class="time">4天</span></button>
+            </div>
+            <button class="row arch" onclick="toggleArch(this)"><span class="t">已归档 (2)</span><span class="ic" data-i="chevD"></span></button>
+            <div class="arch-list">
+              <button class="row archived" data-sid="keel-arch1"><span class="t">旧：设计系统搭建</span><span class="time">6天</span></button>
+              <button class="row archived" data-sid="keel-arch2"><span class="t">旧：M1 最小聊天</span><span class="time">6天</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 项目：demo-app -->
+        <div class="proj">
+          <button class="proj-head" onclick="toggleProj(this)">
+            <span class="ic chev" data-i="chev"></span>
+            <span class="ic" data-i="folder"></span>
+            <span>demo-app</span>
+            <span class="cnt">2</span>
+          </button>
+          <div class="proj-body">
+            <button class="row main" data-sid="demo-main"><span class="ic" data-i="anchor"></span><span class="t">主对话</span><span class="time">3天</span></button>
+            <div class="hair"></div>
+            <button class="row" data-sid="demo-pages"><span class="t">页面开发</span><span class="time">3天</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sb-bottom">
+        <button class="row" onclick="openBoard()"><span class="ic" data-i="grid"></span><span class="t">看板</span></button>
+        <button class="row" onclick="openSettings()"><span class="ic" data-i="gear"></span><span class="t">设置</span></button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= 主区 ================= -->
+  <main class="workarea">
+    <header class="topbar" id="topbar"></header>
+    <section class="content">
+
+      <!-- 前端对话：运行中，含 review 卡 / 验收卡 / 工具行 -->
+      <div class="view" id="view-chat-frontend">
+        <div class="timeline"><div class="col">
+          <div class="msg-user">批次 2 做完了，上报 review。</div>
+          <div class="tools">
+            <div class="tool"><span class="nm">keel_batch_report</span><code>批次 2 · 设置页探测与模型锁定</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
+          </div>
+          <div class="card">
+            <div class="hd">review · 批次 2 <span class="badge ok">通过</span><span class="meta">reviewer：claude-sonnet-5 · 树指纹 3f9c1a2</span></div>
+            <p>0 阻塞 · 2 建议</p>
+            <ul>
+              <li>Composer 的行数计算抽成纯函数并补单测</li>
+              <li>tokens.css 暗色变量写了两遍，可合并</li>
+            </ul>
+            <div class="actions"><button class="btn ghost sm" onclick="openSub(1)">查看 reviewer 轨迹</button></div>
+          </div>
+          <div class="card">
+            <div class="hd">验收 · 批次 2</div>
+            <p>设置页可探测端点、显示端点模型表；模型锁定四项可保存。</p>
+            <div class="actions"><button class="btn primary sm">通过</button><button class="btn outline sm">打回</button></div>
+          </div>
+
+          <div class="msg-user">把设置页改成弹窗、左侧 tab，provider 用卡片列表 + 展开表单。</div>
+          <div class="msg-ai">
+            <p>方案：</p>
+            <ul>
+              <li>弹窗 900×620，左栏 tab：模型 / 模型策略 / 项目 / MCP / 通用</li>
+              <li>provider 卡片只显示名称、状态、探测结果；点「编辑」才展开表单</li>
+              <li>主题开关放「通用」，token 已支持亮暗</li>
+            </ul>
+            <p>无异议我直接做。</p>
+          </div>
+          <div class="msg-user">做吧。</div>
+          <div class="tools">
+            <div class="tool"><span class="nm">read</span><code>packages/web/src/features/settings/SettingsView.tsx</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
+            <div class="tool"><span class="nm">edit</span><code>packages/web/src/design-system/components/dialog.tsx</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
+            <div class="tool"><span class="nm">write</span><code>packages/web/src/features/settings/SettingsDialog.tsx</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
+            <div class="tool"><span class="nm">bash</span><code>pnpm gate</code><span class="st run"><span class="dot run"></span>运行中</span></div>
+          </div>
+          <div class="msg-ai"><p>Dialog 加了 <code>size="lg"</code> 变体，设置拆成五个 tab 组件；正在跑门禁<span class="cursor"></span></p></div>
+        </div></div>
+        <div class="composer-wrap" data-composer="streaming"></div>
+      </div>
+
+      <!-- 引擎对话：末尾一张审批卡 -->
+      <div class="view" id="view-chat-engine" hidden>
+        <div class="timeline"><div class="col">
+          <div class="msg-user">会话恢复后 costUsd 丢了，查一下。</div>
+          <div class="msg-ai"><p>索引里 <code>costUsd</code> 是新字段，旧索引文件没有它；<code>rebuildIndex</code> 也没累加 assistant 的 usage。改 <code>index-store.ts</code>：加载时补 <code>Number(rec.costUsd ?? 0)</code>，重建时累加 <code>usage.cost.total</code>。</p></div>
+          <div class="tools">
+            <div class="tool"><span class="nm">read</span><code>packages/engine/src/session/index-store.ts</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
+            <div class="tool"><span class="nm">edit</span><code>packages/engine/src/session/index-store.ts</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
+          </div>
+          <div class="card">
+            <div class="hd">审批 · bash <span class="badge warn">等待</span><span class="meta">当前档位：允许编辑（bash 需确认）</span></div>
+            <code class="cmd">pnpm vitest run packages/engine</code>
+            <div class="actions"><button class="btn primary sm">允许</button><button class="btn outline sm">本对话总是允许</button><button class="btn ghost sm danger">拒绝</button></div>
+          </div>
+        </div></div>
+        <div class="composer-wrap" data-composer="idle"></div>
+      </div>
+
+      <!-- 主对话：调度视角 -->
+      <div class="view" id="view-chat-main" hidden>
+        <div class="timeline"><div class="col">
+          <div class="msg-user">前端要按新布局重做，先建个前端对话。</div>
+          <div class="tools">
+            <div class="tool"><span class="nm">keel_providers_probe</span><code>anthropic 128ms · deepseek 96ms · opencode-go 210ms</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
+            <div class="tool"><span class="nm">keel_conversation_create</span><code>前端对话 · deepseek/deepseek-v4 · 思考 高</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
+            <div class="tool"><span class="nm">keel_conversation_handoff</span><code>→ 前端对话</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
+          </div>
+          <div class="msg-ai"><p>已创建「前端对话」（职责：负责整个前端 <code>packages/web/**</code>），模型选了 deepseek-v4，需求已交接过去。你可以从左侧进入它继续聊。</p></div>
+        </div></div>
+        <div class="composer-wrap" data-composer="idle"></div>
+      </div>
+
+      <!-- 通用对话（需求讨论 / Infra / demo-app 等） -->
+      <div class="view" id="view-chat-generic" hidden>
+        <div class="timeline"><div class="col">
+          <div class="msg-user">继续上次的事。</div>
+          <div class="tools">
+            <div class="tool"><span class="nm">keel_conversation_list</span><code>名册 · 7 条</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
+            <div class="tool"><span class="nm">read</span><code>docs/review/_剩余问题.md</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
+          </div>
+          <div class="msg-ai"><p>基准 commit 没变，名册里的当前认知还有效。剩余问题里有 1 条属于我这边，先处理它。</p></div>
+        </div></div>
+        <div class="composer-wrap" data-composer="idle"></div>
+      </div>
+
+      <!-- 空对话：输入框居中 -->
+      <div class="view" id="view-empty" hidden>
+        <div class="empty">
+          <div class="wordmark">keel</div>
+          <div class="composer-wrap" data-composer="idle" style="padding:0;width:100%;max-width:800px"></div>
+        </div>
+      </div>
+
+      <!-- 子 agent 轨迹（只读） -->
+      <div class="view" id="view-subagent" hidden>
+        <div class="timeline"><div class="col">
+          <div class="msg-user">对批次 3 的改动做独立 review：只读 diff，不改代码，输出结构化结论（阻塞 / 建议 / 通过）。</div>
+          <div class="tools">
+            <div class="tool"><span class="nm">bash</span><code>git diff --stat 3f9c1a2..HEAD</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
+            <div class="tool"><span class="nm">read</span><code>packages/web/src/features/settings/SettingsDialog.tsx</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
+            <div class="tool"><span class="nm">read</span><code>packages/web/src/design-system/components/dialog.tsx</code><span class="st run"><span class="dot run"></span>运行中</span></div>
+          </div>
+          <div class="msg-ai"><p>正在核对 Dialog 的焦点管理与 Esc 关闭<span class="cursor"></span></p></div>
+        </div></div>
+        <div class="note">子 agent 轨迹只读；结束后结论以工具结果交回「<span id="subParent">前端对话</span>」。</div>
+      </div>
+
+      <!-- 看板 -->
+      <div class="view" id="view-board" hidden>
+        <div class="board"><div class="wrap">
+          <div>
+            <h3>里程碑</h3>
+            <div class="tbl"><table>
+              <thead><tr><th>里程碑</th><th>目标</th><th>状态</th><th>依赖</th><th>模块文档</th></tr></thead>
+              <tbody>
+                <tr><td>M0</td><td>项目初始化：monorepo 骨架、门禁、文档体系</td><td><span class="badge ok">已完成</span></td><td>无</td><td><span class="lnk2">测试工具</span></td></tr>
+                <tr><td>M1</td><td>引擎与最小工作台</td><td><span class="badge accent">进行中</span></td><td>M0</td><td><span class="lnk2">引擎</span> · <span class="lnk2">服务端</span> · <span class="lnk2">Web界面</span></td></tr>
+                <tr><td>M2</td><td>多对话与名册</td><td><span class="badge accent">进行中</span></td><td>M1</td><td><span class="lnk2">对话与名册</span></td></tr>
+                <tr><td>M3</td><td>闭环编排 + 强制层</td><td><span class="badge accent">进行中</span></td><td>M2</td><td><span class="lnk2">闭环编排器</span> · <span class="lnk2">强制层</span></td></tr>
+                <tr><td>M4</td><td>设计确认与看板</td><td><span class="badge accent">进行中</span></td><td>M3</td><td><span class="lnk2">Web界面</span> · <span class="lnk2">文档管理</span></td></tr>
+                <tr><td>M5</td><td>加固与扩展</td><td><span class="badge accent">进行中</span></td><td>M4</td><td><span class="lnk2">MCP</span> · <span class="lnk2">CLI</span></td></tr>
+                <tr><td>M6</td><td>分发</td><td><span class="badge">未开始</span></td><td>M5</td><td><span class="lnk2">CLI</span></td></tr>
+              </tbody>
+            </table></div>
+          </div>
+          <div class="grid3">
+            <div class="card">
+              <div class="hd">review</div>
+              <p>距上次通过 1 轮</p>
+              <ul><li>上次通过：3f9c1a2 · 批次 2 · 前端对话</li></ul>
+            </div>
+            <div class="card">
+              <div class="hd">待决策 <span class="badge warn">2</span></div>
+              <ul>
+                <li>reviewer 与实现者是否允许同一 provider</li>
+                <li>压缩阈值用 pi 默认还是按模型上下文比例</li>
+              </ul>
+            </div>
+            <div class="card">
+              <div class="hd">名册</div>
+              <table>
+                <thead><tr><th>对话</th><th>新鲜度</th><th>状态</th><th>费用</th></tr></thead>
+                <tbody>
+                  <tr><td>主对话</td><td><span class="badge ok">新鲜</span></td><td>空闲</td><td>$0.86</td></tr>
+                  <tr><td>前端对话</td><td><span class="badge ok">新鲜</span></td><td>忙碌</td><td>$1.27</td></tr>
+                  <tr><td>引擎对话</td><td><span class="badge warn">代码已变</span></td><td>阻塞</td><td>$0.64</td></tr>
+                  <tr><td>需求讨论</td><td><span class="badge warn">缓存过期</span></td><td>空闲</td><td>$0.31</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ================= 右侧上下文抽屉 ================= -->
+  <aside class="drawer" id="drawer">
+    <div class="hd"><span>上下文 · <span id="drawerTitle">前端对话</span></span><button class="iconbtn" onclick="toggleDrawer()"><span class="ic" data-i="x"></span></button></div>
+    <div class="badges"><span class="badge ok">新鲜</span><span class="badge accent">忙碌</span><span>$1.27</span><span>86 条</span></div>
+    <dl>
+      <div><dt>模型</dt><dd>deepseek/deepseek-v4 · 思考 高</dd></div>
+      <div><dt>职责</dt><dd>负责整个前端（packages/web/**），维护设计系统与页面</dd></div>
+      <div><dt>上下文领域</dt><dd>Web 工作台</dd></div>
+      <div><dt>代码范围</dt><dd class="mono">packages/web/**</dd></div>
+      <div><dt>基准 commit</dt><dd class="mono">4a04f50</dd></div>
+      <div><dt>当前认知</dt><dd>设计系统已就位；设置页仍是整页；输入框未卡片化；名册面板固定显示</dd></div>
+      <div><dt>最近工作</dt><dd>M4 文档编辑器、看板、流程卡片；M5 审批卡、项目配置区</dd></div>
+      <div><dt>关键产物</dt><dd class="mono"><ul><li>packages/web/src/design-system/tokens.css</li><li>packages/web/src/features/chat/ChatView.tsx</li></ul></dd></div>
+      <div><dt>未解决</dt><dd><ul><li>设置弹窗</li><li>模型选择挪到输入框</li></ul></dd></div>
+      <div><dt>适合接</dt><dd>前端页面 / 组件 / 视觉调整</dd></div>
+      <div><dt>不适合接</dt><dd>引擎与服务端逻辑</dd></div>
+      <div><dt>摘要更新</dt><dd>2026-08-17 10:32</dd></div>
+    </dl>
+  </aside>
+</div>
+
+<!-- ================= 设置弹窗 ================= -->
+<div class="backdrop" id="settings" onclick="if(event.target===this)closeSettings()">
+  <div class="modal">
+    <div class="modal-top">
+      <span class="t">设置</span>
+      <span class="spacer"></span>
+      <span class="path">~/.keel/settings.json</span>
+      <button class="btn ghost sm"><span class="ic" data-i="copy"></span>复制路径</button>
+      <button class="iconbtn" onclick="closeSettings()"><span class="ic" data-i="x"></span></button>
+    </div>
+    <div class="modal-body">
+      <nav class="tabs">
+        <button class="on" onclick="setTab(this,'models')"><span class="ic" data-i="box"></span>模型</button>
+        <button onclick="setTab(this,'policy')"><span class="ic" data-i="shield"></span>模型策略</button>
+        <button onclick="setTab(this,'project')"><span class="ic" data-i="folder"></span>项目</button>
+        <button onclick="setTab(this,'mcp')"><span class="ic" data-i="plug"></span>MCP</button>
+        <button onclick="setTab(this,'general')"><span class="ic" data-i="gear"></span>通用</button>
+      </nav>
+
+      <!-- 模型 -->
+      <div class="pane" id="pane-models">
+        <h2>模型</h2>
+        <p class="desc">填入 API key 即可使用该端点的模型。</p>
+        <div class="prov"><span class="sd"></span><span class="n">Anthropic</span><span class="meta">auth.json · 可达 128ms · 端点列出 6 个模型</span><span class="spacer"></span><button class="btn outline sm">探测</button><button class="btn outline sm">编辑</button><button class="btn ghost sm">移除</button></div>
+        <div class="prov"><span class="sd"></span><span class="n">DeepSeek</span><span class="meta">环境变量 DEEPSEEK_API_KEY · 可达 96ms</span><span class="spacer"></span><button class="btn outline sm">探测</button><button class="btn outline sm">编辑</button></div>
+        <div class="form">
+          <div class="field"><label>提供方</label><input class="input" value="deepseek" readonly></div>
+          <div class="field"><label>API 密钥</label><input class="input" type="password" value="sk-000000000000000000000000000000000000"></div>
+          <details open>
+            <summary><span class="ic chev" data-i="chev"></span>自定义设置</summary>
+            <div class="inner">
+              <div class="field"><label>API 地址</label><input class="input" placeholder="提供方默认"></div>
+              <div class="field">
+                <label>模型目录</label>
+                <div class="row2" style="margin-bottom:6px"><span class="hint" style="margin:0">目录 3 个，端点实时列出 5 个</span><span class="spacer"></span><button class="btn ghost sm">获取可用模型</button></div>
+                <div class="tbl"><table>
+                  <thead><tr><th>模型</th><th>上下文</th><th>输入 / 输出（$ 每百万）</th><th>端点</th></tr></thead>
+                  <tbody>
+                    <tr><td><code>deepseek-v4</code></td><td>256k</td><td>0.28 / 0.42</td><td>有</td></tr>
+                    <tr><td><code>deepseek-v4-flash</code></td><td>128k</td><td>0.07 / 0.28</td><td>有</td></tr>
+                    <tr><td><code>deepseek-v4-preview</code></td><td>?</td><td>未知</td><td>有（目录外）</td></tr>
+                  </tbody>
+                </table></div>
+                <div style="margin-top:8px"><button class="btn outline sm"><span class="ic" data-i="plus"></span>添加模型</button></div>
+              </div>
+            </div>
+          </details>
+          <div class="foot"><button class="btn outline">取消</button><button class="btn primary">保存</button></div>
+        </div>
+        <div class="prov"><span class="sd off"></span><span class="n">OpenAI</span><span class="meta">未配置</span><span class="spacer"></span><button class="btn outline sm">编辑</button></div>
+        <div class="prov"><span class="sd"></span><span class="n">zai-coding-cn</span><span class="badge">自定义</span><span class="meta">OpenAI 兼容 · 可达 210ms</span><span class="spacer"></span><button class="btn outline sm">探测</button><button class="btn outline sm">编辑</button><button class="btn ghost sm danger">删除</button></div>
+        <div style="margin-top:6px"><button class="btn outline sm"><span class="ic" data-i="plus"></span>添加自定义端点</button><button class="btn ghost sm">显示全部 23 个提供方</button></div>
+      </div>
+
+      <!-- 模型策略 -->
+      <div class="pane" id="pane-policy" hidden>
+        <h2>模型策略</h2>
+        <p class="desc">留空 = 由 AI 按任务性质挑模型（成本优先）；锁定后该类对话强制用你指定的模型。</p>
+        <div class="kv">
+          <span class="k">主对话</span><select class="input"><option>不锁定（AI 自选）</option><option>anthropic / claude-sonnet-5</option></select>
+          <span class="k">普通对话</span><select class="input"><option>不锁定（AI 自选）</option></select>
+          <span class="k">子 agent</span><select class="input"><option selected>deepseek / deepseek-v4-flash</option><option>不锁定（AI 自选）</option></select>
+          <span class="k">reviewer</span><select class="input"><option selected>anthropic / claude-sonnet-5</option><option>不锁定（AI 自选）</option></select>
+        </div>
+      </div>
+
+      <!-- 项目 -->
+      <div class="pane" id="pane-project" hidden>
+        <h2>项目</h2>
+        <p class="desc">写回该项目的 <code>.keel/config.json</code>。</p>
+        <div class="kv" style="margin-bottom:16px"><span class="k">项目</span><select class="input" style="max-width:260px"><option>keel-code</option><option>demo-app</option></select></div>
+        <h4>审批档位</h4>
+        <div class="radio-row">
+          <button>询问<span class="sub">每次工具调用都确认</span></button>
+          <button class="on">允许编辑<span class="sub">读写编辑放行，bash 等确认</span></button>
+          <button>全放行<span class="sub">不再询问（逃生舱）</span></button>
+        </div>
+        <h4>验收节奏</h4>
+        <div class="radio-row">
+          <button>每批次</button><button class="on">每里程碑</button><button>最终</button>
+        </div>
+        <h4>流程与守卫</h4>
+        <div class="kv">
+          <span class="k">review 闭环</span><span class="switch"></span>
+          <span class="k">提交门禁</span><span class="switch"></span>
+          <span class="k">前端守卫</span><span class="switch"></span>
+          <span class="k">写入即 lint</span><span class="switch"></span>
+          <span class="k">项目门禁（pnpm gate）</span><span class="switch"></span>
+          <span class="k">提交后文档修剪</span><span class="switch off"></span>
+        </div>
+      </div>
+
+      <!-- MCP -->
+      <div class="pane" id="pane-mcp" hidden>
+        <h2>MCP 服务器</h2>
+        <p class="desc">配置在 <code>~/.keel/mcp.json</code> 或项目 <code>.keel/mcp.json</code>（mcpServers 格式），改后重启 keel serve 生效。</p>
+        <ul class="list">
+          <li><span class="sd"></span><span>codegraph</span><span class="badge ok">已连接 · 9 个工具</span><span class="spacer"></span><span class="meta" style="color:var(--faint);font-size:12px">全局</span></li>
+          <li><span class="sd"></span><span>playwright</span><span class="badge ok">已连接 · 31 个工具</span><span class="spacer"></span><span style="color:var(--faint);font-size:12px">全局</span></li>
+          <li><span class="sd off"></span><span>agentmemory</span><span class="badge danger">未连接：ECONNREFUSED</span><span class="spacer"></span><span style="color:var(--faint);font-size:12px">项目 keel-code</span></li>
+        </ul>
+      </div>
+
+      <!-- 通用 -->
+      <div class="pane" id="pane-general" hidden>
+        <h2>通用</h2>
+        <p class="desc">&nbsp;</p>
+        <h4>主题</h4>
+        <div class="radio-row" style="max-width:360px"><button class="on">跟随系统</button><button>亮</button><button>暗</button></div>
+        <h4>侧栏</h4>
+        <div class="kv"><span class="k">启动时展开全部项目</span><span class="switch off"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="legend" id="legend">
+  <b>原型说明</b><br>
+  点项目名折叠 / 展开；点会话切换（「杂活」= 空对话，「引擎对话」= 有审批卡）；头部「子 agent」下拉可进轨迹；右上图标开关上下文抽屉；左下「设置」开弹窗；左上图标折叠侧栏。
+  <button class="x" onclick="document.getElementById('legend').remove()"><span class="ic" data-i="x"></span></button>
+</div>
+
+<script>
+// ---------- 图标 ----------
+const svg = (inner, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24">${inner}</svg>`;
+const I = {
+  panel: svg('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/>'),
+  panelR: svg('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/>'),
+  plus: svg('<path d="M12 5v14M5 12h14"/>'),
+  search: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'),
+  folder: svg('<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>'),
+  folderPlus: svg('<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M12 10v6M9 13h6"/>'),
+  chev: svg('<path d="m9 6 6 6-6 6"/>', 'sm'),
+  chevD: svg('<path d="m6 9 6 6 6-6"/>', 'sm'),
+  anchor: svg('<circle cx="12" cy="5" r="3"/><path d="M12 22V8M5 12H2a10 10 0 0 0 20 0h-3"/>'),
+  grid: svg('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>'),
+  gear: svg('<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>'),
+  bot: svg('<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/>'),
+  up: svg('<path d="M12 19V5M5 12l7-7 7 7"/>'),
+  stop: svg('<rect x="6" y="6" width="12" height="12" rx="2"/>', 'sm'),
+  x: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
+  clip: svg('<path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>'),
+  shield: svg('<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>'),
+  box: svg('<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/>'),
+  check: svg('<path d="m5 12 5 5L20 7"/>', 'sm'),
+  back: svg('<path d="m15 18-6-6 6-6"/>'),
+  refresh: svg('<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>'),
+  copy: svg('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
+  plug: svg('<path d="M12 22v-5M9 8V2M15 8V2M18 8v5a6 6 0 0 1-12 0V8Z"/>'),
+};
+document.querySelectorAll('[data-i]').forEach(el => { el.innerHTML = I[el.dataset.i]; });
+
+// ---------- 数据 ----------
+const SESSIONS = {
+  'keel-main':     { proj: 'keel-code', title: '主对话', role: '全局调度：探测端点选模型、创建 / 交接对话、验收', kind: 'main', view: 'chat-main', subs: [{ n: '探索：pi 压缩策略', s: 'done', m: 'deepseek-v4-flash', c: '$0.03' }] },
+  'keel-frontend': { proj: 'keel-code', title: '前端对话', role: '负责整个前端（packages/web/**）', kind: 'conversation', view: 'chat-frontend', subs: [
+    { n: 'reviewer · 批次 3', s: 'run', m: 'claude-sonnet-5', c: '$0.05' },
+    { n: 'reviewer · 批次 2', s: 'done', m: 'claude-sonnet-5', c: '$0.18' },
+    { n: '探索：CodeMirror 主题写法', s: 'done', m: 'deepseek-v4-flash', c: '$0.02' },
+  ] },
+  'keel-engine':   { proj: 'keel-code', title: '引擎对话', role: 'pi 内核封装与会话持久（packages/engine/**）', kind: 'conversation', view: 'chat-engine', subs: [{ n: 'reviewer · 批次 5', s: 'done', m: 'claude-sonnet-5', c: '$0.21' }] },
+  'keel-req':      { proj: 'keel-code', title: '需求讨论', role: '产品需求与设计文档（docs/设计/**）', kind: 'conversation', view: 'chat-generic', subs: [] },
+  'keel-misc':     { proj: 'keel-code', title: '杂活', role: '零散任务', kind: 'conversation', view: 'empty', subs: [] },
+  'keel-infra':    { proj: 'keel-code', title: 'Infra 对话', role: '构建、发布、门禁脚本', kind: 'conversation', view: 'chat-generic', subs: [] },
+  'keel-bug':      { proj: 'keel-code', title: 'Bug：会话恢复丢消息', role: '按问题创建', kind: 'conversation', view: 'chat-generic', subs: [] },
+  'keel-arch1':    { proj: 'keel-code', title: '旧：设计系统搭建', role: '已归档', kind: 'conversation', view: 'chat-generic', subs: [] },
+  'keel-arch2':    { proj: 'keel-code', title: '旧：M1 最小聊天', role: '已归档', kind: 'conversation', view: 'chat-generic', subs: [] },
+  'demo-main':     { proj: 'demo-app', title: '主对话', role: '全局调度', kind: 'main', view: 'chat-generic', subs: [] },
+  'demo-pages':    { proj: 'demo-app', title: '页面开发', role: '负责 src/pages/**', kind: 'conversation', view: 'chat-generic', subs: [] },
+};
+const MAIN_OF = { 'keel-code': 'keel-main', 'demo-app': 'demo-main' };
+const SUB_STATUS = { run: ['运行中', 'accent'], done: ['完成', 'ok'], fail: ['失败', 'danger'] };
+
+const state = { sid: 'keel-frontend', view: 'chat-frontend', sub: null, drawer: true };
+
+// ---------- 输入框（复用） ----------
+function composerHTML(streaming) {
+  return `
+  <div class="composer">
+    <textarea rows="2" placeholder="${streaming ? '运行中——现在发送会排在本轮之后' : '描述你要做的事'}"></textarea>
+    <div class="composer-bar">
+      <button class="iconbtn" title="附件">${I.clip}</button>
+      <div class="pop-wrap">
+        <button class="chip" onclick="togglePop(this)">${I.shield}允许编辑${I.chevD}</button>
+        <div class="pop up left">
+          <button class="item"><span class="n">询问<span class="sub">每次工具调用都确认</span></span></button>
+          <button class="item"><span class="ck">${I.check}</span><span class="n">允许编辑<span class="sub">读写编辑放行，bash 等确认</span></span></button>
+          <button class="item"><span class="n">全放行<span class="sub">不再询问（逃生舱）</span></span></button>
+        </div>
+      </div>
+      <span class="spacer"></span>
+      <div class="pop-wrap">
+        <button class="chip" onclick="togglePop(this)">${I.box}deepseek-v4 · 思考 高${I.chevD}</button>
+        <div class="pop up">
+          <div class="grp">anthropic</div>
+          <button class="item"><span class="n">claude-sonnet-5</span><span class="m">$3 / $15</span></button>
+          <button class="item"><span class="n">claude-opus-5</span><span class="m">$15 / $75</span></button>
+          <div class="grp">deepseek</div>
+          <button class="item"><span class="ck">${I.check}</span><span class="n">deepseek-v4</span><span class="m">$0.28 / $0.42</span></button>
+          <button class="item"><span class="n">deepseek-v4-flash</span><span class="m">$0.07 / $0.28</span></button>
+          <hr>
+          <div class="seg"><span class="lb">思考</span><button>关</button><button>低</button><button>中</button><button class="on">高</button><button>最高</button></div>
+        </div>
+      </div>
+      <button class="send ${streaming ? 'stop' : ''}" title="${streaming ? '停止' : '发送'}">${streaming ? I.stop : I.up}</button>
+    </div>
+  </div>`;
+}
+document.querySelectorAll('[data-composer]').forEach(el => { el.innerHTML = composerHTML(el.dataset.composer === 'streaming'); });
+
+// ---------- 头部 ----------
+function renderHeader() {
+  const s = SESSIONS[state.sid];
+  let h = `<button class="iconbtn" id="expandNav" title="展开侧栏" onclick="toggleNav()">${I.panel}</button>`;
+  const drawerBtn = `<button class="iconbtn ${state.drawer ? 'on' : ''}" title="上下文" onclick="toggleDrawer()">${I.panelR}</button>`;
+
+  if (state.view === 'board') {
+    h += `<div class="crumb"><span class="pl">${s.proj}</span><span class="sep">›</span><span class="title">看板</span></div><span class="spacer"></span><button class="btn ghost sm">${I.refresh}刷新</button>`;
+  } else if (state.sub !== null) {
+    const sub = s.subs[state.sub];
+    const [lbl, tone] = SUB_STATUS[sub.s];
+    h += `<button class="iconbtn" title="返回" onclick="selectSession('${state.sid}')">${I.back}</button>
+      <div class="crumb"><span class="pl">${s.proj}</span><span class="sep">›</span><button class="lnk" onclick="selectSession('${state.sid}')">${s.title}</button><span class="sep">›</span><span class="title">${sub.n}</span></div>
+      <span class="badge ${tone}">${lbl}</span><span class="role">${sub.m} · ${sub.c}</span>
+      <span class="spacer"></span>${drawerBtn}`;
+  } else {
+    const running = s.subs.filter(x => x.s === 'run').length;
+    const subChip = s.subs.length ? `<div class="pop-wrap">
+        <button class="chip" onclick="togglePop(this)">${I.bot}子 agent ${s.subs.length}${running ? ` <span class="dot run"></span>${running} 运行中` : ''}${I.chevD}</button>
+        <div class="pop">${s.subs.map((x, i) => {
+          const [lbl, tone] = SUB_STATUS[x.s];
+          return `<button class="item" onclick="openSub(${i})"><span class="n">${x.n}<span class="sub">${x.m} · ${x.c}</span></span><span class="badge ${tone}">${lbl}</span></button>`;
+        }).join('')}</div>
+      </div>` : '';
+    h += `<div class="crumb"><span class="pl">${s.proj}</span><span class="sep">›</span><button class="title">${s.title}${I.chevD}</button></div>
+      <span class="role">${s.role}</span><span class="spacer"></span>${subChip}${drawerBtn}
+      ${s.kind !== 'main' ? `<button class="btn ghost" onclick="selectSession('${MAIN_OF[s.proj]}')">回主对话</button>` : ''}`;
+  }
+  document.getElementById('topbar').innerHTML = h;
+}
+
+// ---------- 视图切换 ----------
+function showView(v) {
+  document.querySelectorAll('.view').forEach(el => { el.hidden = el.id !== 'view-' + v; });
+  document.getElementById('drawer').hidden = !state.drawer || v === 'board';
+}
+function selectSession(sid) {
+  state.sid = sid; state.sub = null; state.view = SESSIONS[sid].view;
+  document.querySelectorAll('.row[data-sid]').forEach(r => r.classList.toggle('active', r.dataset.sid === sid));
+  document.getElementById('drawerTitle').textContent = SESSIONS[sid].title;
+  closePops(); renderHeader(); showView(state.view);
+}
+function openSub(i) {
+  state.sub = i; state.view = 'subagent';
+  document.getElementById('subParent').textContent = SESSIONS[state.sid].title;
+  closePops(); renderHeader(); showView('subagent');
+}
+function openBoard() {
+  state.sub = null; state.view = 'board';
+  document.querySelectorAll('.row[data-sid]').forEach(r => r.classList.remove('active'));
+  closePops(); renderHeader(); showView('board');
+}
+document.getElementById('sbList').addEventListener('click', e => {
+  const r = e.target.closest('[data-sid]'); if (r) selectSession(r.dataset.sid);
+});
+function toggleProj(btn) { btn.parentElement.classList.toggle('open'); }
+function expandMore(btn) { btn.style.display = 'none'; btn.nextElementSibling.classList.add('open'); }
+function toggleArch(btn) { btn.nextElementSibling.classList.toggle('open'); }
+function toggleNav() { document.getElementById('app').classList.toggle('nav-collapsed'); }
+function toggleDrawer() { state.drawer = !state.drawer; renderHeader(); showView(state.view); }
+document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') { e.preventDefault(); toggleNav(); } if (e.key === 'Escape') { closePops(); closeSettings(); } });
+
+// ---------- 弹出菜单 ----------
+function closePops() { document.querySelectorAll('.pop.open').forEach(p => p.classList.remove('open')); }
+function togglePop(btn) {
+  const pop = btn.parentElement.querySelector('.pop');
+  const wasOpen = pop.classList.contains('open');
+  closePops(); if (!wasOpen) pop.classList.add('open');
+}
+document.addEventListener('click', e => { if (!e.target.closest('.pop-wrap')) closePops(); });
+
+// ---------- 设置弹窗 ----------
+function openSettings() { document.getElementById('settings').classList.add('open'); }
+function closeSettings() { document.getElementById('settings').classList.remove('open'); }
+function setTab(btn, id) {
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b === btn));
+  document.querySelectorAll('.pane').forEach(p => { p.hidden = p.id !== 'pane-' + id; });
+}
+
+renderHeader(); showView(state.view);
+</script>
+</body>
+</html>
