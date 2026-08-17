@@ -6,6 +6,7 @@ export type {
   KeelSettings,
   ModelInfo,
   ModelRef,
+  ModelTier,
   ProviderInfo,
   ProviderProbe,
   SessionKind,
@@ -15,7 +16,7 @@ export type {
   ThinkingLevel,
   UsageInfo,
 } from "@keel-code/engine";
-export type { Freshness, RosterEntry, RosterRecord } from "@keel-code/roster";
+export type { Freshness, RosterEntry, RosterRecord, TierView } from "@keel-code/roster";
 
 export interface SessionListItem {
   meta: import("@keel-code/engine").SessionMeta;
@@ -49,8 +50,17 @@ export interface CreateSessionInput {
   title: string;
   role?: string;
   model?: import("@keel-code/engine").ModelRef;
+  /** 没给 model 时按能力档落实 */
+  tier?: import("@keel-code/engine").ModelTier;
   thinkingLevel?: import("@keel-code/engine").ThinkingLevel;
   initialMessage?: string;
+}
+
+/** GET /api/models/tiers */
+export interface TiersOverview {
+  tiers: import("@keel-code/roster").TierView[];
+  kindTiers: Record<string, import("@keel-code/engine").ModelTier>;
+  probes: Record<string, { reachable: boolean; at: number; latencyMs?: number; error?: string }>;
 }
 
 export interface DocListItem {

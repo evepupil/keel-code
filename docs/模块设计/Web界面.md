@@ -24,7 +24,8 @@ packages/web/src/
     design-doc/     设计文档批注编辑器（CodeMirror 6 markdown、划选批注、diff 预览、冻结）
     board/          看板（roadmap 表格投影 + review credit + 待决策数 + 名册）
     roster/         名册面板（新鲜度、模型、费用）
-    settings/       端点与密钥、模型档位锁定、验收节奏、逃生舱开关
+    settings/       端点与密钥、模型档次（轻量 / 标准 / 旗舰）与锁定、项目配置、MCP
+    models/         具体模型下拉与档次常量（跨 feature 共用）
   design-system/  token（色板 / 字体配对 / 间距 / 圆角 / 阴影）+ 基础组件——先于任何业务页面
 ```
 
@@ -42,9 +43,9 @@ packages/web/src/
 - `design-system/components/`：`Button`（cva 变体）、`Input / Textarea / Select / Badge / Card / Spinner / Field / EmptyState`、`Dialog`（原生 `<dialog>`）。
 - `api/client.ts`：令牌引导（`?token=` → sessionStorage → 抹地址栏）、REST 封装；`api/ws.ts`：自动重连 + 断线重放订阅。
 - `store/apply-event.ts`：事件 → 本地消息状态的纯函数（流式 start / update / end、工具执行中、idle 校准标记）；`store/app-store.ts`：`useSyncExternalStore` 小仓库（会话列表 / 当前会话 / 视图 / 模型 / 通知）。
-- `features/sessions/Sidebar.tsx`：项目名 + 连接状态、新建对话、分组列表（主对话 / 对话 / 子 agent 挂父 / 已归档）；`NewSessionDialog.tsx`：标题 / 职责 / 模型（按 provider 分组，含单价）/ 首条消息。
+- `features/sessions/Sidebar.tsx`：项目名 + 连接状态、新建对话、分组列表（主对话 / 对话 / 子 agent 挂父 / 已归档）；`NewSessionDialog.tsx`：标题 / 职责 / 模型——先选能力档（三个 chip 显示会落到的模型、单价、回退提示，默认取普通对话默认档），需要钉死再「指定具体模型…」/ 首条消息。`features/models/ModelSelect.tsx`：按 provider 分组的具体模型下拉（provider::id）；`features/models/tiers.ts`：档次常量与单价格式。
 - `features/chat/ChatView.tsx`：头部（标题 + 职责 + 模型切换）、消息流（自动贴底）、工具执行中提示、`Composer`（Enter 发送 / Shift+Enter 换行 / 运行中排队 / 中止）；`MessageItem.tsx`：用户气泡、assistant markdown（react-markdown + gfm）、思考折叠、`ToolCallCard`（参数 / 结果 / 失败态）。
-- `features/settings/SettingsView.tsx`：provider 列表（常用优先，可展开全部）、粘贴 key 保存 / 移除、探测（可达 / 时延 / 端点模型表）、模型锁定（main / conversation / subagent / reviewer）。
+- `features/settings/SettingsView.tsx`：provider 列表（常用优先，可展开全部）、粘贴 key 保存 / 移除、探测（可达 / 时延 / 端点模型表）。`ModelTiers.tsx`：「模型档次」——三档落点卡（模型 / 单价 / 上下文 / 缺档回退）、每个已配置 provider 一张表（每模型：分段按钮 轻量|标准|旗舰、★ 首选、启用）、各类对话默认档下拉、「锁定具体模型…」收起（main / conversation / subagent / reviewer）；每次改动 PATCH `/settings` 后刷新 `/models/tiers`。
 - `features/docs/DocEditor.tsx`：CodeMirror 6 markdown 编辑器（行号 / 历史 / 自动换行 / token 主题），头部：冻结与批注数徽标、批注（在光标行后插块）、保存、「让 AI 读改动」（发提示回来源对话并切回聊天）。
 - `features/board/BoardView.tsx`：roadmap 表（状态徽标、模块文档链接直接打开编辑器）、review 记录、待决策（已解决按钮）、名册表。
 - `features/chat/ProcessCards.tsx`：`DesignConfirmCard`（打开批注）、`DesignFreezeCard`、`AcceptanceCard`（review 通过后：通过 → 发「验收通过」；打回 → 预填输入框）。
@@ -71,6 +72,7 @@ packages/web/src/
 | 2026-08-17 | M0 骨架与设计 |
 | 2026-08-17 | M1：设计 token + 基础组件、最小聊天、设置页，目验通过 |
 | 2026-08-17 | M2：名册面板、模型锁定、回主对话 |
+| 2026-08-17 | M7（一）：设置页模型档次、新建对话按档选模型 |
 | 2026-08-17 | M3：review 卡片与时间线合并 |
 | 2026-08-17 | M4：文档编辑器、看板、设计确认 / 冻结 / 验收卡、侧栏看板入口 |
 | 2026-08-17 | M5：审批卡、项目配置区 |

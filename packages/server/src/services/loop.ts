@@ -18,6 +18,7 @@ export function setupLoop(engine: Engine, roster: RosterServices): LoopServices 
     engine,
     gateway: roster.gateway,
     runner: roster.runner,
+    selector: roster.selector,
     reviewStateFile,
     options: {
       getModelLocks: () => engine.settings.get().modelLocks ?? {},

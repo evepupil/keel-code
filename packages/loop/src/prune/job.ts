@@ -67,6 +67,7 @@ export function registerDocPruneJob(deps: DocPruneDeps): Unsubscribe {
         mode: "clean",
         title: `文档修剪：${commit}`,
         task: prunePrompt({ commit, stat, message }),
+        tier: engine.settings.get().kindTiers?.docPrune ?? "light",
       })
       .then((r) => {
         parent.appendEntry(DOC_PRUNE_ENTRY, {

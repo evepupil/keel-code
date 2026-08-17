@@ -1,72 +1,40 @@
-import { useMemo, useState } from "react";
-import type { ModelInfo } from "../../api/types";
+import { useEffect, useState } from "react";
+import { api } from "../../api/client";
+import type { ModelTier, TiersOverview } from "../../api/types";
 import { Button } from "../../design-system/components/button";
 import { Dialog } from "../../design-system/components/dialog";
-import { Field, Input, Select, Textarea } from "../../design-system/components/primitives";
+import { Field, Input, Textarea } from "../../design-system/components/primitives";
+import { cn } from "../../lib/cn";
 import { appStore, useAppState } from "../../store/app-store";
-
-/** 模型下拉的取值格式：provider::id */
-export function modelKey(m: { provider: string; id: string }): string {
-  return `${m.provider}::${m.id}`;
-}
-export function parseModelKey(key: string): { provider: string; id: string } | undefined {
-  const i = key.indexOf("::");
-  if (i <= 0) return undefined;
-  return { provider: key.slice(0, i), id: key.slice(i + 2) };
-}
-
-export function ModelSelect({
-  value,
-  onChange,
-  models,
-  allowEmpty,
-  emptyLabel = "默认（第一个可用模型）",
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  models: ModelInfo[];
-  allowEmpty?: boolean;
-  emptyLabel?: string;
-}) {
-  const grouped = useMemo(() => {
-    const map = new Map<string, ModelInfo[]>();
-    for (const m of models) {
-      const list = map.get(m.provider) ?? [];
-      list.push(m);
-      map.set(m.provider, list);
-    }
-    return [...map.entries()];
-  }, [models]);
-  return (
-    <Select value={value} onChange={(e) => onChange(e.target.value)}>
-      {allowEmpty ? <option value="">{emptyLabel}</option> : null}
-      {grouped.map(([provider, list]) => (
-        <optgroup key={provider} label={provider}>
-          {list.map((m) => (
-            <option key={modelKey(m)} value={modelKey(m)}>
-              {m.name}
-              {m.cost.input || m.cost.output ? `　$${m.cost.input}/${m.cost.output} 每百万` : ""}
-            </option>
-          ))}
-        </optgroup>
-      ))}
-    </Select>
-  );
-}
+import { ModelSelect, parseModelKey } from "../models/ModelSelect";
+import { priceOf, TIER_LABEL, TIERS } from "../models/tiers";
 
 export function NewSessionDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const models = useAppState((s) => s.models);
   const [title, setTitle] = useState("");
   const [role, setRole] = useState("");
+  const [tier, setTier] = useState<ModelTier | null>(null);
   const [model, setModel] = useState("");
+  const [pinModel, setPinModel] = useState(false);
+  const [overview, setOverview] = useState<TiersOverview | null>(null);
   const [initial, setInitial] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!open) return;
+    api
+      .modelTiers()
+      .then(setOverview)
+      .catch(() => setOverview(null));
+  }, [open]);
+
   const reset = () => {
     setTitle("");
     setRole("");
+    setTier(null);
     setModel("");
+    setPinModel(false);
     setInitial("");
     setError(null);
   };
@@ -79,12 +47,12 @@ export function NewSessionDialog({ open, onClose }: { open: boolean; onClose: ()
     setBusy(true);
     setError(null);
     try {
-      const ref = parseModelKey(model);
+      const ref = pinModel ? parseModelKey(model) : undefined;
       await appStore.createSession({
         kind: "conversation",
         title: title.trim(),
         ...(role.trim() ? { role: role.trim() } : {}),
-        ...(ref ? { model: ref } : {}),
+        ...(ref ? { model: ref } : tier ? { tier } : {}),
         ...(initial.trim() ? { initialMessage: initial.trim() } : {}),
       });
       reset();
@@ -95,6 +63,9 @@ export function NewSessionDialog({ open, onClose }: { open: boolean; onClose: ()
       setBusy(false);
     }
   };
+
+  const defaultTier = overview?.kindTiers.conversation ?? "standard";
+  const activeTier = tier ?? defaultTier;
 
   return (
     <Dialog open={open} onClose={onClose} title="新建对话">
@@ -116,7 +87,60 @@ export function NewSessionDialog({ open, onClose }: { open: boolean; onClose: ()
           />
         </Field>
         <Field label="模型">
-          <ModelSelect value={model} onChange={setModel} models={models} allowEmpty />
+          <div className="space-y-2">
+            <div className={cn("grid grid-cols-3 gap-2", pinModel && "opacity-50")}>
+              {TIERS.map((t) => {
+                const view = overview?.tiers.find((v) => v.tier === t);
+                const on = !pinModel && activeTier === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    disabled={pinModel}
+                    onClick={() => setTier(t)}
+                    className={cn(
+                      "cursor-pointer rounded-md border px-2 py-1.5 text-left transition-colors",
+                      on
+                        ? "border-accent bg-accent-soft"
+                        : "border-line hover:border-line-strong hover:bg-panel-2",
+                    )}
+                  >
+                    <div className="flex items-center gap-1 text-xs font-medium">
+                      {TIER_LABEL[t]}
+                      {t === defaultTier ? (
+                        <span className="text-[10px] font-normal text-ink-faint">默认</span>
+                      ) : null}
+                    </div>
+                    <div className="truncate font-mono text-[11px] text-ink-muted">
+                      {view?.resolved ? view.resolved.id : overview ? "无可用" : "…"}
+                    </div>
+                    {view?.resolved ? (
+                      <div className="text-[10px] text-ink-faint">
+                        {priceOf(view.resolved)}
+                        {view.fallbackTo ? ` · 回退自${TIER_LABEL[view.fallbackTo]}档` : ""}
+                      </div>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+            {pinModel ? (
+              <div className="flex items-center gap-2">
+                <ModelSelect value={model} onChange={setModel} models={models} allowEmpty />
+                <Button variant="ghost" size="sm" onClick={() => setPinModel(false)}>
+                  改按档次
+                </Button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="cursor-pointer text-xs text-ink-muted hover:text-ink"
+                onClick={() => setPinModel(true)}
+              >
+                指定具体模型…
+              </button>
+            )}
+          </div>
         </Field>
         <Field label="第一条消息（可选）">
           <Textarea value={initial} onChange={(e) => setInitial(e.target.value)} rows={2} />

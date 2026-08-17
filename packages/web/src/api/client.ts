@@ -13,6 +13,7 @@ import type {
   SessionDetail,
   SessionListItem,
   SessionMeta,
+  TiersOverview,
 } from "./types";
 
 const TOKEN_KEY = "keel.token";
@@ -80,6 +81,7 @@ export const api = {
   removeKey: (provider: string) =>
     request<{ ok: true }>(`/providers/${encodeURIComponent(provider)}/key`, { method: "DELETE" }),
   models: (available = true) => request<ModelInfo[]>(`/models${available ? "?available=1" : ""}`),
+  modelTiers: () => request<TiersOverview>("/models/tiers"),
   sessions: (ensureMain = false) =>
     request<SessionListItem[]>(`/sessions${ensureMain ? "?ensureMain=1" : ""}`),
   createSession: (input: CreateSessionInput) =>

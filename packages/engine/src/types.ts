@@ -362,9 +362,20 @@ export type BeforeAgentStartHook = (
 
 // ---------- 设置 ----------
 
+/** 能力档：轻量 / 标准 / 旗舰（与推理档无关） */
+export type ModelTier = "light" | "standard" | "flagship";
+
 export interface KeelSettings {
-  /** 用户锁定的模型：键为对话类别（main / conversation / subagent / reviewer） */
+  /** 用户锁定的模型：键为对话类别（main / conversation / subagent / reviewer / docPrune） */
   modelLocks?: Record<string, ModelRef>;
+  /** 每个模型的能力档，键为 provider/id；缺省 standard */
+  modelTiers?: Record<string, ModelTier>;
+  /** 停用的模型（provider/id） */
+  modelDisabled?: string[];
+  /** 各档首选模型（provider/id） */
+  preferred?: Partial<Record<ModelTier, string>>;
+  /** 各类对话默认档：main / conversation / subagent / reviewer / docPrune */
+  kindTiers?: Record<string, ModelTier>;
   /** 提示缓存 TTL（毫秒），按 provider */
   cacheTtlMs?: Record<string, number>;
   /** 验收节奏 */

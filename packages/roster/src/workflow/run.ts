@@ -2,7 +2,7 @@
  * 声明式 workflow：一组子 agent 步骤 + 依赖关系，控制流由代码决定（拓扑并行，带并发上限）。
  * 每步是一次 clean / fork 子 agent；依赖步骤的结论会拼进本步任务。结果汇总交回发起对话。
  */
-import type { EngineSession, ModelRef } from "@keel-code/engine";
+import type { EngineSession, ModelRef, ModelTier } from "@keel-code/engine";
 import { Type } from "@keel-code/engine";
 import type { RunSubagentResult, SubagentRunner } from "../subagents/run.js";
 
@@ -11,6 +11,7 @@ export interface WorkflowStep {
   task: string;
   mode?: "clean" | "fork";
   model?: ModelRef;
+  tier?: ModelTier;
   readOnly?: boolean;
   dependsOn?: string[];
 }
@@ -103,6 +104,7 @@ export async function runWorkflow(input: {
         title: `workflow 步骤 ${s.id}`,
         task: `${s.task}${context}`,
         ...(s.model ? { model: s.model } : {}),
+        ...(s.tier ? { tier: s.tier } : {}),
         ...(s.readOnly ? { tools: READ_ONLY_TOOLS } : {}),
         ...(input.signal ? { signal: input.signal } : {}),
       })
@@ -178,6 +180,11 @@ export const WORKFLOW_PARAMS = Type.Object({
       id: Type.String({ description: "步骤 id（唯一）" }),
       task: Type.String({ description: "任务描述" }),
       mode: Type.Optional(Type.Union([Type.Literal("clean"), Type.Literal("fork")])),
+      tier: Type.Optional(
+        Type.Union([Type.Literal("light"), Type.Literal("standard"), Type.Literal("flagship")], {
+          description: "能力档（只说档次，不点名模型）",
+        }),
+      ),
       model: Type.Optional(Type.Object({ provider: Type.String(), id: Type.String() })),
       readOnly: Type.Optional(Type.Boolean({ description: "只给只读工具" })),
       dependsOn: Type.Optional(

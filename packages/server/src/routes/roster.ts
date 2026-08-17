@@ -1,9 +1,21 @@
 import type { Engine, KeelSettings } from "@keel-code/engine";
-import type { RosterStore } from "@keel-code/roster";
+import type { ModelSelector, RosterStore } from "@keel-code/roster";
+import { DEFAULT_KIND_TIERS } from "@keel-code/roster";
 import { Hono } from "hono";
 
-export function rosterRoutes(store: RosterStore, engine: Engine): Hono {
+export function rosterRoutes(store: RosterStore, engine: Engine, selector?: ModelSelector): Hono {
   const r = new Hono();
+
+  /** 能力档总览：每档落到谁、候选、回退；各类默认档；探测缓存 */
+  r.get("/models/tiers", async (c) => {
+    if (!selector) return c.json({ tiers: [], kindTiers: DEFAULT_KIND_TIERS, probes: {} });
+    const settings = engine.settings.get();
+    return c.json({
+      tiers: await selector.overview(),
+      kindTiers: { ...DEFAULT_KIND_TIERS, ...(settings.kindTiers ?? {}) },
+      probes: selector.probeSnapshot(),
+    });
+  });
 
   r.get("/roster", async (c) => c.json(await store.entries()));
 

@@ -4,6 +4,8 @@
 import type { Engine } from "@keel-code/engine";
 import {
   type ConversationGateway,
+  kindTier,
+  ModelSelector,
   RosterStore,
   registerRosterTools,
   SubagentRunner,
@@ -14,6 +16,7 @@ export interface RosterServices {
   store: RosterStore;
   runner: SubagentRunner;
   gateway: ConversationGateway;
+  selector: ModelSelector;
   dispose(): void;
 }
 
@@ -31,7 +34,13 @@ export function setupRoster(engine: Engine, hub: SessionHub): RosterServices {
     },
   };
   const store = new RosterStore({ cwd: engine.cwd, gateway, options });
-  const runner = new SubagentRunner({ engine, gateway });
-  const off = registerRosterTools({ engine, gateway, store, runner, options });
-  return { store, runner, gateway, dispose: off };
+  const selector = new ModelSelector(engine);
+  const runner = new SubagentRunner({ engine, gateway, selector });
+  const off = registerRosterTools({ engine, gateway, store, runner, selector, options });
+  // 主对话 / 普通对话没指定模型时按类别默认档落实（可达优先）
+  hub.setModelResolver(async (kind, tier) => {
+    const r = await selector.resolve({ tier: tier ?? kindTier(engine.settings.get(), kind) });
+    return r ? { provider: r.model.provider, id: r.model.id } : undefined;
+  });
+  return { store, runner, gateway, selector, dispose: off };
 }

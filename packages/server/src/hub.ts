@@ -7,6 +7,7 @@ import type {
   Engine,
   EngineEvent,
   EngineSession,
+  ModelTier,
   SessionKind,
   SessionRecord,
 } from "@keel-code/engine";
@@ -24,6 +25,8 @@ export interface CreateConversationInput {
   title: string;
   role?: string;
   model?: { provider: string; id: string };
+  /** 没给 model 时按能力档落实（light / standard / flagship）；缺省按类别默认档 */
+  tier?: ModelTier;
   thinkingLevel?: CreateSessionOptions["thinkingLevel"];
   parentId?: string;
   initialMessage?: string;
@@ -34,6 +37,12 @@ export interface CreateConversationInput {
 }
 
 export class SessionHub {
+  private modelResolver:
+    | ((
+        kind: SessionKind,
+        tier?: ModelTier,
+      ) => Promise<{ provider: string; id: string } | undefined>)
+    | null = null;
   private readonly listeners = new Set<HubListener>();
   private readonly changedListeners = new Set<SessionsChangedListener>();
   private readonly attached = new WeakSet<EngineSession>();
@@ -52,6 +61,16 @@ export class SessionHub {
     return () => {
       this.changedListeners.delete(listener);
     };
+  }
+
+  /** 没指定模型时按类别默认档落实（由名册服务注入）。 */
+  setModelResolver(
+    fn: (
+      kind: SessionKind,
+      tier?: ModelTier,
+    ) => Promise<{ provider: string; id: string } | undefined>,
+  ): void {
+    this.modelResolver = fn;
   }
 
   private emitChanged(): void {
@@ -98,6 +117,10 @@ export class SessionHub {
     if (input.tools) options.tools = input.tools;
     if (input.role) options.role = input.role;
     if (input.model) options.model = input.model;
+    else if (this.modelResolver && input.kind !== "subagent") {
+      const resolved = await this.modelResolver(input.kind, input.tier);
+      if (resolved) options.model = resolved;
+    }
     if (input.thinkingLevel) options.thinkingLevel = input.thinkingLevel;
     if (input.parentId) options.parentId = input.parentId;
     if (input.extra) options.extra = input.extra;

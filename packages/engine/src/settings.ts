@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import type { KeelSettings } from "./types.js";
+import type { KeelSettings, ModelTier } from "./types.js";
 
 /** ~/.keel/settings.json：keel 自身设置（不含凭据）。缺失或损坏按空处理。 */
 export function readSettings(file: string): KeelSettings {
@@ -31,5 +31,30 @@ export function mergeSettings(base: KeelSettings, patch: Partial<KeelSettings>):
   if (patch.cacheTtlMs !== undefined)
     out.cacheTtlMs = { ...(base.cacheTtlMs ?? {}), ...patch.cacheTtlMs };
   if (patch.acceptance !== undefined) out.acceptance = patch.acceptance;
+  if (patch.modelTiers !== undefined) {
+    out.modelTiers = { ...(base.modelTiers ?? {}) };
+    for (const [k, v] of Object.entries(patch.modelTiers)) {
+      if (v === null || v === undefined) delete out.modelTiers[k];
+      else out.modelTiers[k] = v;
+    }
+  }
+  if (patch.modelDisabled !== undefined) out.modelDisabled = [...new Set(patch.modelDisabled)];
+  if (patch.preferred !== undefined) {
+    out.preferred = { ...(base.preferred ?? {}) };
+    for (const [k, v] of Object.entries(patch.preferred) as [
+      ModelTier,
+      string | null | undefined,
+    ][]) {
+      if (v === null || v === undefined) delete out.preferred[k];
+      else out.preferred[k] = v;
+    }
+  }
+  if (patch.kindTiers !== undefined) {
+    out.kindTiers = { ...(base.kindTiers ?? {}) };
+    for (const [k, v] of Object.entries(patch.kindTiers)) {
+      if (v === null || v === undefined) delete out.kindTiers[k];
+      else out.kindTiers[k] = v;
+    }
+  }
   return out;
 }

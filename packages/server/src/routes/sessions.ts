@@ -1,15 +1,17 @@
-import type { Engine, SessionKind, ThinkingLevel } from "@keel-code/engine";
+import type { Engine, ModelTier, SessionKind, ThinkingLevel } from "@keel-code/engine";
 import { Hono } from "hono";
 import type { SessionHub } from "../hub.js";
 
 const KINDS: SessionKind[] = ["main", "conversation", "subagent"];
 const LEVELS: ThinkingLevel[] = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
+const TIERS: ModelTier[] = ["light", "standard", "flagship"];
 
 interface CreateBody {
   kind?: string;
   title?: string;
   role?: string;
   model?: { provider?: string; id?: string };
+  tier?: string;
   thinkingLevel?: string;
   parentId?: string;
   initialMessage?: string;
@@ -53,11 +55,13 @@ export function sessionRoutes(hub: SessionHub, engine: Engine): Hono {
       : undefined;
     try {
       const model = parseModel(body.model);
+      const tier = TIERS.includes(body.tier as ModelTier) ? (body.tier as ModelTier) : undefined;
       const session = await hub.create({
         kind,
         title: body.title,
         ...(body.role ? { role: body.role } : {}),
         ...(model ? { model } : {}),
+        ...(tier ? { tier } : {}),
         ...(level ? { thinkingLevel: level } : {}),
         ...(body.parentId ? { parentId: body.parentId } : {}),
         ...(body.initialMessage ? { initialMessage: body.initialMessage } : {}),

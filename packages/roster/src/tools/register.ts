@@ -4,8 +4,16 @@
  * - 主对话 + 普通对话：keel_conversation_list / keel_roster_update / keel_agent_run
  * - 普通对话独有：keel_report_to_main
  */
-import type { Engine, HookScope, ModelRef, ThinkingLevel, Unsubscribe } from "@keel-code/engine";
+import type {
+  Engine,
+  HookScope,
+  ModelRef,
+  ModelTier,
+  ThinkingLevel,
+  Unsubscribe,
+} from "@keel-code/engine";
 import { Type } from "@keel-code/engine";
+import { kindTier, type ModelSelector, renderTierDigest } from "../models/select.js";
 import { applyLock, renderProbeDigest } from "../models/tiers.js";
 import { renderRosterDigest } from "../registry/digest.js";
 import type { RosterStore } from "../registry/store.js";
@@ -23,8 +31,18 @@ export interface RegisterRosterToolsDeps {
   gateway: ConversationGateway;
   store: RosterStore;
   runner: SubagentRunner;
+  /** 能力档选择器；不给则退回旧的按模型表挑选 */
+  selector?: ModelSelector;
   options?: RosterOptions;
 }
+
+const TIER_SCHEMA = Type.Union(
+  [Type.Literal("light"), Type.Literal("standard"), Type.Literal("flagship")],
+  {
+    description:
+      "能力档：light 轻量 / standard 标准 / flagship 旗舰。你只说档次，系统落到具体模型；不传按该类对话默认档",
+  },
+);
 
 const THINKING = ["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
 const READ_ONLY_TOOLS = ["read", "grep", "find", "ls"];
@@ -39,7 +57,23 @@ function asModelRef(v: unknown): ModelRef | undefined {
 }
 
 export function registerRosterTools(deps: RegisterRosterToolsDeps): Unsubscribe {
-  const { engine, gateway, store, runner } = deps;
+  const { engine, gateway, store, runner, selector } = deps;
+
+  /** 对话模型落实：显式 model > 锁定 > 按 tier / 类别默认档（可达优先）> 系统默认 */
+  const resolveConversationModel = async (
+    requested: ModelRef | undefined,
+    tier: ModelTier | undefined,
+  ): Promise<{ model?: ModelRef; note?: string }> => {
+    const locks = deps.options?.getModelLocks?.();
+    const lock = applyLock("conversation", requested, locks);
+    if (lock.model && (requested || locks?.conversation)) {
+      return { model: lock.model, ...(lock.note ? { note: lock.note } : {}) };
+    }
+    if (!selector) return {};
+    const t = tier ?? kindTier(engine.settings.get(), "conversation");
+    const r = await selector.resolve({ tier: t });
+    return r ? { model: { provider: r.model.provider, id: r.model.id }, note: r.note } : {};
+  };
   const offs: Unsubscribe[] = [];
   const mainOnly: HookScope = { kinds: ["main"] };
   const talkers: HookScope = { kinds: ["main", "conversation"] };
@@ -61,7 +95,18 @@ export function registerRosterTools(deps: RegisterRosterToolsDeps): Unsubscribe 
         execute: async (params) => {
           const p = params as { providers?: string[] };
           const probes = await engine.models.probe(p.providers ? { providers: p.providers } : {});
-          return renderProbeDigest(probes);
+          if (!selector) return renderProbeDigest(probes);
+          const views = await selector.overview();
+          const kt = engine.settings.get().kindTiers ?? {};
+          const reach = probes
+            .map(
+              (x) =>
+                `${x.provider}：${x.reachable ? `可达 ${x.latencyMs ?? "?"}ms` : `不可达${x.error ? `（${x.error}）` : ""}`}`,
+            )
+            .join("；");
+          return [renderTierDigest(views, kt), "", `端点：${reach || "（无已配置端点）"}`].join(
+            String.fromCharCode(10),
+          );
         },
       },
       mainOnly,
@@ -80,6 +125,7 @@ export function registerRosterTools(deps: RegisterRosterToolsDeps): Unsubscribe 
           role: Type.String({
             description: "职责段：一句话职责 + 上下文领域 + 代码范围 + 当前要做的事",
           }),
+          tier: Type.Optional(TIER_SCHEMA),
           model: Type.Optional(ModelRefSchema),
           thinkingLevel: Type.Optional(
             Type.Union(THINKING.map((t) => Type.Literal(t)) as never, { description: "推理档" }),
@@ -96,17 +142,14 @@ export function registerRosterTools(deps: RegisterRosterToolsDeps): Unsubscribe 
           const p = params as {
             title: string;
             role: string;
+            tier?: ModelTier;
             model?: unknown;
             thinkingLevel?: ThinkingLevel;
             contextScope?: string;
             codeRange?: string[];
             initialMessage?: string;
           };
-          const lock = applyLock(
-            "conversation",
-            asModelRef(p.model),
-            deps.options?.getModelLocks?.(),
-          );
+          const lock = await resolveConversationModel(asModelRef(p.model), p.tier);
           const session = await gateway.create({
             kind: "conversation",
             title: p.title,
@@ -322,6 +365,7 @@ export function registerRosterTools(deps: RegisterRosterToolsDeps): Unsubscribe 
             mode: "clean" | "fork";
             task: string;
             title?: string;
+            tier?: ModelTier;
             model?: unknown;
             readOnly?: boolean;
           };
@@ -333,6 +377,7 @@ export function registerRosterTools(deps: RegisterRosterToolsDeps): Unsubscribe 
             task: p.task,
             ...(p.title ? { title: p.title } : {}),
             ...(lock.model ? { model: lock.model } : {}),
+            ...(p.tier ? { tier: p.tier } : {}),
             ...(p.readOnly ? { tools: READ_ONLY_TOOLS } : {}),
             ...(ctx.signal ? { signal: ctx.signal } : {}),
           });
@@ -357,6 +402,7 @@ export function registerRosterTools(deps: RegisterRosterToolsDeps): Unsubscribe 
         parameters: WORKFLOW_PARAMS,
         execute: async (params, ctx) => {
           const p = params as { steps: WorkflowStep[]; maxParallel?: number };
+          // 步骤没给 model 也没给 tier 时，按子 agent 默认档由 runner 落实
           const parent = await gateway.get(ctx.sessionId);
           const locks = deps.options?.getModelLocks?.();
           const steps = p.steps.map((s) => ({

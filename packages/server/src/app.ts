@@ -54,7 +54,7 @@ export function buildApp(deps: AppDeps): Hono {
   );
   api.route("/", providerRoutes(deps.engine));
   api.route("/", sessionRoutes(deps.hub, deps.engine));
-  api.route("/", rosterRoutes(deps.roster.store, deps.engine));
+  api.route("/", rosterRoutes(deps.roster.store, deps.engine, deps.roster.selector));
   api.route("/", docRoutes(deps.engine));
   api.route("/", boardRoutes(deps.engine, deps.roster.store, deps.loop.reviewStateFile));
   api.route("/", approvalRoutes(deps.approvals));

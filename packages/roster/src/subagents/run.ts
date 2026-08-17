@@ -5,9 +5,17 @@
  * 结果交回发起它的对话；轨迹持久化并挂在父对话下（kind = subagent, parentId = 父）。
  */
 import { randomUUID } from "node:crypto";
-import type { Engine, EngineSession, ModelRef, ThinkingLevel, TSchema } from "@keel-code/engine";
+import type {
+  Engine,
+  EngineSession,
+  ModelRef,
+  ModelTier,
+  ThinkingLevel,
+  TSchema,
+} from "@keel-code/engine";
 import { Type } from "@keel-code/engine";
 import { assembleSystemPrompt } from "@keel-code/methodology";
+import type { ModelSelector } from "../models/select.js";
 import type { ConversationGateway } from "../types.js";
 
 export interface RunSubagentInput {
@@ -15,7 +23,11 @@ export interface RunSubagentInput {
   mode: "clean" | "fork";
   task: string;
   title?: string;
+  /** 显式模型；不给则按 tier 落实（再不给按子 agent 默认档） */
   model?: ModelRef;
+  tier?: ModelTier;
+  /** 落实时尽量避开的模型（reviewer 避开实现者） */
+  avoid?: ModelRef;
   thinkingLevel?: ThinkingLevel;
   /** 给了 schema：子 agent 必须调用 submit_result 提交结构化结果 */
   outputSchema?: TSchema;
@@ -34,11 +46,15 @@ export interface RunSubagentResult {
   structured?: unknown;
   costUsd: number;
   error?: string;
+  /** 模型落实说明（档次 → 模型 / 回退） */
+  modelNote?: string;
 }
 
 export interface SubagentRunnerDeps {
   engine: Engine;
   gateway: ConversationGateway;
+  /** 能力档选择器；不给则不按档落实（沿用父对话模型） */
+  selector?: ModelSelector;
   maxConcurrent?: number;
   defaultTimeoutMs?: number;
 }
@@ -87,6 +103,21 @@ export class SubagentRunner {
 
       const title = input.title ?? `子 agent（${input.mode}）：${input.task.slice(0, 24)}`;
       const extra = { [RUN_ID_KEY]: runId, subagentMode: input.mode };
+      // 模型：显式 > 按档落实（selector）> 继承父对话
+      let model = input.model;
+      let modelNote: string | undefined;
+      if (!model && this.deps.selector) {
+        const settings = this.deps.engine.settings.get();
+        const tier = input.tier ?? settings.kindTiers?.subagent ?? "standard";
+        const r = await this.deps.selector.resolve({
+          tier,
+          ...(input.avoid ? { avoid: input.avoid } : {}),
+        });
+        if (r) {
+          model = { provider: r.model.provider, id: r.model.id };
+          modelNote = r.note;
+        }
+      }
       let session: EngineSession;
       if (input.mode === "fork") {
         session = await this.deps.engine.sessions.fork(input.parent.id, {
@@ -94,7 +125,7 @@ export class SubagentRunner {
           title,
           parentId: input.parent.id,
           extra,
-          ...(input.model ? { model: input.model } : {}),
+          ...(model ? { model } : {}),
           ...(input.thinkingLevel ? { thinkingLevel: input.thinkingLevel } : {}),
           ...(input.tools ? { tools: input.tools } : {}),
         });
@@ -110,7 +141,7 @@ export class SubagentRunner {
               ? "你是一次性子 agent。完成任务后必须调用 submit_result 提交结构化结果，然后停止。"
               : "你是一次性子 agent。完成任务后直接给出结论文本，然后停止。",
           }),
-          ...(input.model ? { model: input.model } : {}),
+          ...(model ? { model } : {}),
           ...(input.thinkingLevel ? { thinkingLevel: input.thinkingLevel } : {}),
           ...(input.tools ? { tools: input.tools } : {}),
         });
@@ -154,6 +185,7 @@ export class SubagentRunner {
       const result: RunSubagentResult = { sessionId: session.id, finished, text, costUsd };
       if (structured !== undefined) result.structured = structured;
       if (error) result.error = error;
+      if (modelNote) result.modelNote = modelNote;
       return result;
     } finally {
       unregister?.();
@@ -169,10 +201,16 @@ export const AGENT_RUN_PARAMS = Type.Object({
   }),
   task: Type.String({ description: "任务描述：目标、边界、交付物、验收标准" }),
   title: Type.Optional(Type.String({ description: "子 agent 标题（默认取任务前 24 字）" })),
+  tier: Type.Optional(
+    Type.Union([Type.Literal("light"), Type.Literal("standard"), Type.Literal("flagship")], {
+      description:
+        "能力档：light 轻量 / standard 标准 / flagship 旗舰；不传按子 agent 默认档。你只说档次，不点名模型",
+    }),
+  ),
   model: Type.Optional(
     Type.Object(
       { provider: Type.String(), id: Type.String() },
-      { description: "指定模型（先用 keel_providers_probe 看可用模型）；缺省继承当前对话" },
+      { description: "仅在用户明确指定了具体模型时使用；平时用 tier" },
     ),
   ),
   readOnly: Type.Optional(Type.Boolean({ description: "只给只读工具（read/grep/find/ls）" })),

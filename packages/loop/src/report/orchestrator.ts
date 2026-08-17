@@ -9,7 +9,12 @@
  */
 import type { Engine, HookScope, ModelRef, Unsubscribe } from "@keel-code/engine";
 import { Type } from "@keel-code/engine";
-import type { ConversationGateway, ModelLocks, SubagentRunner } from "@keel-code/roster";
+import type {
+  ConversationGateway,
+  ModelLocks,
+  ModelSelector,
+  SubagentRunner,
+} from "@keel-code/roster";
 import { acceptanceBrief } from "../acceptance/brief.js";
 import { extractCommand, isGitCommit, SHELL_TOOL_RE } from "../credit/commit-detect.js";
 import { readReviewState, writeReviewState } from "../credit/state.js";
@@ -26,6 +31,8 @@ export interface LoopDeps {
   engine: Engine;
   gateway: ConversationGateway;
   runner: SubagentRunner;
+  /** 能力档选择器：reviewer 取旗舰且尽量避开实现者；不给则退回按模型表挑 */
+  selector?: ModelSelector;
   /** review 状态文件路径（keel 用户目录下） */
   reviewStateFile: string;
   options?: {
@@ -101,11 +108,7 @@ export function registerBatchReportTool(deps: LoopDeps): Unsubscribe {
         };
 
         // 1. reviewer：干净上下文 + 结构化结论
-        const chosen = await pickReviewerModel(
-          engine,
-          parent.meta.model,
-          deps.options?.getModelLocks?.(),
-        );
+        const chosen = await chooseReviewer(deps, parent.meta.model);
         const previous = state.roundsSincePass > 0 ? lastFixFindings(parent) : undefined;
         const run = await runner.run({
           parent,
@@ -235,4 +238,19 @@ function lastFixFindings(parent: {
     if (d?.action === "fix" && d.findings?.length) return formatFindings(d.findings);
   }
   return undefined;
+}
+
+/** reviewer 模型：锁定 > 能力档（默认旗舰，避开实现者）> 旧的按模型表挑。 */
+async function chooseReviewer(
+  deps: LoopDeps,
+  implementer: ModelRef,
+): Promise<{ model: ModelRef; note: string }> {
+  const locks = deps.options?.getModelLocks?.();
+  if (locks?.reviewer) return { model: locks.reviewer, note: "用户锁定" };
+  if (deps.selector) {
+    const tier = deps.engine.settings.get().kindTiers?.reviewer ?? "flagship";
+    const r = await deps.selector.resolve({ tier, avoid: implementer });
+    if (r) return { model: { provider: r.model.provider, id: r.model.id }, note: r.note };
+  }
+  return pickReviewerModel(deps.engine, implementer, locks);
 }

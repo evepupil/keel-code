@@ -5,6 +5,20 @@
  * 子 agent 运行器（clean / fork）、名册记录 + 新鲜度 + `.keel/agents/` 投影。
  */
 export const PACKAGE_NAME = "@keel-code/roster" as const;
+export {
+  DEFAULT_KIND_TIERS,
+  isDisabled,
+  kindTier,
+  ModelSelector,
+  type ModelSelectorOptions,
+  modelKeyOf,
+  type ResolveResult,
+  renderTierDigest,
+  TIER_LABEL,
+  TIERS,
+  type TierView,
+  tierOfModel,
+} from "./models/select.js";
 export { applyLock, type ModelTier, renderProbeDigest, tierOf } from "./models/tiers.js";
 export { renderRosterDigest } from "./registry/digest.js";
 export { computeFreshness, formatIdle } from "./registry/freshness.js";
