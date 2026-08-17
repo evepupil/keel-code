@@ -10,6 +10,7 @@ import { Button } from "../../../design-system/components/button";
 import { Badge, Field, Input, Select } from "../../../design-system/components/primitives";
 import { cn } from "../../../lib/cn";
 import { appStore } from "../../../store/app-store";
+import { syncRemoteModels } from "./model-catalog";
 
 export type FormMode = "add-builtin" | "add-custom" | "edit";
 
@@ -205,18 +206,15 @@ function CatalogEditor({
         ...(values.api ? { api: values.api } : {}),
         ...(values.apiKey.trim() ? { apiKey: values.apiKey.trim() } : {}),
       });
-      const have = new Map(values.models.map((m) => [m.id, m]));
-      const next = [...values.models];
-      let added = 0;
-      for (const r of remote.models) {
-        if (have.has(r.id)) continue;
-        next.push({ id: r.id, name: r.id, enabled: false });
-        added += 1;
-      }
-      onChange({ ...values, models: next });
+      const synced = syncRemoteModels(values.models, remote.models);
+      onChange({ ...values, models: synced.models });
+      const changes = [
+        synced.added ? `拉到 ${synced.added} 个` : "",
+        synced.removed ? `清理 ${synced.removed} 个过期模型` : "",
+      ].filter(Boolean);
       appStore.notify(
         "info",
-        added ? `从 ${remote.url} 拉到 ${added} 个，勾上要用的` : `已是最新（${remote.url}）`,
+        changes.length ? `${changes.join("，")}（${remote.url}）` : "没有变化",
       );
     } catch (e) {
       appStore.notify("error", e instanceof Error ? e.message : String(e));
