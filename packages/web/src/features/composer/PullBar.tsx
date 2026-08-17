@@ -1,7 +1,7 @@
 /**
  * 输入框上方：看板 / 子 agent / 任务。同一时间只开一个上拉。
  */
-import { Bot, LayoutGrid, ListChecks } from "lucide-react";
+import { Bot, CheckCircle2, Circle, LayoutGrid, ListChecks, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../api/client";
 import type { BoardData, SessionListItem } from "../../api/types";
@@ -9,8 +9,10 @@ import { Chip } from "../../design-system/components/chip";
 import { StatusDot } from "../../design-system/components/dot";
 import { Popover, PopoverContent, PopoverTrigger } from "../../design-system/components/popover";
 import { Badge } from "../../design-system/components/primitives";
+import { cn } from "../../lib/cn";
 import { formatTokens } from "../../lib/format";
 import { appStore, useAppState } from "../../store/app-store";
+import { type TaskItem, taskSummary, tasksOf } from "./tasks";
 
 const TONE: Record<string, "ok" | "accent" | "warn" | "danger" | "neutral"> = {
   已完成: "ok",
@@ -22,11 +24,14 @@ const TONE: Record<string, "ok" | "accent" | "warn" | "danger" | "neutral"> = {
 export function PullBar({ sessionId }: { sessionId: string }) {
   const sessions = useAppState((s) => s.sessions);
   const workspaceId = useAppState((s) => s.workspaceId);
+  const entries = useAppState((s) => s.chats[sessionId]?.entries);
   const subs = useMemo(
     () => sessions.filter((s) => s.meta.kind === "subagent" && s.meta.parentId === sessionId),
     [sessions, sessionId],
   );
   const running = subs.filter((s) => s.live?.isStreaming).length;
+  const tasks = useMemo(() => tasksOf(entries ?? []), [entries]);
+  const taskSt = taskSummary(tasks) ?? undefined;
   const [open, setOpen] = useState<"board" | "subs" | "tasks" | null>(null);
   const [board, setBoard] = useState<BoardData | null>(null);
 
@@ -95,6 +100,7 @@ export function PullBar({ sessionId }: { sessionId: string }) {
             variant="soft"
             icon={<ListChecks />}
             label="任务"
+            status={taskSt}
             caret="up"
             active={open === "tasks"}
           />
@@ -102,7 +108,7 @@ export function PullBar({ sessionId }: { sessionId: string }) {
         width="w-[28rem]"
         align="end"
       >
-        <div className="px-2.5 py-6 text-center text-[12.5px] text-ink-faint">还没有任务</div>
+        <TaskPanel tasks={tasks} />
       </Pull>
     </div>
   );
@@ -183,6 +189,39 @@ function BoardPanel({ data }: { data: BoardData | null }) {
           ))}
         </>
       ) : null}
+    </div>
+  );
+}
+
+function TaskPanel({ tasks }: { tasks: TaskItem[] }) {
+  if (tasks.length === 0)
+    return <div className="px-2.5 py-6 text-center text-[12.5px] text-ink-faint">还没有任务</div>;
+  return (
+    <div>
+      <div className="flex items-center gap-2 px-2.5 pt-2 pb-1.5">
+        <ListChecks className="h-4 w-4" />
+        <span className="font-medium">任务</span>
+        <span className="font-normal text-ink-muted">{taskSummary(tasks)}</span>
+      </div>
+      {tasks.map((t, i) => (
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: 清单按序展示
+          key={`${i}-${t.text}`}
+          className={cn(
+            "flex items-center gap-2.5 px-2.5 py-1.5 text-[13px]",
+            t.status === "todo" && "text-ink-muted",
+          )}
+        >
+          {t.status === "done" ? (
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-ok" />
+          ) : t.status === "doing" ? (
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-accent" />
+          ) : (
+            <Circle className="h-4 w-4 shrink-0 text-line-strong" />
+          )}
+          <span className="min-w-0 flex-1">{t.text}</span>
+        </div>
+      ))}
     </div>
   );
 }

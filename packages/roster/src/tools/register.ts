@@ -425,6 +425,43 @@ export function registerRosterTools(deps: RegisterRosterToolsDeps): Unsubscribe 
     ),
   );
 
+  // ---------- 任务清单（主对话 + 普通对话） ----------
+  offs.push(
+    engine.tools.register(
+      {
+        name: "keel_tasks_update",
+        label: "更新任务清单",
+        description:
+          "维护你这条对话的任务清单（整表覆盖）。多步任务开工前先列全，每开始 / 完成一项就更新状态；用户在界面输入框上方实时可见。",
+        parameters: Type.Object({
+          tasks: Type.Array(
+            Type.Object({
+              text: Type.String({ description: "任务一句话" }),
+              status: Type.Union(
+                [Type.Literal("todo"), Type.Literal("doing"), Type.Literal("done")],
+                { description: "todo 未开始 / doing 进行中 / done 完成" },
+              ),
+            }),
+            { description: "完整任务列表（覆盖式，每次给全量）" },
+          ),
+        }),
+        execute: async (params, ctx) => {
+          const p = params as {
+            tasks: { text: string; status: "todo" | "doing" | "done" }[];
+          };
+          const session = await gateway.get(ctx.sessionId);
+          session.appendEntry("keel/tasks", {
+            tasks: p.tasks,
+            at: new Date().toISOString(),
+          });
+          const done = p.tasks.filter((t) => t.status === "done").length;
+          return `任务清单已更新：${done}/${p.tasks.length} 完成。`;
+        },
+      },
+      talkers,
+    ),
+  );
+
   // ---------- 普通对话独有 ----------
   offs.push(
     engine.tools.register(

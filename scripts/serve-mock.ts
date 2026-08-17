@@ -34,6 +34,24 @@ mock.onRequest((req) => {
     .find((m) => (m as { role?: string }).role === "user") as { content?: unknown } | undefined;
   const text = textOf(lastUser?.content);
   const isReviewer = sys.includes("你是一次性子 agent") && text.includes("独立 reviewer");
+  if (!isReviewer && text.includes("列任务")) {
+    if (last?.role === "tool") return { text: "清单已列好，我按这个顺序做。" };
+    return {
+      toolCalls: [
+        {
+          name: "keel_tasks_update",
+          arguments: {
+            tasks: [
+              { text: "梳理任务面板数据来源", status: "done" },
+              { text: "实现 keel_tasks_update 工具", status: "done" },
+              { text: "方法论加任务清单规则", status: "doing" },
+              { text: "补单测并提交", status: "todo" },
+            ],
+          },
+        },
+      ],
+    };
+  }
   if (isReviewer) {
     if (last?.role === "tool") return { text: "结论已提交。" };
     reviewRounds += 1;
