@@ -205,12 +205,16 @@ function CatalogEditor({
         ...(values.api ? { api: values.api } : {}),
         ...(values.apiKey.trim() ? { apiKey: values.apiKey.trim() } : {}),
       });
-      const have = new Set(values.models.map((m) => m.id));
-      const extra: CatalogModel[] = remote
-        .filter((m) => !have.has(m.id))
-        .map((m) => ({ id: m.id, name: m.id }));
-      onChange({ ...values, models: [...values.models, ...extra] });
-      appStore.notify("info", extra.length ? `写入 ${extra.length} 个模型` : "没有新模型");
+      const have = new Map(values.models.map((m) => [m.id, m]));
+      const next = [...values.models];
+      let added = 0;
+      for (const r of remote) {
+        if (have.has(r.id)) continue;
+        next.push({ id: r.id, name: r.id, enabled: false });
+        added += 1;
+      }
+      onChange({ ...values, models: next });
+      appStore.notify("info", added ? `拉到 ${added} 个，勾上要用的` : "没有新模型");
     } catch (e) {
       appStore.notify("error", e instanceof Error ? e.message : String(e));
     } finally {
@@ -225,13 +229,16 @@ function CatalogEditor({
       appStore.notify("error", "这个模型已经在目录里");
       return;
     }
-    onChange({ ...values, models: [...values.models, { id, name: id }] });
+    onChange({ ...values, models: [...values.models, { id, name: id, enabled: true }] });
     setNewId("");
     setAdding(false);
   };
 
-  const remove = (id: string) => {
-    onChange({ ...values, models: values.models.filter((m) => m.id !== id) });
+  const toggle = (id: string) => {
+    onChange({
+      ...values,
+      models: values.models.map((m) => (m.id === id ? { ...m, enabled: m.enabled === false } : m)),
+    });
   };
 
   return (
@@ -261,20 +268,20 @@ function CatalogEditor({
         </div>
         {values.models.length === 0 ? (
           <div className="rounded-md border border-dashed border-line px-3 py-6 text-center text-xs text-ink-faint">
-            模型选择器中将不显示任何模型；目录外仍可直接发送。
+            模型选择器只显示勾上的。拉下来的默认不勾，手加的默认勾上。
           </div>
         ) : (
-          <ul className="divide-y divide-line rounded-md border border-line">
+          <ul className="max-h-56 divide-y divide-line overflow-y-auto rounded-md border border-line">
             {values.models.map((m) => (
               <li key={m.id} className="flex items-center gap-2 px-2.5 py-1.5 text-xs">
-                <span className="min-w-0 flex-1 truncate font-mono">{m.id}</span>
-                <button
-                  type="button"
-                  className="text-ink-faint hover:text-danger"
-                  onClick={() => remove(m.id)}
-                >
-                  移除
-                </button>
+                <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={m.enabled !== false}
+                    onChange={() => toggle(m.id)}
+                  />
+                  <span className="min-w-0 truncate font-mono">{m.id}</span>
+                </label>
               </li>
             ))}
           </ul>

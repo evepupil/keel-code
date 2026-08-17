@@ -80,7 +80,15 @@ export async function upsertProvider(
     ...(body?.name ? { name: body.name } : {}),
     ...(body?.baseUrl ? { baseUrl: body.baseUrl } : {}),
     ...(body?.api ? { api: body.api as never } : {}),
-    ...(body?.models ? { models: toRuntimeModels(body.models, body.api, body.baseUrl) } : {}),
+    ...(body?.models
+      ? {
+          models: toRuntimeModels(
+            body.models.filter((m) => m.enabled !== false),
+            body.api,
+            body.baseUrl,
+          ),
+        }
+      : {}),
   });
 
   if (input.apiKey?.trim()) {

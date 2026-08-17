@@ -38,12 +38,12 @@ export async function createEngineHost(options: EngineHostOptions = {}): Promise
   const runtime = await createModelRuntime(home, runtimeOptions);
   const models: Engine["models"] = {
     providers: () => listProviders(runtime),
-    list: (providerId) => listModels(runtime, providerId),
+    list: (providerId) => listModels(runtime, home.modelsFile, providerId),
     get: (ref) => {
-      const m = getModel(runtime, ref);
+      const m = getModel(runtime, home.modelsFile, ref);
       return m ? toModelInfo(m) : undefined;
     },
-    available: () => availableModels(runtime),
+    available: () => availableModels(runtime, home.modelsFile),
     setApiKey: (providerId, apiKey) => runtime.setRuntimeApiKey(providerId, apiKey),
     removeApiKey: (providerId) => runtime.removeRuntimeApiKey(providerId),
     probe: (probeOptions) => probeProviders(runtime, probeOptions),

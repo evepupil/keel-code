@@ -142,7 +142,7 @@ export class SessionService {
       if (m) return m;
       if (!lenient) throw new Error(`未知模型：${ref.provider}/${ref.id}`);
     }
-    const fallback = await pickDefaultModel(this.deps.runtime);
+    const fallback = await pickDefaultModel(this.deps.runtime, this.deps.paths.modelsFile);
     if (!fallback) {
       throw new Error("没有可用模型：请先在设置里配置至少一个 provider 的 API key。");
     }

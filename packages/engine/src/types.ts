@@ -91,6 +91,8 @@ export interface CatalogProvider {
 export interface CatalogModel {
   id: string;
   name?: string;
+  /** 勾上才进选择器；缺省当勾上（兼容旧目录） */
+  enabled?: boolean;
   reasoning?: boolean;
   input?: ("text" | "image")[];
   cost?: ModelCost;

@@ -9,6 +9,7 @@ import {
   removeCatalog,
   upsertCatalog,
   validateProviderId,
+  visibleModelsOf,
   writeModelsFile,
 } from "./catalog.js";
 
@@ -59,5 +60,21 @@ describe("models.json 读写", () => {
     expect(existsSync(path)).toBe(true);
     expect(readFileSync(path, "utf8")).not.toContain("apiKey");
     expect(readModelsFile(path).providers.acme?.name).toBe("Acme GW");
+  });
+
+  it("选择器只认勾过的模型；没加的提供方一律不进", () => {
+    const file = upsertCatalog(emptyModelsFile(), "acme", {
+      models: [{ id: "a", enabled: true }, { id: "b", enabled: false }, { id: "c" }],
+    });
+    const shown = visibleModelsOf(
+      [
+        { provider: "acme", id: "a" },
+        { provider: "acme", id: "b" },
+        { provider: "acme", id: "c" },
+        { provider: "anthropic", id: "claude-fable-5" },
+      ],
+      file,
+    );
+    expect(shown.map((m) => m.id)).toEqual(["a", "c"]);
   });
 });

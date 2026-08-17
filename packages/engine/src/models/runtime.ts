@@ -1,6 +1,7 @@
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import type { KeelHomePaths, ModelInfo, ModelRef, ProviderInfo } from "../types.js";
+import { readModelsFile, visibleModelsOf } from "./catalog.js";
 
 export async function createModelRuntime(
   paths: KeelHomePaths,
@@ -50,21 +51,42 @@ export function listProviders(runtime: ModelRuntime): ProviderInfo[] {
   });
 }
 
-export function listModels(runtime: ModelRuntime, providerId?: string): ModelInfo[] {
-  return runtime.getModels(providerId).map(toModelInfo);
+export function listModels(
+  runtime: ModelRuntime,
+  modelsPath: string,
+  providerId?: string,
+): ModelInfo[] {
+  return visibleModelsOf(
+    runtime.getModels(providerId).map(toModelInfo),
+    readModelsFile(modelsPath),
+  );
 }
 
-export function getModel(runtime: ModelRuntime, ref: ModelRef): Model<Api> | undefined {
+export function getModel(
+  runtime: ModelRuntime,
+  modelsPath: string,
+  ref: ModelRef,
+): Model<Api> | undefined {
+  const allowed = readModelsFile(modelsPath).providers[ref.provider]?.models;
+  if (!allowed?.some((m) => m.id === ref.id && m.enabled !== false)) return undefined;
   return runtime.getModel(ref.provider, ref.id);
 }
 
-export async function availableModels(runtime: ModelRuntime): Promise<ModelInfo[]> {
+export async function availableModels(
+  runtime: ModelRuntime,
+  modelsPath: string,
+): Promise<ModelInfo[]> {
   const models = await runtime.getAvailable();
-  return models.map(toModelInfo);
+  return visibleModelsOf(models.map(toModelInfo), readModelsFile(modelsPath));
 }
 
-/** 挑一个默认模型：优先已配置凭据的第一个 provider 的第一个模型。 */
-export async function pickDefaultModel(runtime: ModelRuntime): Promise<Model<Api> | undefined> {
-  const available = await runtime.getAvailable();
-  return available[0];
+/** 挑一个默认模型：用户目录里勾过、且已配置凭据的第一个。 */
+export async function pickDefaultModel(
+  runtime: ModelRuntime,
+  modelsPath: string,
+): Promise<Model<Api> | undefined> {
+  const visible = await availableModels(runtime, modelsPath);
+  const first = visible[0];
+  if (!first) return undefined;
+  return runtime.getModel(first.provider, first.id);
 }

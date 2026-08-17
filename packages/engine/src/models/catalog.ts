@@ -82,6 +82,17 @@ export function upsertCatalog(
   return { providers: { ...file.providers, [id]: next } };
 }
 
+/** 选择器只认 models.json 里勾过的：没加提供方、或目录为空，都不进列表。 */
+export function visibleModelsOf<T extends { provider: string; id: string }>(
+  models: T[],
+  file: ModelsFile,
+): T[] {
+  return models.filter((m) => {
+    const allowed = file.providers[m.provider]?.models;
+    return !!allowed?.some((x) => x.id === m.id && x.enabled !== false);
+  });
+}
+
 export function removeCatalog(file: ModelsFile, id: string): ModelsFile {
   if (!(id in file.providers)) return file;
   const { [id]: _drop, ...rest } = file.providers;
@@ -114,6 +125,7 @@ function sanitizeModel(raw: Record<string, unknown>): CatalogModel {
   return {
     id: String(raw.id),
     ...(typeof raw.name === "string" ? { name: raw.name } : {}),
+    ...(typeof raw.enabled === "boolean" ? { enabled: raw.enabled } : {}),
     ...(typeof raw.reasoning === "boolean" ? { reasoning: raw.reasoning } : {}),
     ...(input && input.length > 0 ? { input } : {}),
     ...(cost ? { cost } : {}),
