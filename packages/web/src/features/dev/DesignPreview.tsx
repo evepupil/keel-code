@@ -479,7 +479,7 @@ export function DesignPreview() {
           </div>
         </Section>
 
-        <Section title="卡片" hint="消息流里的富节点：统一 12px 圆角、1px 线、无阴影">
+        <Section title="卡片" hint="消息流里的富节点：统一 10px 圆角、1px 线、无阴影">
           <div className="grid gap-3 lg:grid-cols-2">
             <Card className="p-3.5">
               <div className="mb-1.5 flex items-center gap-2 font-medium">

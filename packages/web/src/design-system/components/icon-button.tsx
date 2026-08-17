@@ -21,8 +21,7 @@ export function IconButton({
       type={type}
       className={cn(
         "inline-flex shrink-0 items-center justify-center rounded-sm text-ink-muted transition-colors hover:bg-panel-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50 [&>svg]:shrink-0",
-        size === "xs" &&
-          "h-[22px] w-[22px] rounded-[5px] text-ink-faint [&>svg]:h-3.5 [&>svg]:w-3.5",
+        size === "xs" && "h-[22px] w-[22px] text-ink-faint [&>svg]:h-3.5 [&>svg]:w-3.5",
         size === "sm" && "h-6 w-6 [&>svg]:h-3.5 [&>svg]:w-3.5",
         size === "md" && "h-[30px] w-[30px] [&>svg]:h-4 [&>svg]:w-4",
         active && "bg-accent-soft text-accent hover:bg-accent-soft hover:text-accent",
