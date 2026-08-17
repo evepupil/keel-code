@@ -17,7 +17,8 @@ let home: TempDir;
 let project: TempDir;
 let server: RunningServer;
 
-const api = (path: string, init: RequestInit = {}) =>
+/** 全局路由 */
+const gapi = (path: string, init: RequestInit = {}) =>
   fetch(`http://127.0.0.1:${server.port}/api${path}`, {
     ...init,
     headers: {
@@ -26,12 +27,14 @@ const api = (path: string, init: RequestInit = {}) =>
       ...(init.headers ?? {}),
     },
   });
+/** 工作区级路由（/api/w/<wid>/…） */
+const api = (path: string, init: RequestInit = {}) => gapi(`/w/${server.workspaceId}${path}`, init);
 
 beforeAll(async () => {
   mock = await startMockOpenAIServer({ models: ["mock-1"] });
   home = makeTempKeelHome({ baseUrl: mock.baseUrl, models: ["mock-1"] });
   project = makeTempProject();
-  server = await startServer({ cwd: project.path, homeDir: home.path, port: 0 });
+  server = await startServer({ cwd: project.path, homeDir: home.path, port: 0, idleMs: 0 });
 });
 
 afterAll(async () => {
@@ -45,20 +48,20 @@ describe("鉴权与基础路由", () => {
   it("没令牌 401，有令牌 200", async () => {
     const r1 = await fetch(`http://127.0.0.1:${server.port}/api/health`);
     expect(r1.status).toBe(401);
-    const r2 = await api("/health");
+    const r2 = await gapi("/health");
     expect(r2.status).toBe(200);
     expect(((await r2.json()) as { ok: boolean }).ok).toBe(true);
   });
 
   it("providers / models / probe", async () => {
-    const providers = (await (await api("/providers")).json()) as {
+    const providers = (await (await gapi("/providers")).json()) as {
       id: string;
       configured: boolean;
     }[];
     expect(providers.find((p) => p.id === "mock")?.configured).toBe(true);
-    const models = (await (await api("/models?available=1")).json()) as { id: string }[];
+    const models = (await (await gapi("/models?available=1")).json()) as { id: string }[];
     expect(models.map((m) => m.id)).toContain("mock-1");
-    const probe = (await (await api("/providers/probe?providers=mock")).json()) as {
+    const probe = (await (await gapi("/providers/probe?providers=mock")).json()) as {
       provider: string;
       reachable: boolean;
     }[];
@@ -101,7 +104,7 @@ describe("会话", () => {
     ws.on("message", (data) => {
       received.push(JSON.parse(String(data)) as (typeof received)[number]);
     });
-    ws.send(JSON.stringify({ type: "subscribe", sessionId: id }));
+    ws.send(JSON.stringify({ type: "subscribe", workspaceId: server.workspaceId, sessionId: id }));
 
     mock.enqueue({ text: "你好，前端对话在此" });
     const promptRes = await api(`/sessions/${id}/prompt`, {
@@ -155,13 +158,13 @@ describe("会话", () => {
     expect(roster.every((e) => typeof e.freshness.level === "string")).toBe(true);
 
     const patched = (await (
-      await api("/settings", {
+      await gapi("/settings", {
         method: "PATCH",
         body: JSON.stringify({ modelLocks: { reviewer: { provider: "mock", id: "mock-1" } } }),
       })
     ).json()) as { modelLocks?: Record<string, { id: string }> };
     expect(patched.modelLocks?.reviewer?.id).toBe("mock-1");
-    const settings = (await (await api("/settings")).json()) as {
+    const settings = (await (await gapi("/settings")).json()) as {
       modelLocks?: Record<string, unknown>;
     };
     expect(settings.modelLocks?.reviewer).toBeDefined();
@@ -254,6 +257,35 @@ describe("会话", () => {
     expect(board.decisions).toEqual([]);
     expect(board.roster.length).toBeGreaterThan(0);
     expect(board.review.lastPass).toBeNull();
+  });
+
+  it("工作区：列表 / 加入 / 懒加载 / 未知 404 / 移除", async () => {
+    const list = (await (await gapi("/workspaces")).json()) as {
+      id: string;
+      path: string;
+      loaded: boolean;
+      isProject: boolean;
+    }[];
+    expect(list.find((w) => w.id === server.workspaceId)?.loaded).toBe(true);
+    // 加入第二个工作区（临时目录，不是项目）
+    const other = makeTempProject();
+    try {
+      const added = (await (
+        await gapi("/workspaces", { method: "POST", body: JSON.stringify({ path: other.path }) })
+      ).json()) as { id: string; loaded: boolean };
+      expect(added.loaded).toBe(false);
+      // 第一次访问工作区级路由才加载
+      const proj = (await (await gapi(`/w/${added.id}/project`)).json()) as { cwd: string };
+      expect(proj.cwd).toBe(other.path);
+      const again = (await (await gapi("/workspaces")).json()) as { id: string; loaded: boolean }[];
+      expect(again.find((w) => w.id === added.id)?.loaded).toBe(true);
+      expect((await gapi("/w/nope/sessions")).status).toBe(404);
+      expect((await gapi("/workspaces", { method: "POST", body: "{}" })).status).toBe(400);
+      expect((await gapi(`/workspaces/${added.id}`, { method: "DELETE" })).status).toBe(200);
+      expect((await gapi(`/w/${added.id}/project`)).status).toBe(404);
+    } finally {
+      other.cleanup();
+    }
   });
 
   it("WS 令牌错误被拒", async () => {

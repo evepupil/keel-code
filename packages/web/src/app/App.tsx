@@ -4,6 +4,7 @@ import { ChatView } from "../features/chat/ChatView";
 import { DocEditor } from "../features/docs/DocEditor";
 import { Sidebar } from "../features/sessions/Sidebar";
 import { SettingsView } from "../features/settings/SettingsView";
+import { WorkspaceEmpty } from "../features/workspaces/WorkspaceEmpty";
 import { cn } from "../lib/cn";
 import { appStore, useAppState } from "../store/app-store";
 
@@ -12,6 +13,7 @@ export function App() {
   const tokenMissing = useAppState((s) => s.tokenMissing);
   const fatal = useAppState((s) => s.fatal);
   const view = useAppState((s) => s.view);
+  const workspaceId = useAppState((s) => s.workspaceId);
   const notice = useAppState((s) => s.notice);
 
   useEffect(() => {
@@ -22,7 +24,7 @@ export function App() {
   if (tokenMissing) {
     return (
       <Center>
-        <p className="text-sm">缺少访问令牌。请从终端里 keel serve 打印的地址打开工作台。</p>
+        <p className="text-sm">缺少访问令牌。请从终端里 keel web 打印的地址打开工作台。</p>
       </Center>
     );
   }
@@ -40,6 +42,8 @@ export function App() {
       <main className="flex min-w-0 flex-1 flex-col">
         {view === "settings" ? (
           <SettingsView />
+        ) : !workspaceId ? (
+          <WorkspaceEmpty />
         ) : view === "board" ? (
           <BoardView />
         ) : view === "doc" ? (

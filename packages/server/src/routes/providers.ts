@@ -1,7 +1,7 @@
 import type { Engine } from "@keel-code/engine";
 import { Hono } from "hono";
 
-export function providerRoutes(engine: Engine): Hono {
+export function providerRoutes(engine: Pick<Engine, "models">): Hono {
   const r = new Hono();
 
   r.get("/providers", (c) => c.json(engine.models.providers()));

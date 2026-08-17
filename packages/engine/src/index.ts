@@ -7,10 +7,15 @@
 
 export type { Static, TSchema } from "typebox";
 export { Type } from "typebox";
-export { createEngine } from "./engine.js";
+export { createEngine, createEngineHost } from "./engine.js";
 export { scopeMatches } from "./hooks/bus.js";
 export { buildModelsRequest, parseModelIds } from "./models/probe.js";
-export { importPiCredentials, projectDirName, resolveKeelPaths } from "./paths.js";
+export {
+  importPiCredentials,
+  projectDirName,
+  resolveHomePaths,
+  resolveKeelPaths,
+} from "./paths.js";
 export { convertMessage, convertMessages, convertUsage } from "./session/convert.js";
 export { KEEL_META_ENTRY, KEEL_SYSTEM_PROMPT_ENTRY } from "./session/index-store.js";
 export { sumUsage } from "./session/session.js";

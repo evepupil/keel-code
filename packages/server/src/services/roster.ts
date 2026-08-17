@@ -20,7 +20,11 @@ export interface RosterServices {
   dispose(): void;
 }
 
-export function setupRoster(engine: Engine, hub: SessionHub): RosterServices {
+export function setupRoster(
+  engine: Engine,
+  hub: SessionHub,
+  sharedSelector?: ModelSelector,
+): RosterServices {
   const gateway: ConversationGateway = {
     list: () => hub.list(),
     get: (id) => hub.get(id),
@@ -34,7 +38,7 @@ export function setupRoster(engine: Engine, hub: SessionHub): RosterServices {
     },
   };
   const store = new RosterStore({ cwd: engine.cwd, gateway, options });
-  const selector = new ModelSelector(engine);
+  const selector = sharedSelector ?? new ModelSelector(engine);
   const runner = new SubagentRunner({ engine, gateway, selector });
   const off = registerRosterTools({ engine, gateway, store, runner, selector, options });
   // 主对话 / 普通对话没指定模型时按类别默认档落实（可达优先）

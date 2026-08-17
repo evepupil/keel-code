@@ -41,9 +41,27 @@ export interface SessionDetail {
 }
 
 export interface ProjectInfo {
+  id: string;
   cwd: string;
   name: string;
 }
+
+/** GET /api/workspaces */
+export interface WorkspaceInfo {
+  id: string;
+  path: string;
+  name: string;
+  addedAt: string;
+  lastOpenedAt: string;
+  loaded: boolean;
+  isProject: boolean;
+  exists: boolean;
+}
+
+export type PickFolderResult =
+  | { status: "picked"; path: string }
+  | { status: "cancelled" }
+  | { status: "unsupported"; reason: string };
 
 export interface CreateSessionInput {
   kind: import("@keel-code/engine").SessionKind;
@@ -107,6 +125,8 @@ export interface BoardData {
 
 export interface ApprovalRequest {
   id: string;
+  /** 客户端补上：来自哪个工作区 */
+  workspaceId?: string;
   sessionId: string;
   parentId?: string;
   toolName: string;

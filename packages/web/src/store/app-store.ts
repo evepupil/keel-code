@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { ApiError, api, bootstrapToken } from "../api/client";
+import { ApiError, api, bootstrapToken, setApiWorkspace } from "../api/client";
 import type {
   ApprovalRequest,
   CreateSessionInput,
@@ -8,8 +8,10 @@ import type {
   ProjectInfo,
   ProviderInfo,
   SessionListItem,
+  WorkspaceInfo,
 } from "../api/types";
 import { WsClient } from "../api/ws";
+import { formatRoute, parseRoute, type Route } from "../app/router";
 import { applyEngineEvent, type ChatState, emptyChat } from "./apply-event";
 
 export type View = "chat" | "settings" | "board" | "doc";
@@ -18,6 +20,9 @@ export interface AppState {
   ready: boolean;
   tokenMissing: boolean;
   fatal?: string;
+  workspaces: WorkspaceInfo[];
+  /** 当前工作区；null = 还没选（没有工作区或在全局设置页） */
+  workspaceId: string | null;
   project?: ProjectInfo;
   sessions: SessionListItem[];
   currentId: string | null;
@@ -31,30 +36,41 @@ export interface AppState {
   doc: { path: string; sessionId: string | null } | null;
   /** 预填到输入框的草稿（验收打回等） */
   composerDraft: string | null;
-  /** 待用户审批的工具调用 */
+  /** 当前工作区待用户审批的工具调用 */
   approvals: ApprovalRequest[];
+  /** 其他工作区的待审批数（工作区切换器上标角标） */
+  pendingByWorkspace: Record<string, number>;
 }
 
 type Listener = () => void;
 
+const initialState: AppState = {
+  ready: false,
+  tokenMissing: false,
+  workspaces: [],
+  workspaceId: null,
+  sessions: [],
+  currentId: null,
+  chats: {},
+  view: "chat",
+  wsConnected: false,
+  models: [],
+  providers: [],
+  doc: null,
+  composerDraft: null,
+  approvals: [],
+  pendingByWorkspace: {},
+};
+
 class AppStore {
-  private state: AppState = {
-    ready: false,
-    tokenMissing: false,
-    sessions: [],
-    currentId: null,
-    chats: {},
-    view: "chat",
-    wsConnected: false,
-    models: [],
-    providers: [],
-    doc: null,
-    composerDraft: null,
-    approvals: [],
-  };
+  private state: AppState = initialState;
   private readonly listeners = new Set<Listener>();
   private ws: WsClient | null = null;
   private resyncTimers = new Map<string, number>();
+  /** 我们自己写进地址栏的 hash，用来忽略回声 */
+  private pushedHash: string | null = null;
+  /** 工作区切换序号：异步加载回来时发现已经切走就丢弃 */
+  private switchSeq = 0;
 
   getState = (): AppState => this.state;
 
@@ -80,6 +96,8 @@ class AppStore {
     }, 4000);
   }
 
+  // ---------- 启动 ----------
+
   async init(): Promise<void> {
     const token = bootstrapToken();
     if (!token) {
@@ -87,34 +105,59 @@ class AppStore {
       return;
     }
     try {
-      const [project, providers, models] = await Promise.all([
-        api.project(),
+      const [providers, models, workspaces] = await Promise.all([
         api.providers(),
         api.models(true),
+        api.workspaces(),
       ]);
-      this.set({ project, providers, models });
-      await this.refreshSessions(true);
+      this.set({ providers, models, workspaces });
       this.ws = new WsClient({
-        onEvent: (sessionId, event) => this.applyEvent(sessionId, event),
-        onSessionsChanged: () => void this.refreshSessions(false),
+        onEvent: (wid, sessionId, event) => {
+          if (wid === this.state.workspaceId) this.applyEvent(sessionId, event);
+        },
+        onSessionsChanged: (wid) => {
+          if (wid === this.state.workspaceId) void this.refreshSessions(false);
+        },
+        onWorkspacesChanged: () => void this.refreshWorkspaces(),
         onStatus: (connected) => {
           this.set({ wsConnected: connected });
-          if (connected) void this.refreshApprovals();
+          if (connected && this.state.workspaceId) void this.refreshApprovals();
         },
-        onApproval: (request) =>
-          this.set((s) => ({
-            approvals: s.approvals.some((a) => a.id === request.id)
-              ? s.approvals
-              : [...s.approvals, request],
-          })),
-        onApprovalResolved: (id) =>
-          this.set((s) => ({ approvals: s.approvals.filter((a) => a.id !== id) })),
+        onApproval: (wid, request) => {
+          if (wid === this.state.workspaceId) {
+            this.set((s) => ({
+              approvals: s.approvals.some((a) => a.id === request.id)
+                ? s.approvals
+                : [...s.approvals, { ...request, workspaceId: wid }],
+            }));
+          } else {
+            this.set((s) => ({
+              pendingByWorkspace: {
+                ...s.pendingByWorkspace,
+                [wid]: (s.pendingByWorkspace[wid] ?? 0) + 1,
+              },
+            }));
+          }
+        },
+        onApprovalResolved: (wid, id) => {
+          if (wid === this.state.workspaceId) {
+            this.set((s) => ({ approvals: s.approvals.filter((a) => a.id !== id) }));
+          } else {
+            this.set((s) => ({
+              pendingByWorkspace: {
+                ...s.pendingByWorkspace,
+                [wid]: Math.max(0, (s.pendingByWorkspace[wid] ?? 0) - 1),
+              },
+            }));
+          }
+        },
       });
       this.ws.connect();
-      const first =
-        this.state.sessions.find((s) => s.meta.kind === "main" && !s.meta.archived) ??
-        this.state.sessions[0];
-      if (first) this.selectSession(first.meta.id);
+      window.addEventListener("hashchange", () => {
+        if (window.location.hash === this.pushedHash) return;
+        void this.applyRoute(parseRoute(window.location.hash));
+      });
+      await this.applyRoute(parseRoute(window.location.hash));
       this.set({ ready: true });
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
@@ -126,11 +169,182 @@ class AppStore {
     }
   }
 
+  // ---------- 路由 ----------
+
+  /** 按地址栏进入：工作区不存在就回到首个工作区 */
+  private async applyRoute(route: Route): Promise<void> {
+    if (route.kind === "settings") {
+      this.set({ view: "settings" });
+      this.syncHash();
+      return;
+    }
+    if (route.kind === "home") {
+      const first = this.state.workspaces[0];
+      if (first) await this.selectWorkspace(first.id);
+      else this.set({ workspaceId: null, view: "chat" });
+      this.syncHash();
+      return;
+    }
+    const known = this.state.workspaces.some((w) => w.id === route.workspaceId);
+    if (!known) {
+      await this.refreshWorkspaces();
+      if (!this.state.workspaces.some((w) => w.id === route.workspaceId)) {
+        this.notify("error", "工作区不存在或已移除");
+        await this.applyRoute({ kind: "home" });
+        return;
+      }
+    }
+    await this.selectWorkspace(route.workspaceId, {
+      view: route.kind === "board" ? "board" : route.kind === "doc" ? "doc" : "chat",
+      ...(route.kind === "doc" ? { docPath: route.path } : {}),
+      ...(route.kind === "chat" ? { sessionId: route.sessionId } : {}),
+    });
+  }
+
+  private syncHash(): void {
+    const s = this.state;
+    let route: Route;
+    if (s.view === "settings") route = { kind: "settings" };
+    else if (!s.workspaceId) route = { kind: "home" };
+    else if (s.view === "board") route = { kind: "board", workspaceId: s.workspaceId };
+    else if (s.view === "doc" && s.doc)
+      route = { kind: "doc", workspaceId: s.workspaceId, path: s.doc.path };
+    else if (s.currentId)
+      route = { kind: "chat", workspaceId: s.workspaceId, sessionId: s.currentId };
+    else route = { kind: "workspace", workspaceId: s.workspaceId };
+    const hash = formatRoute(route);
+    if (window.location.hash === hash) return;
+    this.pushedHash = hash;
+    window.history.replaceState(null, "", hash);
+  }
+
+  // ---------- 工作区 ----------
+
+  async refreshWorkspaces(): Promise<void> {
+    try {
+      this.set({ workspaces: await api.workspaces() });
+    } catch (e) {
+      this.notify("error", `加载工作区失败：${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  /**
+   * 切换工作区：清空会话态，重新拉项目 / 会话 / 审批。
+   * 目标 view / sessionId / docPath 由路由给；不给就进主对话。
+   */
+  async selectWorkspace(
+    id: string,
+    target: { view?: View; sessionId?: string; docPath?: string } = {},
+  ): Promise<void> {
+    const same = this.state.workspaceId === id;
+    const seq = ++this.switchSeq;
+    if (!same) {
+      this.ws?.unsubscribeAll();
+      setApiWorkspace(id);
+      this.set({
+        workspaceId: id,
+        project: undefined,
+        sessions: [],
+        currentId: null,
+        chats: {},
+        approvals: [],
+        doc: null,
+        view: target.view ?? "chat",
+        pendingByWorkspace: { ...this.state.pendingByWorkspace, [id]: 0 },
+      });
+      try {
+        const project = await api.project();
+        if (seq !== this.switchSeq) return;
+        this.set({ project });
+      } catch (e) {
+        if (seq !== this.switchSeq) return;
+        this.notify("error", `打开工作区失败：${e instanceof Error ? e.message : String(e)}`);
+        this.set({ workspaceId: null });
+        this.syncHash();
+        return;
+      }
+      await this.refreshSessions(true);
+      if (seq !== this.switchSeq) return;
+      void this.refreshApprovals();
+      void this.refreshWorkspaces();
+    }
+    if (target.view === "doc" && target.docPath) {
+      this.set({ view: "doc", doc: { path: target.docPath, sessionId: null } });
+    } else if (target.view === "board") {
+      this.set({ view: "board" });
+    } else {
+      const wanted = target.sessionId
+        ? this.state.sessions.find((s) => s.meta.id === target.sessionId)
+        : undefined;
+      const first =
+        wanted ??
+        this.state.sessions.find((s) => s.meta.kind === "main" && !s.meta.archived) ??
+        this.state.sessions[0];
+      if (first) this.selectSession(first.meta.id);
+      else this.set({ view: "chat", currentId: null });
+    }
+    this.syncHash();
+  }
+
+  async addWorkspace(path: string): Promise<void> {
+    try {
+      const w = await api.addWorkspace(path);
+      await this.refreshWorkspaces();
+      await this.selectWorkspace(w.id);
+    } catch (e) {
+      this.notify("error", `添加工作区失败：${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  /** 弹系统目录选择框，选中即添加 */
+  async pickWorkspace(): Promise<void> {
+    try {
+      const r = await api.pickFolder();
+      if (r.status === "picked") await this.addWorkspace(r.path);
+      else if (r.status === "unsupported") this.notify("error", r.reason);
+    } catch (e) {
+      this.notify("error", `选择目录失败：${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  async removeWorkspace(id: string): Promise<void> {
+    try {
+      await api.removeWorkspace(id);
+      await this.refreshWorkspaces();
+      if (this.state.workspaceId === id) {
+        const next = this.state.workspaces[0];
+        if (next) await this.selectWorkspace(next.id);
+        else {
+          setApiWorkspace(null);
+          this.set({
+            workspaceId: null,
+            project: undefined,
+            sessions: [],
+            currentId: null,
+            chats: {},
+            approvals: [],
+            doc: null,
+            view: "chat",
+          });
+          this.syncHash();
+        }
+      }
+    } catch (e) {
+      this.notify("error", `移除工作区失败：${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  // ---------- 会话 ----------
+
   async refreshSessions(ensureMain: boolean): Promise<void> {
+    if (!this.state.workspaceId) return;
+    const seq = this.switchSeq;
     try {
       const sessions = await api.sessions(ensureMain);
+      if (seq !== this.switchSeq) return;
       this.set({ sessions });
     } catch (e) {
+      if (seq !== this.switchSeq) return;
       this.notify("error", `加载对话列表失败：${e instanceof Error ? e.message : String(e)}`);
     }
   }
@@ -141,8 +355,12 @@ class AppStore {
   }
 
   async refreshApprovals(): Promise<void> {
+    if (!this.state.workspaceId) return;
+    const wid = this.state.workspaceId;
     try {
-      this.set({ approvals: await api.approvals() });
+      const list = await api.approvals();
+      if (wid !== this.state.workspaceId) return;
+      this.set({ approvals: list.map((a) => ({ ...a, workspaceId: wid })) });
     } catch {
       // 忽略
     }
@@ -159,10 +377,12 @@ class AppStore {
 
   setView(view: View): void {
     this.set({ view });
+    this.syncHash();
   }
 
   openDoc(path: string, sessionId: string | null = this.state.currentId): void {
     this.set({ view: "doc", doc: { path, sessionId } });
+    this.syncHash();
   }
 
   setComposerDraft(text: string | null): void {
@@ -171,13 +391,16 @@ class AppStore {
 
   selectSession(id: string): void {
     this.set({ currentId: id, view: "chat" });
-    this.ws?.subscribe(id);
+    if (this.state.workspaceId) this.ws?.subscribe(this.state.workspaceId, id);
     if (!this.state.chats[id]?.loaded) void this.loadSession(id);
+    this.syncHash();
   }
 
   async loadSession(id: string): Promise<void> {
+    const seq = this.switchSeq;
     try {
       const detail = await api.session(id);
+      if (seq !== this.switchSeq) return;
       this.setChat(id, (c) => ({
         ...c,
         messages: detail.messages,
@@ -191,6 +414,7 @@ class AppStore {
         sessions: s.sessions.map((x) => (x.meta.id === id ? { ...x, meta: detail.meta } : x)),
       }));
     } catch (e) {
+      if (seq !== this.switchSeq) return;
       this.notify("error", `加载对话失败：${e instanceof Error ? e.message : String(e)}`);
     }
   }

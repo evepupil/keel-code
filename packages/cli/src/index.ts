@@ -1,16 +1,15 @@
 /**
- * keel-code CLI：init / serve / status / doctor。
+ * keel-code CLI：init / web / serve / run / status / doctor。
  */
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createEngine } from "@keel-code/engine";
-import { startServer } from "@keel-code/server";
 import { Command } from "commander";
 import { runDoctor } from "./commands/doctor.js";
 import { initProject } from "./commands/init.js";
 import { runHeadless } from "./commands/run.js";
-import { openBrowser } from "./util/open-browser.js";
+import { runWebCommand } from "./commands/web.js";
 import { findWebDist } from "./util/web-dist.js";
 
 export const PACKAGE_NAME = "keel-code" as const;
@@ -49,15 +48,15 @@ export function buildProgram(): Command {
       const r = initProject(cwd);
       for (const f of r.created) console.log(`  + ${f}`);
       for (const f of r.skipped) console.log(`  = ${f}（已存在，跳过）`);
-      console.log(`\nkeel 已初始化：${cwd}\n下一步：keel serve`);
+      console.log(`\nkeel 已初始化：${cwd}\n下一步：keel web`);
     });
 
-  program
-    .command("serve")
-    .description("启动本地服务并打开 Web 工作台")
-    .option("-p, --port <n>", "端口（0 = 自动挑空闲端口）", "3131")
-    .option("--no-open", "不自动打开浏览器")
-    .action(async (o: { port: string; open: boolean }) => {
+  const webAction =
+    (foreground: boolean) =>
+    async (
+      dir: string | undefined,
+      o: { port: string; open: boolean; foreground?: boolean; stop?: boolean },
+    ) => {
       const { cwd, home } = opts();
       const staticDir = findWebDist();
       if (!staticDir) {
@@ -65,23 +64,35 @@ export function buildProgram(): Command {
           "未找到 Web 工作台构建产物，只提供 API（开发时先 pnpm --filter @keel-code/web build）",
         );
       }
-      const server = await startServer({
-        cwd,
+      const code = await runWebCommand({
+        dir: dir ? resolve(dir) : cwd,
         ...(home ? { homeDir: home } : {}),
         port: Number(o.port),
+        open: o.open,
+        foreground: foreground || o.foreground === true,
+        stop: o.stop === true,
         ...(staticDir ? { staticDir } : {}),
         version: readVersion(),
       });
-      console.log(`keel 工作台：${server.url}`);
-      console.log(`项目：${cwd}`);
-      if (o.open && staticDir) openBrowser(server.url);
-      const shutdown = async () => {
-        await server.close();
-        process.exit(0);
-      };
-      process.on("SIGINT", () => void shutdown());
-      process.on("SIGTERM", () => void shutdown());
-    });
+      if (code !== 0) process.exitCode = code;
+    };
+
+  program
+    .command("web")
+    .description("打开含全部工作区的 Web 工作台（后台单实例；当前目录是项目就注册进去）")
+    .argument("[dir]", "要打开的项目目录（默认当前目录）")
+    .option("-p, --port <n>", "端口", "3131")
+    .option("--no-open", "不自动打开浏览器")
+    .option("--foreground", "前台运行（调试）")
+    .option("--stop", "停止后台工作台")
+    .action(webAction(false));
+
+  program
+    .command("serve")
+    .description("前台启动本地服务并打开 Web 工作台（keel web --foreground 的别名）")
+    .option("-p, --port <n>", "端口（0 = 自动挑空闲端口）", "3131")
+    .option("--no-open", "不自动打开浏览器")
+    .action((o: { port: string; open: boolean }) => webAction(true)(undefined, o));
 
   program
     .command("run")
@@ -130,7 +141,7 @@ export function buildProgram(): Command {
       try {
         const list = await engine.sessions.list();
         if (list.length === 0) {
-          console.log("还没有对话。运行 keel serve 开始。");
+          console.log("还没有对话。运行 keel web 开始。");
           return;
         }
         for (const r of list) {

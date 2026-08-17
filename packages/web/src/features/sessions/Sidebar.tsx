@@ -5,37 +5,24 @@ import { Button } from "../../design-system/components/button";
 import { Badge } from "../../design-system/components/primitives";
 import { cn } from "../../lib/cn";
 import { appStore, useAppState } from "../../store/app-store";
+import { WorkspaceSwitcher } from "../workspaces/WorkspaceSwitcher";
 import { NewSessionDialog } from "./NewSessionDialog";
 
 export function Sidebar() {
-  const project = useAppState((s) => s.project);
+  const workspaceId = useAppState((s) => s.workspaceId);
   const sessions = useAppState((s) => s.sessions);
   const currentId = useAppState((s) => s.currentId);
   const view = useAppState((s) => s.view);
-  const wsConnected = useAppState((s) => s.wsConnected);
   const [creating, setCreating] = useState(false);
 
   const groups = useMemo(() => groupSessions(sessions), [sessions]);
 
   return (
     <aside className="flex h-full w-64 shrink-0 flex-col border-r border-line bg-panel">
-      <div className="flex items-center justify-between px-3 py-2.5">
-        <div className="min-w-0">
-          <div className="truncate text-sm font-semibold" title={project?.cwd}>
-            {project?.name ?? "keel"}
-          </div>
-          <div className="truncate text-[11px] text-ink-faint" title={project?.cwd}>
-            {project?.cwd}
-          </div>
-        </div>
-        <span
-          className={cn("h-2 w-2 shrink-0 rounded-full", wsConnected ? "bg-ok" : "bg-danger")}
-          title={wsConnected ? "已连接" : "连接断开"}
-        />
-      </div>
+      <WorkspaceSwitcher />
 
       <div className="px-3 pb-2">
-        <Button className="w-full" onClick={() => setCreating(true)}>
+        <Button className="w-full" onClick={() => setCreating(true)} disabled={!workspaceId}>
           <Plus className="h-4 w-4" />
           新建对话
         </Button>
@@ -58,7 +45,7 @@ export function Sidebar() {
             ))}
           </div>
         ))}
-        {sessions.length === 0 ? (
+        {workspaceId && sessions.length === 0 ? (
           <p className="px-2 py-4 text-xs text-ink-faint">还没有对话</p>
         ) : null}
       </nav>
@@ -68,6 +55,7 @@ export function Sidebar() {
           variant="ghost"
           className={cn("w-full justify-start", view === "board" && "bg-panel-2 text-ink")}
           onClick={() => appStore.setView("board")}
+          disabled={!workspaceId}
         >
           <LayoutGrid className="h-4 w-4" />
           看板

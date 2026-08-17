@@ -1,9 +1,9 @@
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
-import type { KeelPaths, ModelInfo, ModelRef, ProviderInfo } from "../types.js";
+import type { KeelHomePaths, ModelInfo, ModelRef, ProviderInfo } from "../types.js";
 
 export async function createModelRuntime(
-  paths: KeelPaths,
+  paths: KeelHomePaths,
   options: { allowModelNetwork?: boolean } = {},
 ): Promise<ModelRuntime> {
   return ModelRuntime.create({

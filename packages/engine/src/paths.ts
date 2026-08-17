@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, join, resolve } from "node:path";
-import type { KeelPaths } from "./types.js";
+import type { KeelHomePaths, KeelPaths } from "./types.js";
 
 /** 把项目目录变成稳定、可读的目录名：<basename>-<hash12>。Windows 上大小写与斜杠归一化。 */
 export function projectDirName(cwd: string): string {
@@ -22,26 +22,38 @@ export function projectDirName(cwd: string): string {
   return `${slug}-${hash}`;
 }
 
-export function resolveKeelPaths(cwd: string, homeDir?: string): KeelPaths {
+/** 用户级路径（与项目无关的那部分）。 */
+export function resolveHomePaths(homeDir?: string): KeelHomePaths {
   const home = resolve(homeDir ?? process.env.KEEL_HOME ?? join(homedir(), ".keel"));
-  const sessionsRoot = join(home, "sessions");
-  const projectSessionsDir = join(sessionsRoot, projectDirName(cwd));
   return {
     home,
     authFile: join(home, "auth.json"),
     modelsFile: join(home, "models.json"),
     settingsFile: join(home, "settings.json"),
     piAgentDir: join(home, "pi"),
-    sessionsRoot,
+    sessionsRoot: join(home, "sessions"),
+  };
+}
+
+export function resolveKeelPaths(cwd: string, homeDir?: string): KeelPaths {
+  const home = resolveHomePaths(homeDir);
+  const projectSessionsDir = join(home.sessionsRoot, projectDirName(cwd));
+  return {
+    ...home,
     projectSessionsDir,
     projectIndexFile: join(projectSessionsDir, "index.json"),
   };
 }
 
-export function ensureKeelDirs(paths: KeelPaths): void {
-  for (const dir of [paths.home, paths.piAgentDir, paths.sessionsRoot, paths.projectSessionsDir]) {
+export function ensureHomeDirs(paths: KeelHomePaths): void {
+  for (const dir of [paths.home, paths.piAgentDir, paths.sessionsRoot]) {
     mkdirSync(dir, { recursive: true });
   }
+}
+
+export function ensureKeelDirs(paths: KeelPaths): void {
+  ensureHomeDirs(paths);
+  mkdirSync(paths.projectSessionsDir, { recursive: true });
 }
 
 /**
@@ -50,7 +62,7 @@ export function ensureKeelDirs(paths: KeelPaths): void {
  * 返回导入的 provider id 列表。
  */
 export function importPiCredentials(
-  paths: KeelPaths,
+  paths: Pick<KeelHomePaths, "authFile">,
   piAuthFile = join(homedir(), ".pi", "agent", "auth.json"),
 ): string[] {
   try {

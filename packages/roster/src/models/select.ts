@@ -84,7 +84,7 @@ export class ModelSelector {
   private readonly cache = new Map<string, ProbeCacheEntry>();
 
   constructor(
-    private readonly engine: Engine,
+    private readonly engine: Pick<Engine, "models" | "settings">,
     private readonly options: ModelSelectorOptions = {},
   ) {}
 

@@ -54,7 +54,7 @@ pnpm monorepo（TypeScript 7 strict、Biome、vitest），10 个包骨架（engi
 
 ### M7
 设计见 [设计/06](设计/06-模型档次与多工作区.md)。顺序：先能力档，再多工作区，最后前端整体重构。
-2026-08-17：能力档已落地（选择器 + 工具收 tier + reviewer / 文档修剪按档 + 设置页 / 新建对话按档选）；多工作区进行中。
+2026-08-17：能力档已落地（选择器 + 工具收 tier + reviewer / 文档修剪按档 + 设置页 / 新建对话按档选）；多工作区已落地（EngineHost 共享宿主、工作区注册表 + 懒加载 / 闲置释放、`/api/w/:wid/*` + WS 带 workspaceId、`keel web` 后台单实例、Web 切换器 + hash 路由）。待：目验 + 前端整体重构。
 
 ### M6
 2026-08-17：发布形态准备（publishConfig、prepack 复制 Web 产物、`pnpm keel` 根脚本）；实际 `npm publish`、`keel tui`、执行器接口待做。

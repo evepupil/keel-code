@@ -33,6 +33,7 @@ export function SettingsView() {
   const providers = useAppState((s) => s.providers);
   const models = useAppState((s) => s.models);
   const project = useAppState((s) => s.project);
+  const workspaceId = useAppState((s) => s.workspaceId);
   const [probing, setProbing] = useState(false);
   const [probes, setProbes] = useState<ProviderProbe[]>([]);
   const [showAll, setShowAll] = useState(false);
@@ -84,13 +85,15 @@ export function SettingsView() {
 
         <ModelTiersSection />
 
-        <ProjectConfigSection />
-
-        <McpSection />
-
-        <section className="space-y-1 text-xs text-ink-faint">
-          <div>项目：{project?.cwd}</div>
-        </section>
+        {workspaceId && project ? (
+          <div key={workspaceId} className="space-y-6 border-t border-line pt-6">
+            <div className="text-xs text-ink-faint" title={project.cwd}>
+              以下为当前工作区：{project.name}
+            </div>
+            <ProjectConfigSection />
+            <McpSection />
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -241,7 +244,7 @@ function McpSection() {
         配置写在 <code className="rounded-sm bg-panel-2 px-1 font-mono">~/.keel/mcp.json</code>{" "}
         或项目的
         <code className="mx-1 rounded-sm bg-panel-2 px-1 font-mono">.keel/mcp.json</code>
-        （mcpServers 格式，与 Claude Code 相同），改后重启 keel serve 生效。
+        （mcpServers 格式，与 Claude Code 相同），改后重启 keel web 生效。
       </p>
       {servers.length === 0 ? (
         <p className="text-xs text-ink-faint">没有配置 MCP 服务器。</p>

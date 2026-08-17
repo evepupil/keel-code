@@ -1,28 +1,32 @@
+/**
+ * HTTP 应用：
+ *   全局：/api/health、/api/workspaces、/api/providers、/api/models、/api/settings、/api/models/tiers
+ *   工作区级：/api/w/:wid/…（project / sessions / roster / docs / board / approvals / mcp），
+ *   工作区运行时懒加载，每个工作区一个带 basePath 的子应用，按 wid 缓存。
+ *   WebSocket：/ws 一条连接复用，订阅与推送都带 workspaceId。
+ */
 import { basename } from "node:path";
-import type { Engine } from "@keel-code/engine";
-import type { McpManager } from "@keel-code/mcp";
+import type { EngineHost } from "@keel-code/engine";
+import type { ModelSelector } from "@keel-code/roster";
 import { Hono } from "hono";
 import type { WSContext } from "hono/ws";
 import { tokenAuth } from "./auth.js";
-import type { SessionHub } from "./hub.js";
 import { approvalRoutes } from "./routes/approvals.js";
 import { boardRoutes } from "./routes/board.js";
 import { docRoutes } from "./routes/docs.js";
 import { providerRoutes } from "./routes/providers.js";
 import { rosterRoutes } from "./routes/roster.js";
 import { sessionRoutes } from "./routes/sessions.js";
-import type { ApprovalServices } from "./services/approvals.js";
-import type { LoopServices } from "./services/loop.js";
-import type { RosterServices } from "./services/roster.js";
+import { settingsRoutes } from "./routes/settings.js";
+import { workspaceRoutes } from "./routes/workspaces.js";
+import type { KeelRuntime } from "./runtime.js";
+import type { WorkspaceManager } from "./workspaces/manager.js";
 import { WsHub } from "./ws/ws-hub.js";
 
 export interface AppDeps {
-  engine: Engine;
-  hub: SessionHub;
-  roster: RosterServices;
-  loop: LoopServices;
-  approvals: ApprovalServices;
-  mcp: McpManager;
+  host: EngineHost;
+  selector: ModelSelector;
+  manager: WorkspaceManager;
   token: string;
   version: string;
   /** hono 的 upgradeWebSocket（由 node 适配器提供） */
@@ -35,9 +39,31 @@ export interface AppDeps {
   ) => unknown;
 }
 
-export function buildApp(deps: AppDeps): Hono {
+/** 一个工作区的全部路由，挂在 /api/w/<wid> 下。 */
+export function buildWorkspaceApp(wid: string, rt: KeelRuntime): Hono {
+  const app = new Hono().basePath(`/api/w/${wid}`);
+  app.get("/project", (c) =>
+    c.json({
+      id: wid,
+      cwd: rt.engine.cwd,
+      name: basename(rt.engine.cwd),
+      paths: rt.engine.paths,
+    }),
+  );
+  app.route("/", sessionRoutes(rt.hub, rt.engine));
+  app.route("/", rosterRoutes(rt.roster.store));
+  app.route("/", docRoutes(rt.engine));
+  app.route("/", boardRoutes(rt.engine, rt.roster.store, rt.loop.reviewStateFile));
+  app.route("/", approvalRoutes(rt.approvals));
+  app.get("/mcp", (c) => c.json(rt.mcp.status()));
+  return app;
+}
+
+export function buildApp(deps: AppDeps): { app: Hono; wsHub: WsHub } {
   const app = new Hono();
-  const wsHub = new WsHub(deps.hub, deps.approvals);
+  const wsHub = new WsHub(deps.manager);
+  const workspaceApps = new Map<string, Hono>();
+  deps.manager.onUnloaded((id) => workspaceApps.delete(id));
 
   const api = new Hono();
   api.use("*", tokenAuth(deps.token));
@@ -45,20 +71,36 @@ export function buildApp(deps: AppDeps): Hono {
     c.json({
       ok: true,
       version: deps.version,
-      cwd: deps.engine.cwd,
-      name: basename(deps.engine.cwd),
+      pid: process.pid,
+      home: deps.host.home,
+      workspaces: deps.manager.list().length,
+      loaded: deps.manager.loadedIds(),
     }),
   );
-  api.get("/project", (c) =>
-    c.json({ cwd: deps.engine.cwd, name: basename(deps.engine.cwd), paths: deps.engine.paths }),
-  );
-  api.route("/", providerRoutes(deps.engine));
-  api.route("/", sessionRoutes(deps.hub, deps.engine));
-  api.route("/", rosterRoutes(deps.roster.store, deps.engine, deps.roster.selector));
-  api.route("/", docRoutes(deps.engine));
-  api.route("/", boardRoutes(deps.engine, deps.roster.store, deps.loop.reviewStateFile));
-  api.route("/", approvalRoutes(deps.approvals));
-  api.get("/mcp", (c) => c.json(deps.mcp.status()));
+  api.route("/", providerRoutes(deps.host));
+  api.route("/", settingsRoutes(deps.host, deps.selector));
+  api.route("/", workspaceRoutes(deps.manager));
+
+  // 工作区级：懒加载运行时 → 子应用（带 basePath，直接转发原始请求）
+  api.all("/w/:wid/*", async (c) => {
+    const wid = c.req.param("wid");
+    let rt: KeelRuntime | undefined;
+    try {
+      rt = await deps.manager.get(wid);
+    } catch (e) {
+      return c.json(
+        { error: `工作区启动失败：${e instanceof Error ? e.message : String(e)}` },
+        500,
+      );
+    }
+    if (!rt) return c.json({ error: "未知工作区" }, 404);
+    let sub = workspaceApps.get(wid);
+    if (!sub) {
+      sub = buildWorkspaceApp(wid, rt);
+      workspaceApps.set(wid, sub);
+    }
+    return sub.fetch(c.req.raw);
+  });
   app.route("/api", api);
 
   app.get(
@@ -87,5 +129,5 @@ export function buildApp(deps: AppDeps): Hono {
     }) as never,
   );
 
-  return app;
+  return { app, wsHub };
 }

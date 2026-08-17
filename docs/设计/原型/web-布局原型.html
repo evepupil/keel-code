@@ -18,6 +18,7 @@
   --faint:oklch(66% 0.015 250);
   --accent:oklch(52% 0.13 235);
   --accent-soft:oklch(94% 0.03 235);
+  --violet:oklch(62% 0.15 300);
   --ok:oklch(55% 0.14 150);
   --ok-soft:oklch(95% 0.04 150);
   --warn:oklch(62% 0.15 75);
@@ -36,6 +37,7 @@ code{font-family:var(--mono);font-size:12.5px}
 svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
 svg.i.sm{width:14px;height:14px}
 .spacer{flex:1}
+.faint{color:var(--faint)}
 
 /* ---------- 布局 ---------- */
 .app{display:flex;height:100%}
@@ -51,47 +53,78 @@ svg.i.sm{width:14px;height:14px}
 .sb-sec{display:flex;align-items:center;gap:2px;padding:6px 10px 2px 16px;color:var(--faint);font-size:12px}
 .sb-list{flex:1;overflow-y:auto;padding:0 8px 8px}
 .proj{margin-bottom:2px}
-.proj-head{display:flex;align-items:center;gap:6px;width:100%;padding:6px 6px;border-radius:var(--r-sm);font-weight:500;text-align:left}
+.proj-head{display:flex;align-items:center;gap:6px;width:100%;padding:4px 4px 4px 6px;border-radius:var(--r-sm);font-weight:500;text-align:left;cursor:pointer;user-select:none}
 .proj-head:hover{background:var(--hover)}
 .proj-head .chev{color:var(--faint);transition:transform .15s}
 .proj.open .proj-head .chev{transform:rotate(90deg)}
-.proj-head .cnt{margin-left:auto;color:var(--faint);font-size:11px;font-weight:400}
+.proj-head .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj-head .acts2{display:inline-flex;gap:2px;flex:none}
 .proj-body{display:none;padding:2px 0 6px}
 .proj.open .proj-body{display:block}
-.row{display:flex;align-items:center;gap:6px;width:100%;padding:5px 8px 5px 30px;border-radius:var(--r-sm);text-align:left;color:var(--ink)}
+.row{display:flex;align-items:center;gap:6px;width:100%;padding:5px 8px 5px 30px;border-radius:var(--r-sm);text-align:left;color:var(--ink);min-height:30px}
 .row:hover{background:var(--hover)}
 .row.active{background:var(--accent-soft)}
 .row .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .time{color:var(--faint);font-size:11px;flex:none}
-.row.main{padding-left:8px;font-weight:500}
-.row.main .ic{color:var(--muted)}
+.row.mainrow{padding-left:8px;font-weight:500}
+.row.mainrow .ic{color:var(--muted)}
+.row .acts{display:none;gap:2px;flex:none}
+.row:hover .acts{display:inline-flex}
+.row:hover .time,.row:hover .pinmark{display:none}
+.pinmark{color:var(--faint)}
+.pinmark svg{width:12px;height:12px}
+.iconbtn.xs{width:22px;height:22px;border-radius:5px;color:var(--faint)}
+.iconbtn.xs svg{width:14px;height:14px}
+.iconbtn.xs:hover{color:var(--ink);background:var(--line)}
 .hair{height:1px;background:var(--line);margin:3px 8px 4px 30px}
-.dot{width:7px;height:7px;border-radius:50%;flex:none}
-.dot.run{background:var(--ok);animation:pulse 1.6s ease-in-out infinite}
+.dot{width:7px;height:7px;border-radius:50%;flex:none;background:var(--line-strong)}
+.dot.run{background:var(--accent);animation:pulse 1.6s ease-in-out infinite}
+.dot.ok{background:var(--ok)}
+.dot.bad{background:var(--danger)}
 .dot.pend{background:var(--warn)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .row.more,.row.arch{color:var(--faint);font-size:12px}
 .row.archived{opacity:.6}
-.more-list,.arch-list{display:none}
-.more-list.open,.arch-list.open{display:block}
 .sb-bottom{border-top:1px solid var(--line);padding:8px}
 .sb-bottom .row{padding-left:8px;gap:8px}
 
+/* 悬浮信息卡 / 固定定位菜单（都放在侧栏之外，避免被裁切） */
+.hcard{position:fixed;z-index:70;width:288px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px oklch(0% 0 0/.14);padding:6px;display:none;font-size:13px}
+.hc-head{display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:14px}
+.hc-head b{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hc-row{display:flex;align-items:center;gap:8px;padding:6px 8px;color:var(--ink);width:100%;text-align:left;border-radius:8px}
+button.hc-row:hover{background:var(--hover)}
+.hc-row.mono{font-family:var(--mono);font-size:12px;color:var(--muted);word-break:break-all}
+.hc-desc{padding:0 8px 6px;color:var(--muted);font-size:12.5px}
+.hcard hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.hc-lab{padding:6px 8px 0;color:var(--faint);font-size:11px}
+.hc-tok{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:4px 8px 6px}
+.hc-tok div{display:flex;flex-direction:column}
+.hc-tok span{color:var(--faint);font-size:11px}
+.hc-tok b{font-weight:500;font-size:13px}
+.fmenu{position:fixed;z-index:70;min-width:160px;background:var(--bg);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px oklch(0% 0 0/.12);padding:4px;display:none}
+.fmenu button{display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;border-radius:7px;text-align:left;font-size:13px}
+.fmenu button:hover{background:var(--hover)}
+.fmenu button.danger{color:var(--danger)}
+.fmenu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+
 /* ---------- 主区 ---------- */
 .workarea{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--bg)}
-.topbar{height:48px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--line)}
+.topbar{height:52px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px 0 16px;border-bottom:1px solid var(--line)}
 .app:not(.nav-collapsed) #expandNav{display:none}
+.hd2{min-width:0;display:flex;flex-direction:column;justify-content:center;line-height:1.3}
+.hd2 .ttl{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hd2 .desc{color:var(--faint);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 .crumb{display:flex;align-items:center;gap:6px;min-width:0;flex:none}
-.crumb .pl,.crumb .sep{color:var(--faint)}
+.crumb .sep{color:var(--faint)}
 .crumb .lnk{color:var(--muted);padding:2px 4px;border-radius:var(--r-sm)}
 .crumb .lnk:hover{background:var(--hover);color:var(--ink)}
-.crumb .title{font-weight:600;display:inline-flex;align-items:center;gap:2px;padding:2px 4px;border-radius:var(--r-sm)}
-button.title:hover{background:var(--hover)}
+.crumb .title{font-weight:600;padding:2px 4px}
 .role{color:var(--faint);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .chip{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:12.5px;color:var(--ink);white-space:nowrap}
 .chip:hover{background:var(--hover)}
 .chip .chev{color:var(--faint)}
-.iconbtn{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-sm);color:var(--muted);flex:none}
+.iconbtn{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-sm);color:var(--muted);flex:none;cursor:pointer}
 .iconbtn:hover{background:var(--hover);color:var(--ink)}
 .iconbtn.on{background:var(--accent-soft);color:var(--accent)}
 .btn{height:28px;padding:0 10px;border-radius:var(--r-sm);font-size:12.5px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
@@ -108,9 +141,14 @@ button.title:hover{background:var(--hover)}
 .timeline{flex:1;overflow-y:auto;padding:22px 0 12px}
 .col{max-width:760px;margin:0 auto;padding:0 20px;display:flex;flex-direction:column;gap:14px}
 .msg-user{align-self:flex-end;max-width:78%;background:var(--panel-2);border-radius:14px 14px 4px 14px;padding:8px 12px}
-.msg-ai{align-self:stretch}
+.msg-ai{align-self:stretch;position:relative}
 .msg-ai p+p,.msg-ai ul+p,.msg-ai p+ul{margin-top:.5em}
 .msg-ai ul{padding-left:1.25em}
+.msg-meta{display:flex;align-items:center;gap:2px;margin-top:6px;color:var(--faint);font-size:11.5px;opacity:0;transition:opacity .15s}
+.msg-ai:hover .msg-meta,.msg-ai.show-meta .msg-meta{opacity:1}
+.msg-meta .iconbtn{width:24px;height:24px}
+.msg-meta .iconbtn svg{width:14px;height:14px}
+.msg-meta .txt{margin-left:6px}
 .cursor{display:inline-block;width:7px;height:14px;background:var(--ink);vertical-align:-2px;margin-left:2px;animation:blink 1s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
 .tools{display:flex;flex-direction:column;gap:6px;align-self:stretch}
@@ -134,20 +172,72 @@ button.title:hover{background:var(--hover)}
 .badge.danger{background:var(--danger-soft);color:var(--danger)}
 .note{text-align:center;color:var(--faint);font-size:12px;padding:10px 20px 18px}
 
-/* ---------- 输入框 ---------- */
-.composer-wrap{flex:none;padding:8px 20px 18px}
-.composer{max-width:760px;margin:0 auto;border:1px solid var(--line);border-radius:var(--r-xl);background:var(--bg);box-shadow:0 2px 12px oklch(0% 0 0/.05);padding:10px 12px 8px}
+/* ---------- 输入区：上拉按钮行 + 输入框 + 运行统计 ---------- */
+.composer-wrap{flex:none;padding:6px 20px 12px}
+.composer-inner{max-width:760px;margin:0 auto}
+.pullbar{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.pull-wrap{position:relative;display:inline-flex}
+.pchip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:8px;background:var(--panel-2);font-size:12.5px;color:var(--ink);white-space:nowrap}
+.pchip:hover{background:var(--hover)}
+.pchip.on{background:var(--accent-soft);color:var(--accent)}
+.pchip .lb{font-weight:500}
+.pchip .st{color:var(--muted)}
+.pchip.on .st{color:var(--accent)}
+.pchip .chev{color:var(--faint);transition:transform .15s}
+.pchip.on .chev{transform:rotate(180deg)}
+.pull{position:absolute;bottom:calc(100% + 8px);left:0;width:480px;max-height:62vh;overflow-y:auto;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px oklch(0% 0 0/.12);padding:6px;z-index:25;display:none}
+.pull.open{display:block}
+.pull.right{left:auto;right:0}
+.pull .phd{display:flex;align-items:center;gap:8px;padding:8px 10px 6px;font-weight:500}
+.pull .phd .st{color:var(--muted);font-weight:400}
+.pull .phd .lk{margin-left:auto;color:var(--accent);font-size:12px;font-weight:400}
+.pull .sec{padding:10px 10px 4px;color:var(--faint);font-size:11px;border-top:1px solid var(--line);margin-top:6px}
+.pull .li{padding:3px 10px;font-size:12.5px;color:var(--muted)}
+.pull .emp{padding:16px 10px;text-align:center;color:var(--faint);font-size:12.5px}
+.subrow{display:flex;align-items:flex-start;gap:10px;width:100%;padding:8px 10px;border-radius:8px;text-align:left}
+.subrow:hover{background:var(--hover)}
+.subrow .dot{margin-top:7px}
+.subrow .n{flex:1;min-width:0}
+.subrow .n .d{display:block;color:var(--faint);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.subrow .r{flex:none;text-align:right;color:var(--faint);font-size:11.5px;line-height:1.5}
+.task{display:flex;align-items:center;gap:8px;padding:6px 10px;font-size:13px}
+.task .ic{color:var(--ok)}
+.task.doing .ic{color:var(--accent)}
+.task.doing svg{animation:spin 1s linear infinite}
+.task.todo .ic{color:var(--line-strong)}
+.task.todo{color:var(--muted)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ms{display:flex;align-items:center;gap:8px;padding:5px 10px;font-size:13px}
+.ms .id{font-weight:600;width:28px;flex:none}
+.ms .g{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.composer{border:1px solid var(--line);border-radius:var(--r-xl);background:var(--bg);box-shadow:0 2px 12px oklch(0% 0 0/.05);padding:10px 12px 8px}
 .composer textarea{width:100%;border:0;outline:0;resize:none;font:inherit;background:transparent;min-height:46px;line-height:1.5;padding:2px 4px;color:var(--ink)}
 .composer textarea::placeholder{color:var(--faint)}
 .composer-bar{display:flex;align-items:center;gap:6px;margin-top:4px}
 .send{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;flex:none}
 .send.stop{background:var(--ink)}
 .send.stop svg{fill:#fff;stroke:#fff}
+.ctx-wrap{position:relative;display:inline-flex}
+.ring{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-sm);cursor:default}
+.ring:hover{background:var(--hover)}
+.ring svg{width:18px;height:18px;transform:rotate(-90deg)}
+.ctx-pop{position:absolute;bottom:calc(100% + 8px);right:0;width:280px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px oklch(0% 0 0/.12);padding:12px;display:none;z-index:30;font-size:12.5px}
+.ctx-wrap:hover .ctx-pop{display:block}
+.ctx-pop .t{display:flex;justify-content:space-between;font-weight:500;margin-bottom:8px}
+.ctx-pop .bar{display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--panel-2);margin-bottom:10px}
+.ctx-pop .bar span{display:block;height:100%}
+.ctx-pop .r{display:flex;align-items:center;gap:8px;padding:3px 0;color:var(--muted)}
+.ctx-pop .r .sw{width:8px;height:8px;border-radius:2px;flex:none}
+.ctx-pop .r .v{margin-left:auto;color:var(--ink)}
+.runstats{margin-top:6px;color:var(--faint);font-size:11.5px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.runstats i{font-style:normal;margin:0 7px;color:var(--line-strong)}
 
 /* ---------- 空对话 ---------- */
 .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 20px 8vh}
 .empty .wordmark{font-size:28px;margin-bottom:22px;color:var(--ink)}
-.empty .composer{width:100%;box-shadow:0 8px 30px oklch(0% 0 0/.07)}
+.empty .composer-wrap{padding:0;width:100%;max-width:800px}
+.empty .composer{box-shadow:0 8px 30px oklch(0% 0 0/.07)}
 
 /* ---------- 右侧抽屉 ---------- */
 .drawer{width:296px;flex:none;border-left:1px solid var(--line);background:var(--side);overflow-y:auto;padding:12px 14px;font-size:12.5px}
@@ -162,7 +252,7 @@ button.title:hover{background:var(--hover)}
 
 /* ---------- 弹出菜单 ---------- */
 .pop-wrap{position:relative;display:inline-flex}
-.pop{position:absolute;top:calc(100% + 6px);right:0;min-width:270px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px oklch(0% 0 0/.10);padding:6px;z-index:20;display:none}
+.pop{position:absolute;top:calc(100% + 6px);right:0;min-width:240px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px oklch(0% 0 0/.10);padding:6px;z-index:20;display:none}
 .pop.open{display:block}
 .pop.up{top:auto;bottom:calc(100% + 6px)}
 .pop.left{right:auto;left:0}
@@ -179,7 +269,7 @@ button.title:hover{background:var(--hover)}
 .seg button{flex:1;height:24px;border:1px solid var(--line);border-radius:6px;font-size:11.5px}
 .seg button.on{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
 
-/* ---------- 看板 ---------- */
+/* ---------- 完整看板 ---------- */
 .board{flex:1;overflow-y:auto;padding:20px}
 .board .wrap{max-width:980px;margin:0 auto;display:grid;gap:16px}
 .board h3{font-size:13px;font-weight:600;margin-bottom:8px}
@@ -224,7 +314,6 @@ tr:last-child td{border-bottom:0}
 .form details summary .chev{transition:transform .15s}
 .form details[open] summary .chev{transform:rotate(90deg)}
 .form details .inner{display:grid;gap:10px;margin-top:10px}
-.mini{border:1px dashed var(--line-strong);border-radius:8px;padding:8px 10px;color:var(--faint);font-size:12px;text-align:center}
 .kv{display:grid;grid-template-columns:150px 1fr;gap:12px 16px;align-items:center;font-size:13px}
 .kv .k{color:var(--muted)}
 .switch{width:32px;height:18px;border-radius:9px;background:var(--accent);position:relative;display:inline-block;flex:none}
@@ -239,7 +328,7 @@ tr:last-child td{border-bottom:0}
 .list li:last-child{border-bottom:0}
 
 /* ---------- 原型说明 ---------- */
-.legend{position:fixed;right:16px;bottom:16px;max-width:380px;background:var(--ink);color:#fff;border-radius:10px;padding:10px 30px 10px 12px;font-size:12px;line-height:1.6;z-index:60;box-shadow:0 8px 24px oklch(0% 0 0/.25)}
+.legend{position:fixed;left:16px;bottom:16px;max-width:400px;background:var(--ink);color:#fff;border-radius:10px;padding:10px 30px 10px 12px;font-size:12px;line-height:1.6;z-index:60;box-shadow:0 8px 24px oklch(0% 0 0/.25)}
 .legend b{font-weight:600}
 .legend .x{position:absolute;top:6px;right:6px;color:#fff;opacity:.7;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px}
 .legend .x:hover{opacity:1;background:oklch(100% 0 0/.12)}
@@ -264,53 +353,9 @@ tr:last-child td{border-bottom:0}
         <button class="iconbtn" title="添加项目"><span class="ic" data-i="folderPlus"></span></button>
       </div>
 
-      <div class="sb-list" id="sbList">
-        <!-- 项目：keel-code -->
-        <div class="proj open">
-          <button class="proj-head" onclick="toggleProj(this)">
-            <span class="ic chev" data-i="chev"></span>
-            <span class="ic" data-i="folder"></span>
-            <span>keel-code</span>
-            <span class="cnt">7</span>
-          </button>
-          <div class="proj-body">
-            <button class="row main" data-sid="keel-main"><span class="ic" data-i="anchor"></span><span class="t">主对话</span><span class="time">3分钟</span></button>
-            <div class="hair"></div>
-            <button class="row active" data-sid="keel-frontend"><span class="t">前端对话</span><span class="dot run" title="运行中"></span><span class="time">刚刚</span></button>
-            <button class="row" data-sid="keel-engine"><span class="t">引擎对话</span><span class="dot pend" title="有待审批"></span><span class="time">2小时</span></button>
-            <button class="row" data-sid="keel-req"><span class="t">需求讨论</span><span class="time">1天</span></button>
-            <button class="row" data-sid="keel-misc"><span class="t">杂活</span><span class="time">1天</span></button>
-            <button class="row more" onclick="expandMore(this)">展开其余 2 个对话</button>
-            <div class="more-list">
-              <button class="row" data-sid="keel-infra"><span class="t">Infra 对话</span><span class="time">3天</span></button>
-              <button class="row" data-sid="keel-bug"><span class="t">Bug：会话恢复丢消息</span><span class="time">4天</span></button>
-            </div>
-            <button class="row arch" onclick="toggleArch(this)"><span class="t">已归档 (2)</span><span class="ic" data-i="chevD"></span></button>
-            <div class="arch-list">
-              <button class="row archived" data-sid="keel-arch1"><span class="t">旧：设计系统搭建</span><span class="time">6天</span></button>
-              <button class="row archived" data-sid="keel-arch2"><span class="t">旧：M1 最小聊天</span><span class="time">6天</span></button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 项目：demo-app -->
-        <div class="proj">
-          <button class="proj-head" onclick="toggleProj(this)">
-            <span class="ic chev" data-i="chev"></span>
-            <span class="ic" data-i="folder"></span>
-            <span>demo-app</span>
-            <span class="cnt">2</span>
-          </button>
-          <div class="proj-body">
-            <button class="row main" data-sid="demo-main"><span class="ic" data-i="anchor"></span><span class="t">主对话</span><span class="time">3天</span></button>
-            <div class="hair"></div>
-            <button class="row" data-sid="demo-pages"><span class="t">页面开发</span><span class="time">3天</span></button>
-          </div>
-        </div>
-      </div>
+      <div class="sb-list" id="sbList"></div>
 
       <div class="sb-bottom">
-        <button class="row" onclick="openBoard()"><span class="ic" data-i="grid"></span><span class="t">看板</span></button>
         <button class="row" onclick="openSettings()"><span class="ic" data-i="gear"></span><span class="t">设置</span></button>
       </div>
     </div>
@@ -352,6 +397,13 @@ tr:last-child td{border-bottom:0}
               <li>主题开关放「通用」，token 已支持亮暗</li>
             </ul>
             <p>无异议我直接做。</p>
+            <div class="msg-meta">
+              <button class="iconbtn" title="复制"><span class="ic" data-i="copy"></span></button>
+              <button class="iconbtn" title="有用"><span class="ic" data-i="thumbUp"></span></button>
+              <button class="iconbtn" title="没用"><span class="ic" data-i="thumbDown"></span></button>
+              <button class="iconbtn" title="从这里分叉"><span class="ic" data-i="branch"></span></button>
+              <span class="txt">10:02 · 用时 14 秒 · 首 token 3 秒 · 96 tok/s · 1.1K tok</span>
+            </div>
           </div>
           <div class="msg-user">做吧。</div>
           <div class="tools">
@@ -362,14 +414,23 @@ tr:last-child td{border-bottom:0}
           </div>
           <div class="msg-ai"><p>Dialog 加了 <code>size="lg"</code> 变体，设置拆成五个 tab 组件；正在跑门禁<span class="cursor"></span></p></div>
         </div></div>
-        <div class="composer-wrap" data-composer="streaming"></div>
+        <div class="composer-wrap"></div>
       </div>
 
       <!-- 引擎对话：末尾一张审批卡 -->
       <div class="view" id="view-chat-engine" hidden>
         <div class="timeline"><div class="col">
           <div class="msg-user">会话恢复后 costUsd 丢了，查一下。</div>
-          <div class="msg-ai"><p>索引里 <code>costUsd</code> 是新字段，旧索引文件没有它；<code>rebuildIndex</code> 也没累加 assistant 的 usage。改 <code>index-store.ts</code>：加载时补 <code>Number(rec.costUsd ?? 0)</code>，重建时累加 <code>usage.cost.total</code>。</p></div>
+          <div class="msg-ai show-meta">
+            <p>索引里 <code>costUsd</code> 是新字段，旧索引文件没有它；<code>rebuildIndex</code> 也没累加 assistant 的 usage。改 <code>index-store.ts</code>：加载时补 <code>Number(rec.costUsd ?? 0)</code>，重建时累加 <code>usage.cost.total</code>。</p>
+            <div class="msg-meta">
+              <button class="iconbtn" title="复制"><span class="ic" data-i="copy"></span></button>
+              <button class="iconbtn" title="有用"><span class="ic" data-i="thumbUp"></span></button>
+              <button class="iconbtn" title="没用"><span class="ic" data-i="thumbDown"></span></button>
+              <button class="iconbtn" title="从这里分叉"><span class="ic" data-i="branch"></span></button>
+              <span class="txt">08:41 · 用时 21 秒 · 首 token 8 秒 · 102 tok/s · 1.4K tok</span>
+            </div>
+          </div>
           <div class="tools">
             <div class="tool"><span class="nm">read</span><code>packages/engine/src/session/index-store.ts</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
             <div class="tool"><span class="nm">edit</span><code>packages/engine/src/session/index-store.ts</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
@@ -380,7 +441,7 @@ tr:last-child td{border-bottom:0}
             <div class="actions"><button class="btn primary sm">允许</button><button class="btn outline sm">本对话总是允许</button><button class="btn ghost sm danger">拒绝</button></div>
           </div>
         </div></div>
-        <div class="composer-wrap" data-composer="idle"></div>
+        <div class="composer-wrap"></div>
       </div>
 
       <!-- 主对话：调度视角 -->
@@ -392,9 +453,18 @@ tr:last-child td{border-bottom:0}
             <div class="tool"><span class="nm">keel_conversation_create</span><code>前端对话 · deepseek/deepseek-v4 · 思考 高</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
             <div class="tool"><span class="nm">keel_conversation_handoff</span><code>→ 前端对话</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
           </div>
-          <div class="msg-ai"><p>已创建「前端对话」（职责：负责整个前端 <code>packages/web/**</code>），模型选了 deepseek-v4，需求已交接过去。你可以从左侧进入它继续聊。</p></div>
+          <div class="msg-ai show-meta">
+            <p>已创建「前端对话」（职责：负责整个前端 <code>packages/web/**</code>），模型选了 deepseek-v4，需求已交接过去。你可以从左侧进入它继续聊。</p>
+            <div class="msg-meta">
+              <button class="iconbtn" title="复制"><span class="ic" data-i="copy"></span></button>
+              <button class="iconbtn" title="有用"><span class="ic" data-i="thumbUp"></span></button>
+              <button class="iconbtn" title="没用"><span class="ic" data-i="thumbDown"></span></button>
+              <button class="iconbtn" title="从这里分叉"><span class="ic" data-i="branch"></span></button>
+              <span class="txt">09:58 · 用时 33 秒 · 首 token 4 秒 · 88 tok/s · 2.3K tok</span>
+            </div>
+          </div>
         </div></div>
-        <div class="composer-wrap" data-composer="idle"></div>
+        <div class="composer-wrap"></div>
       </div>
 
       <!-- 通用对话（需求讨论 / Infra / demo-app 等） -->
@@ -405,16 +475,25 @@ tr:last-child td{border-bottom:0}
             <div class="tool"><span class="nm">keel_conversation_list</span><code>名册 · 7 条</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
             <div class="tool"><span class="nm">read</span><code>docs/review/_剩余问题.md</code><span class="st ok"><span class="ic" data-i="check"></span>完成</span></div>
           </div>
-          <div class="msg-ai"><p>基准 commit 没变，名册里的当前认知还有效。剩余问题里有 1 条属于我这边，先处理它。</p></div>
+          <div class="msg-ai show-meta">
+            <p>基准 commit 没变，名册里的当前认知还有效。剩余问题里有 1 条属于我这边，先处理它。</p>
+            <div class="msg-meta">
+              <button class="iconbtn" title="复制"><span class="ic" data-i="copy"></span></button>
+              <button class="iconbtn" title="有用"><span class="ic" data-i="thumbUp"></span></button>
+              <button class="iconbtn" title="没用"><span class="ic" data-i="thumbDown"></span></button>
+              <button class="iconbtn" title="从这里分叉"><span class="ic" data-i="branch"></span></button>
+              <span class="txt">昨天 17:20 · 用时 9 秒 · 首 token 2 秒 · 110 tok/s · 0.6K tok</span>
+            </div>
+          </div>
         </div></div>
-        <div class="composer-wrap" data-composer="idle"></div>
+        <div class="composer-wrap"></div>
       </div>
 
       <!-- 空对话：输入框居中 -->
       <div class="view" id="view-empty" hidden>
         <div class="empty">
           <div class="wordmark">keel</div>
-          <div class="composer-wrap" data-composer="idle" style="padding:0;width:100%;max-width:800px"></div>
+          <div class="composer-wrap"></div>
         </div>
       </div>
 
@@ -432,22 +511,14 @@ tr:last-child td{border-bottom:0}
         <div class="note">子 agent 轨迹只读；结束后结论以工具结果交回「<span id="subParent">前端对话</span>」。</div>
       </div>
 
-      <!-- 看板 -->
+      <!-- 完整看板（从上拉面板进入） -->
       <div class="view" id="view-board" hidden>
         <div class="board"><div class="wrap">
           <div>
             <h3>里程碑</h3>
             <div class="tbl"><table>
               <thead><tr><th>里程碑</th><th>目标</th><th>状态</th><th>依赖</th><th>模块文档</th></tr></thead>
-              <tbody>
-                <tr><td>M0</td><td>项目初始化：monorepo 骨架、门禁、文档体系</td><td><span class="badge ok">已完成</span></td><td>无</td><td><span class="lnk2">测试工具</span></td></tr>
-                <tr><td>M1</td><td>引擎与最小工作台</td><td><span class="badge accent">进行中</span></td><td>M0</td><td><span class="lnk2">引擎</span> · <span class="lnk2">服务端</span> · <span class="lnk2">Web界面</span></td></tr>
-                <tr><td>M2</td><td>多对话与名册</td><td><span class="badge accent">进行中</span></td><td>M1</td><td><span class="lnk2">对话与名册</span></td></tr>
-                <tr><td>M3</td><td>闭环编排 + 强制层</td><td><span class="badge accent">进行中</span></td><td>M2</td><td><span class="lnk2">闭环编排器</span> · <span class="lnk2">强制层</span></td></tr>
-                <tr><td>M4</td><td>设计确认与看板</td><td><span class="badge accent">进行中</span></td><td>M3</td><td><span class="lnk2">Web界面</span> · <span class="lnk2">文档管理</span></td></tr>
-                <tr><td>M5</td><td>加固与扩展</td><td><span class="badge accent">进行中</span></td><td>M4</td><td><span class="lnk2">MCP</span> · <span class="lnk2">CLI</span></td></tr>
-                <tr><td>M6</td><td>分发</td><td><span class="badge">未开始</span></td><td>M5</td><td><span class="lnk2">CLI</span></td></tr>
-              </tbody>
+              <tbody id="boardRows"></tbody>
             </table></div>
           </div>
           <div class="grid3">
@@ -466,12 +537,12 @@ tr:last-child td{border-bottom:0}
             <div class="card">
               <div class="hd">名册</div>
               <table>
-                <thead><tr><th>对话</th><th>新鲜度</th><th>状态</th><th>费用</th></tr></thead>
+                <thead><tr><th>对话</th><th>新鲜度</th><th>状态</th><th>token</th></tr></thead>
                 <tbody>
-                  <tr><td>主对话</td><td><span class="badge ok">新鲜</span></td><td>空闲</td><td>$0.86</td></tr>
-                  <tr><td>前端对话</td><td><span class="badge ok">新鲜</span></td><td>忙碌</td><td>$1.27</td></tr>
-                  <tr><td>引擎对话</td><td><span class="badge warn">代码已变</span></td><td>阻塞</td><td>$0.64</td></tr>
-                  <tr><td>需求讨论</td><td><span class="badge warn">缓存过期</span></td><td>空闲</td><td>$0.31</td></tr>
+                  <tr><td>主对话</td><td><span class="badge ok">新鲜</span></td><td>空闲</td><td>0.9M</td></tr>
+                  <tr><td>前端对话</td><td><span class="badge ok">新鲜</span></td><td>忙碌</td><td>1.3M</td></tr>
+                  <tr><td>引擎对话</td><td><span class="badge warn">代码已变</span></td><td>阻塞</td><td>0.7M</td></tr>
+                  <tr><td>需求讨论</td><td><span class="badge warn">缓存过期</span></td><td>空闲</td><td>0.3M</td></tr>
                 </tbody>
               </table>
             </div>
@@ -485,7 +556,7 @@ tr:last-child td{border-bottom:0}
   <!-- ================= 右侧上下文抽屉 ================= -->
   <aside class="drawer" id="drawer">
     <div class="hd"><span>上下文 · <span id="drawerTitle">前端对话</span></span><button class="iconbtn" onclick="toggleDrawer()"><span class="ic" data-i="x"></span></button></div>
-    <div class="badges"><span class="badge ok">新鲜</span><span class="badge accent">忙碌</span><span>$1.27</span><span>86 条</span></div>
+    <div class="badges"><span class="badge ok">新鲜</span><span class="badge accent">忙碌</span><span>1.3M tok</span><span>86 条</span></div>
     <dl>
       <div><dt>模型</dt><dd>deepseek/deepseek-v4 · 思考 高</dd></div>
       <div><dt>职责</dt><dd>负责整个前端（packages/web/**），维护设计系统与页面</dd></div>
@@ -503,6 +574,10 @@ tr:last-child td{border-bottom:0}
   </aside>
 </div>
 
+<!-- 侧栏悬浮信息卡 / 项目菜单（固定定位，避免被侧栏裁切） -->
+<div class="hcard" id="hcard"></div>
+<div class="fmenu" id="fmenu"></div>
+
 <!-- ================= 设置弹窗 ================= -->
 <div class="backdrop" id="settings" onclick="if(event.target===this)closeSettings()">
   <div class="modal">
@@ -515,14 +590,13 @@ tr:last-child td{border-bottom:0}
     </div>
     <div class="modal-body">
       <nav class="tabs">
-        <button class="on" onclick="setTab(this,'models')"><span class="ic" data-i="box"></span>模型</button>
-        <button onclick="setTab(this,'policy')"><span class="ic" data-i="shield"></span>模型策略</button>
-        <button onclick="setTab(this,'project')"><span class="ic" data-i="folder"></span>项目</button>
-        <button onclick="setTab(this,'mcp')"><span class="ic" data-i="plug"></span>MCP</button>
-        <button onclick="setTab(this,'general')"><span class="ic" data-i="gear"></span>通用</button>
+        <button class="on" data-tab="models" onclick="setTab('models')"><span class="ic" data-i="box"></span>模型</button>
+        <button data-tab="policy" onclick="setTab('policy')"><span class="ic" data-i="shield"></span>模型策略</button>
+        <button data-tab="project" onclick="setTab('project')"><span class="ic" data-i="folder"></span>项目</button>
+        <button data-tab="mcp" onclick="setTab('mcp')"><span class="ic" data-i="plug"></span>MCP</button>
+        <button data-tab="general" onclick="setTab('general')"><span class="ic" data-i="gear"></span>通用</button>
       </nav>
 
-      <!-- 模型 -->
       <div class="pane" id="pane-models">
         <h2>模型</h2>
         <p class="desc">填入 API key 即可使用该端点的模型。</p>
@@ -539,11 +613,11 @@ tr:last-child td{border-bottom:0}
                 <label>模型目录</label>
                 <div class="row2" style="margin-bottom:6px"><span class="hint" style="margin:0">目录 3 个，端点实时列出 5 个</span><span class="spacer"></span><button class="btn ghost sm">获取可用模型</button></div>
                 <div class="tbl"><table>
-                  <thead><tr><th>模型</th><th>上下文</th><th>输入 / 输出（$ 每百万）</th><th>端点</th></tr></thead>
+                  <thead><tr><th>模型</th><th>上下文</th><th>推理</th><th>端点</th></tr></thead>
                   <tbody>
-                    <tr><td><code>deepseek-v4</code></td><td>256k</td><td>0.28 / 0.42</td><td>有</td></tr>
-                    <tr><td><code>deepseek-v4-flash</code></td><td>128k</td><td>0.07 / 0.28</td><td>有</td></tr>
-                    <tr><td><code>deepseek-v4-preview</code></td><td>?</td><td>未知</td><td>有（目录外）</td></tr>
+                    <tr><td><code>deepseek-v4</code></td><td>256K</td><td>是</td><td>有</td></tr>
+                    <tr><td><code>deepseek-v4-flash</code></td><td>128K</td><td>否</td><td>有</td></tr>
+                    <tr><td><code>deepseek-v4-preview</code></td><td>?</td><td>?</td><td>有（目录外）</td></tr>
                   </tbody>
                 </table></div>
                 <div style="margin-top:8px"><button class="btn outline sm"><span class="ic" data-i="plus"></span>添加模型</button></div>
@@ -557,10 +631,9 @@ tr:last-child td{border-bottom:0}
         <div style="margin-top:6px"><button class="btn outline sm"><span class="ic" data-i="plus"></span>添加自定义端点</button><button class="btn ghost sm">显示全部 23 个提供方</button></div>
       </div>
 
-      <!-- 模型策略 -->
       <div class="pane" id="pane-policy" hidden>
         <h2>模型策略</h2>
-        <p class="desc">留空 = 由 AI 按任务性质挑模型（成本优先）；锁定后该类对话强制用你指定的模型。</p>
+        <p class="desc">留空 = 由 AI 按任务性质挑模型；锁定后该类对话强制用你指定的模型。</p>
         <div class="kv">
           <span class="k">主对话</span><select class="input"><option>不锁定（AI 自选）</option><option>anthropic / claude-sonnet-5</option></select>
           <span class="k">普通对话</span><select class="input"><option>不锁定（AI 自选）</option></select>
@@ -569,7 +642,6 @@ tr:last-child td{border-bottom:0}
         </div>
       </div>
 
-      <!-- 项目 -->
       <div class="pane" id="pane-project" hidden>
         <h2>项目</h2>
         <p class="desc">写回该项目的 <code>.keel/config.json</code>。</p>
@@ -581,9 +653,7 @@ tr:last-child td{border-bottom:0}
           <button>全放行<span class="sub">不再询问（逃生舱）</span></button>
         </div>
         <h4>验收节奏</h4>
-        <div class="radio-row">
-          <button>每批次</button><button class="on">每里程碑</button><button>最终</button>
-        </div>
+        <div class="radio-row"><button>每批次</button><button class="on">每里程碑</button><button>最终</button></div>
         <h4>流程与守卫</h4>
         <div class="kv">
           <span class="k">review 闭环</span><span class="switch"></span>
@@ -595,18 +665,16 @@ tr:last-child td{border-bottom:0}
         </div>
       </div>
 
-      <!-- MCP -->
       <div class="pane" id="pane-mcp" hidden>
         <h2>MCP 服务器</h2>
         <p class="desc">配置在 <code>~/.keel/mcp.json</code> 或项目 <code>.keel/mcp.json</code>（mcpServers 格式），改后重启 keel serve 生效。</p>
         <ul class="list">
-          <li><span class="sd"></span><span>codegraph</span><span class="badge ok">已连接 · 9 个工具</span><span class="spacer"></span><span class="meta" style="color:var(--faint);font-size:12px">全局</span></li>
+          <li><span class="sd"></span><span>codegraph</span><span class="badge ok">已连接 · 9 个工具</span><span class="spacer"></span><span style="color:var(--faint);font-size:12px">全局</span></li>
           <li><span class="sd"></span><span>playwright</span><span class="badge ok">已连接 · 31 个工具</span><span class="spacer"></span><span style="color:var(--faint);font-size:12px">全局</span></li>
           <li><span class="sd off"></span><span>agentmemory</span><span class="badge danger">未连接：ECONNREFUSED</span><span class="spacer"></span><span style="color:var(--faint);font-size:12px">项目 keel-code</span></li>
         </ul>
       </div>
 
-      <!-- 通用 -->
       <div class="pane" id="pane-general" hidden>
         <h2>通用</h2>
         <p class="desc">&nbsp;</p>
@@ -621,7 +689,7 @@ tr:last-child td{border-bottom:0}
 
 <div class="legend" id="legend">
   <b>原型说明</b><br>
-  点项目名折叠 / 展开；点会话切换（「杂活」= 空对话，「引擎对话」= 有审批卡）；头部「子 agent」下拉可进轨迹；右上图标开关上下文抽屉；左下「设置」开弹窗；左上图标折叠侧栏。
+  项目行：点名字折叠 / 展开，悬停出项目信息卡，「⋯」是项目菜单，右侧图标新建对话；会话行：悬停出置顶 / 归档按钮和会话信息卡；输入框上方「看板 / 子 agent / 任务」可上拉，同时只开一个；发送键左边圆环悬停看上下文用量；悬停 AI 消息看用时等信息；Ctrl+B 折叠侧栏。
   <button class="x" onclick="document.getElementById('legend').remove()"><span class="ic" data-i="x"></span></button>
 </div>
 
@@ -637,6 +705,7 @@ const I = {
   folderPlus: svg('<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M12 10v6M9 13h6"/>'),
   chev: svg('<path d="m9 6 6 6-6 6"/>', 'sm'),
   chevD: svg('<path d="m6 9 6 6 6-6"/>', 'sm'),
+  chevU: svg('<path d="m18 15-6-6-6 6"/>', 'sm chev'),
   anchor: svg('<circle cx="12" cy="5" r="3"/><path d="M12 22V8M5 12H2a10 10 0 0 0 20 0h-3"/>'),
   grid: svg('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>'),
   gear: svg('<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>'),
@@ -652,93 +721,329 @@ const I = {
   refresh: svg('<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>'),
   copy: svg('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
   plug: svg('<path d="M12 22v-5M9 8V2M15 8V2M18 8v5a6 6 0 0 1-12 0V8Z"/>'),
+  listChecks: svg('<path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"/>'),
+  checkCircle: svg('<circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 5-5"/>'),
+  loader: svg('<path d="M21 12a9 9 0 1 1-6.22-8.56"/>'),
+  circle: svg('<circle cx="12" cy="12" r="9"/>'),
+  thumbUp: svg('<path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>'),
+  thumbDown: svg('<path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/>'),
+  branch: svg('<path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>'),
+  dots: svg('<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>'),
+  compose: svg('<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>'),
+  pin: svg('<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>'),
+  archive: svg('<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>'),
+  msg: svg('<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>'),
+  trash: svg('<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'),
 };
 document.querySelectorAll('[data-i]').forEach(el => { el.innerHTML = I[el.dataset.i]; });
 
 // ---------- 数据 ----------
+const BOARD = {
+  proj: 'keel-code',
+  milestones: [
+    ['M0', '项目初始化：monorepo 骨架、门禁、文档体系', 'done', '无', '测试工具'],
+    ['M1', '引擎与最小工作台', 'doing', 'M0', '引擎 · 服务端 · Web界面'],
+    ['M2', '多对话与名册', 'doing', 'M1', '对话与名册'],
+    ['M3', '闭环编排 + 强制层', 'doing', 'M2', '闭环编排器 · 强制层'],
+    ['M4', '设计确认与看板', 'doing', 'M3', 'Web界面 · 文档管理'],
+    ['M5', '加固与扩展', 'doing', 'M4', 'MCP · CLI'],
+    ['M6', '分发', 'todo', 'M5', 'CLI'],
+  ],
+  review: '距上次通过 1 轮 · 上次通过 3f9c1a2（批次 2 · 前端对话）',
+  decisions: ['reviewer 与实现者是否允许同一 provider', '压缩阈值用 pi 默认还是按模型上下文比例'],
+};
+const MS_BADGE = { done: '<span class="badge ok">已完成</span>', doing: '<span class="badge accent">进行中</span>', todo: '<span class="badge">未开始</span>', blocked: '<span class="badge danger">阻塞</span>' };
+
+const PROJECTS = [
+  { id: 'keel-code', name: 'keel-code', path: 'D:\\myproject\\keel-code', open: true, visible: 4,
+    sessions: ['keel-main', 'keel-frontend', 'keel-engine', 'keel-req', 'keel-misc', 'keel-infra', 'keel-bug'],
+    archived: ['keel-arch1', 'keel-arch2'] },
+  { id: 'demo-app', name: 'demo-app', path: 'D:\\myproject\\demo-app', open: false, visible: 5,
+    sessions: ['demo-main', 'demo-pages'], archived: [] },
+];
+
 const SESSIONS = {
-  'keel-main':     { proj: 'keel-code', title: '主对话', role: '全局调度：探测端点选模型、创建 / 交接对话、验收', kind: 'main', view: 'chat-main', subs: [{ n: '探索：pi 压缩策略', s: 'done', m: 'deepseek-v4-flash', c: '$0.03' }] },
-  'keel-frontend': { proj: 'keel-code', title: '前端对话', role: '负责整个前端（packages/web/**）', kind: 'conversation', view: 'chat-frontend', subs: [
-    { n: 'reviewer · 批次 3', s: 'run', m: 'claude-sonnet-5', c: '$0.05' },
-    { n: 'reviewer · 批次 2', s: 'done', m: 'claude-sonnet-5', c: '$0.18' },
-    { n: '探索：CodeMirror 主题写法', s: 'done', m: 'deepseek-v4-flash', c: '$0.02' },
-  ] },
-  'keel-engine':   { proj: 'keel-code', title: '引擎对话', role: 'pi 内核封装与会话持久（packages/engine/**）', kind: 'conversation', view: 'chat-engine', subs: [{ n: 'reviewer · 批次 5', s: 'done', m: 'claude-sonnet-5', c: '$0.21' }] },
-  'keel-req':      { proj: 'keel-code', title: '需求讨论', role: '产品需求与设计文档（docs/设计/**）', kind: 'conversation', view: 'chat-generic', subs: [] },
-  'keel-misc':     { proj: 'keel-code', title: '杂活', role: '零散任务', kind: 'conversation', view: 'empty', subs: [] },
-  'keel-infra':    { proj: 'keel-code', title: 'Infra 对话', role: '构建、发布、门禁脚本', kind: 'conversation', view: 'chat-generic', subs: [] },
-  'keel-bug':      { proj: 'keel-code', title: 'Bug：会话恢复丢消息', role: '按问题创建', kind: 'conversation', view: 'chat-generic', subs: [] },
-  'keel-arch1':    { proj: 'keel-code', title: '旧：设计系统搭建', role: '已归档', kind: 'conversation', view: 'chat-generic', subs: [] },
-  'keel-arch2':    { proj: 'keel-code', title: '旧：M1 最小聊天', role: '已归档', kind: 'conversation', view: 'chat-generic', subs: [] },
-  'demo-main':     { proj: 'demo-app', title: '主对话', role: '全局调度', kind: 'main', view: 'chat-generic', subs: [] },
-  'demo-pages':    { proj: 'demo-app', title: '页面开发', role: '负责 src/pages/**', kind: 'conversation', view: 'chat-generic', subs: [] },
+  'keel-main': { proj: 'keel-code', title: '主对话', role: '全局调度：探测端点选模型、创建 / 交接对话、验收', kind: 'main', view: 'chat-main', time: '3分钟',
+    tokens: { cache: '0.8M', miss: '0.1M', out: '41K' },
+    subs: [{ n: '探索：pi 压缩策略', s: 'done', m: 'deepseek-v4-flash', tok: '61K tok', dur: '1分12秒', desc: '读 pi 的压缩实现，总结阈值与保留策略，只回结论' }],
+    tasks: [{ t: '探测端点并选模型', s: 'done' }, { t: '创建前端对话并交接需求', s: 'done' }],
+    stats: ['6 轮 · 21 步', 'LLM 3m40s · 工具调用 1m05s', '首 token 平均 3.1s · 92 tok/s', '缓存命中 88%', '输入 0.9M tok · 输出 41K tok'],
+    ctx: { usedK: 31, totalK: 256, sysK: 2.4, toolsK: 8.2, msgsK: 20.4 } },
+  'keel-frontend': { proj: 'keel-code', title: '前端对话', role: '负责整个前端（packages/web/**）', kind: 'conversation', view: 'chat-frontend', time: '刚刚', run: true, streaming: true,
+    tokens: { cache: '19.8M', miss: '1.1M', out: '1.1M' },
+    subs: [
+      { n: 'reviewer · 批次 3', s: 'run', m: 'claude-sonnet-5', tok: '212K tok', dur: '1分38秒', desc: '你是 keel 独立 reviewer，以干净一次性上下文审查批次 3 的 diff…' },
+      { n: 'reviewer · 批次 2', s: 'done', m: 'claude-sonnet-5', tok: '601K tok', dur: '2分55秒', desc: '你是 keel 独立 reviewer，以干净一次性上下文审查批次 2 的 diff…' },
+      { n: '探索：CodeMirror 主题写法', s: 'done', m: 'deepseek-v4-flash', tok: '159K tok', dur: '2分15秒', desc: '你要为项目找出 CodeMirror 6 用 CSS 变量做主题的最小写法…' },
+    ],
+    tasks: [
+      { t: '梳理设置页现有结构与数据流', s: 'done' },
+      { t: 'Dialog 增加 lg 尺寸变体', s: 'done' },
+      { t: '拆出五个设置 tab 组件', s: 'done' },
+      { t: '跑门禁并修复类型错误', s: 'doing' },
+      { t: '上报批次 3 并进入 review', s: 'todo' },
+    ],
+    stats: ['18 轮 · 170 步', 'LLM 40m53s · 工具调用 53m11s', '首 token 平均 6.2s · 85 tok/s', '缓存命中 95%', '输入 20.9M tok · 输出 1.1M tok'],
+    ctx: { usedK: 139, totalK: 256, sysK: 2.1, toolsK: 6.9, msgsK: 130 } },
+  'keel-engine': { proj: 'keel-code', title: '引擎对话', role: 'pi 内核封装与会话持久（packages/engine/**）', kind: 'conversation', view: 'chat-engine', time: '2小时', pend: true, pinned: true,
+    tokens: { cache: '5.8M', miss: '0.6M', out: '0.3M' },
+    subs: [{ n: 'reviewer · 批次 5', s: 'done', m: 'claude-sonnet-5', tok: '470K tok', dur: '5分11秒', desc: '你是 keel 独立 reviewer，以干净一次性上下文审查批次 5 的 diff…' }],
+    tasks: [{ t: '定位 costUsd 丢失原因', s: 'done' }, { t: '修 index-store 加载与重建', s: 'done' }, { t: '跑引擎测试', s: 'doing' }, { t: '上报批次 6', s: 'todo' }],
+    stats: ['11 轮 · 64 步', 'LLM 12m08s · 工具调用 9m40s', '首 token 平均 4.0s · 78 tok/s', '缓存命中 91%', '输入 6.4M tok · 输出 0.3M tok'],
+    ctx: { usedK: 79, totalK: 256, sysK: 2.1, toolsK: 6.9, msgsK: 70 } },
+  'keel-req':   { proj: 'keel-code', title: '需求讨论', role: '产品需求与设计文档（docs/设计/**）', kind: 'conversation', view: 'chat-generic', time: '1天',
+    tokens: { cache: '0.24M', miss: '60K', out: '18K' }, subs: [], tasks: [{ t: '整理 02 文档的对话模型章节', s: 'done' }],
+    stats: ['4 轮 · 9 步', 'LLM 2m12s · 工具调用 0m20s', '首 token 平均 2.4s · 104 tok/s', '缓存命中 80%', '输入 0.3M tok · 输出 18K tok'], ctx: { usedK: 22, totalK: 256, sysK: 2.1, toolsK: 6.9, msgsK: 13 } },
+  'keel-misc':  { proj: 'keel-code', title: '杂活', role: '零散任务', kind: 'conversation', view: 'empty', time: '1天',
+    tokens: { cache: '0', miss: '0', out: '0' }, subs: [], tasks: [], ctx: { usedK: 0, totalK: 256, sysK: 0, toolsK: 0, msgsK: 0 } },
+  'keel-infra': { proj: 'keel-code', title: 'Infra 对话', role: '构建、发布、门禁脚本', kind: 'conversation', view: 'chat-generic', time: '3天',
+    tokens: { cache: '0.15M', miss: '50K', out: '12K' }, subs: [], tasks: [],
+    stats: ['3 轮 · 12 步', 'LLM 1m50s · 工具调用 2m02s', '首 token 平均 2.9s · 99 tok/s', '缓存命中 76%', '输入 0.2M tok · 输出 12K tok'], ctx: { usedK: 18, totalK: 256, sysK: 2.1, toolsK: 6.9, msgsK: 9 } },
+  'keel-bug':   { proj: 'keel-code', title: 'Bug：会话恢复丢消息', role: '按问题创建', kind: 'conversation', view: 'chat-generic', time: '4天',
+    tokens: { cache: '1.0M', miss: '0.1M', out: '60K' }, subs: [], tasks: [],
+    stats: ['5 轮 · 30 步', 'LLM 6m01s · 工具调用 4m12s', '首 token 平均 3.3s · 90 tok/s', '缓存命中 89%', '输入 1.1M tok · 输出 60K tok'], ctx: { usedK: 44, totalK: 256, sysK: 2.1, toolsK: 6.9, msgsK: 35 } },
+  'keel-arch1': { proj: 'keel-code', title: '旧：设计系统搭建', role: '已归档', kind: 'conversation', view: 'chat-generic', time: '6天', archived: true,
+    tokens: { cache: '2.1M', miss: '0.3M', out: '0.2M' }, subs: [], tasks: [], ctx: { usedK: 60, totalK: 256, sysK: 2.1, toolsK: 6.9, msgsK: 51 } },
+  'keel-arch2': { proj: 'keel-code', title: '旧：M1 最小聊天', role: '已归档', kind: 'conversation', view: 'chat-generic', time: '6天', archived: true,
+    tokens: { cache: '1.4M', miss: '0.2M', out: '0.1M' }, subs: [], tasks: [], ctx: { usedK: 60, totalK: 256, sysK: 2.1, toolsK: 6.9, msgsK: 51 } },
+  'demo-main':  { proj: 'demo-app', title: '主对话', role: '全局调度', kind: 'main', view: 'chat-generic', time: '3天',
+    tokens: { cache: '0.1M', miss: '20K', out: '6K' }, subs: [], tasks: [], ctx: { usedK: 12, totalK: 200, sysK: 2.4, toolsK: 8.2, msgsK: 1.4 } },
+  'demo-pages': { proj: 'demo-app', title: '页面开发', role: '负责 src/pages/**', kind: 'conversation', view: 'chat-generic', time: '3天',
+    tokens: { cache: '0.6M', miss: '0.1M', out: '40K' }, subs: [], tasks: [], ctx: { usedK: 30, totalK: 200, sysK: 2.1, toolsK: 6.9, msgsK: 21 } },
 };
 const MAIN_OF = { 'keel-code': 'keel-main', 'demo-app': 'demo-main' };
 const SUB_STATUS = { run: ['运行中', 'accent'], done: ['完成', 'ok'], fail: ['失败', 'danger'] };
 
 const state = { sid: 'keel-frontend', view: 'chat-frontend', sub: null, drawer: true };
 
-// ---------- 输入框（复用） ----------
-function composerHTML(streaming) {
-  return `
-  <div class="composer">
-    <textarea rows="2" placeholder="${streaming ? '运行中——现在发送会排在本轮之后' : '描述你要做的事'}"></textarea>
-    <div class="composer-bar">
-      <button class="iconbtn" title="附件">${I.clip}</button>
-      <div class="pop-wrap">
-        <button class="chip" onclick="togglePop(this)">${I.shield}允许编辑${I.chevD}</button>
-        <div class="pop up left">
-          <button class="item"><span class="n">询问<span class="sub">每次工具调用都确认</span></span></button>
-          <button class="item"><span class="ck">${I.check}</span><span class="n">允许编辑<span class="sub">读写编辑放行，bash 等确认</span></span></button>
-          <button class="item"><span class="n">全放行<span class="sub">不再询问（逃生舱）</span></span></button>
-        </div>
+// ---------- 侧栏（按数据渲染） ----------
+function sessionRow(id, p) {
+  const s = SESSIONS[id];
+  const isMain = s.kind === 'main';
+  const active = id === state.sid && state.view !== 'board';
+  const acts = isMain ? '' : `<span class="acts">
+      <span class="iconbtn xs" title="${s.pinned ? '取消置顶' : '置顶'}" onclick="togglePin(event,'${id}')">${I.pin}</span>
+      <span class="iconbtn xs" title="${s.archived ? '取消归档' : '归档'}" onclick="toggleArchive(event,'${id}')">${I.archive}</span>
+    </span>`;
+  return `<button class="row ${isMain ? 'mainrow' : ''} ${active ? 'active' : ''} ${s.archived ? 'archived' : ''}" data-sid="${id}"
+      onmouseenter="hoverSess(event,'${id}')" onmouseleave="hoverOut()">
+      ${isMain ? `<span class="ic">${I.anchor}</span>` : ''}
+      <span class="t">${s.title}</span>
+      ${s.run ? '<span class="dot run" title="运行中"></span>' : ''}${s.pend ? '<span class="dot pend" title="有待审批"></span>' : ''}
+      ${s.pinned && !isMain ? `<span class="ic pinmark">${I.pin}</span>` : ''}
+      <span class="time">${s.time}</span>${acts}
+    </button>`;
+}
+function renderSidebar() {
+  document.getElementById('sbList').innerHTML = PROJECTS.map(p => {
+    const live = p.sessions.filter(id => !SESSIONS[id].archived);
+    const main = live.filter(id => SESSIONS[id].kind === 'main');
+    const pinned = live.filter(id => SESSIONS[id].kind !== 'main' && SESSIONS[id].pinned);
+    const rest = live.filter(id => SESSIONS[id].kind !== 'main' && !SESSIONS[id].pinned);
+    const shown = p.showMore ? rest : rest.slice(0, p.visible);
+    const hidden = rest.length - shown.length;
+    const archived = [...p.archived, ...p.sessions.filter(id => SESSIONS[id].archived && !p.archived.includes(id))];
+    return `<div class="proj ${p.open ? 'open' : ''}">
+      <div class="proj-head" onclick="toggleProj('${p.id}')" onmouseenter="hoverProj(event,'${p.id}')" onmouseleave="hoverOut()">
+        <span class="ic chev">${I.chev}</span><span class="ic">${I.folder}</span><span class="t">${p.name}</span>
+        <span class="acts2">
+          <span class="iconbtn xs" title="项目菜单" onclick="projMenu(event,'${p.id}')">${I.dots}</span>
+          <span class="iconbtn xs" title="在此项目新建对话" onclick="event.stopPropagation()">${I.compose}</span>
+        </span>
+      </div>
+      <div class="proj-body">
+        ${main.map(id => sessionRow(id, p)).join('')}
+        ${main.length ? '<div class="hair"></div>' : ''}
+        ${[...pinned, ...shown].map(id => sessionRow(id, p)).join('')}
+        ${hidden > 0 ? `<button class="row more" onclick="showMore('${p.id}')">展开其余 ${hidden} 个对话</button>` : ''}
+        ${archived.length ? `<button class="row arch" onclick="toggleArch('${p.id}')"><span class="t">已归档 (${archived.length})</span>${p.showArch ? I.chevU : I.chevD}</button>` : ''}
+        ${p.showArch ? archived.map(id => sessionRow(id, p)).join('') : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleProj(pid) { const p = PROJECTS.find(x => x.id === pid); p.open = !p.open; hideCard(); renderSidebar(); }
+function showMore(pid) { PROJECTS.find(x => x.id === pid).showMore = true; renderSidebar(); }
+function toggleArch(pid) { const p = PROJECTS.find(x => x.id === pid); p.showArch = !p.showArch; renderSidebar(); }
+function togglePin(e, id) { e.stopPropagation(); SESSIONS[id].pinned = !SESSIONS[id].pinned; hideCard(); renderSidebar(); }
+function toggleArchive(e, id) { e.stopPropagation(); SESSIONS[id].archived = !SESSIONS[id].archived; hideCard(); renderSidebar(); }
+document.getElementById('sbList').addEventListener('click', e => {
+  const r = e.target.closest('[data-sid]'); if (r) selectSession(r.dataset.sid);
+});
+
+// ---------- 悬浮信息卡 ----------
+let hoverTimer = null, hideTimer = null;
+const hcard = document.getElementById('hcard');
+hcard.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+hcard.addEventListener('mouseleave', hoverOut);
+function showCard(html, anchor) {
+  clearTimeout(hideTimer);
+  hcard.innerHTML = html; hcard.style.display = 'block';
+  const sb = document.querySelector('.sidebar').getBoundingClientRect();
+  const r = anchor.getBoundingClientRect();
+  let top = r.top - 6;
+  if (top + hcard.offsetHeight > window.innerHeight - 8) top = window.innerHeight - 8 - hcard.offsetHeight;
+  hcard.style.left = `${sb.right + 6}px`; hcard.style.top = `${top}px`;
+}
+function hideCard() { clearTimeout(hoverTimer); clearTimeout(hideTimer); hcard.style.display = 'none'; }
+function hoverOut() { clearTimeout(hoverTimer); hideTimer = setTimeout(() => { hcard.style.display = 'none'; }, 220); }
+function hoverProj(e, pid) {
+  const el = e.currentTarget; clearTimeout(hoverTimer);
+  hoverTimer = setTimeout(() => showCard(projCard(pid), el), 220);
+}
+function hoverSess(e, id) {
+  const el = e.currentTarget; clearTimeout(hoverTimer);
+  hoverTimer = setTimeout(() => showCard(sessCard(id), el), 220);
+}
+function projCard(pid) {
+  const p = PROJECTS.find(x => x.id === pid);
+  const live = p.sessions.filter(id => !SESSIONS[id].archived);
+  const running = live.filter(id => SESSIONS[id].run).length;
+  return `<div class="hc-head"><span class="ic">${I.folder}</span><b>${p.name}</b><span class="spacer"></span><span class="ic faint" title="置顶项目">${I.pin}</span></div>
+    <div class="hc-row"><span class="ic faint">${I.msg}</span>${live.length} 个对话${running ? ` · ${running} 运行中` : ''}</div>
+    <hr>
+    <div class="hc-row mono"><span class="ic">${I.folder}</span>${p.path}</div>
+    <button class="hc-row" onclick="openSettingsTab('project')"><span class="ic faint">${I.gear}</span>编辑项目</button>`;
+}
+function sessCard(id) {
+  const s = SESSIONS[id]; const t = s.tokens;
+  return `<div class="hc-head"><b>${s.title}</b><span class="spacer"></span><span class="faint" style="font-size:12px">${s.time}</span></div>
+    <div class="hc-desc">${s.role}</div>
+    <hr>
+    <div class="hc-lab">token 用量</div>
+    <div class="hc-tok"><div><span>缓存命中</span><b>${t.cache}</b></div><div><span>未命中</span><b>${t.miss}</b></div><div><span>输出</span><b>${t.out}</b></div></div>`;
+}
+
+// ---------- 项目菜单（固定定位） ----------
+const fmenu = document.getElementById('fmenu');
+function projMenu(e, pid) {
+  e.stopPropagation(); hideCard();
+  const p = PROJECTS.find(x => x.id === pid);
+  fmenu.innerHTML = `<button>${I.pin}置顶项目</button><button onclick="openSettingsTab('project')">${I.gear}编辑项目</button><button>${I.compose}新建对话</button><hr><button class="danger">${I.trash}移除项目</button>`;
+  const r = e.currentTarget.getBoundingClientRect();
+  fmenu.style.display = 'block'; fmenu.style.left = `${r.left}px`; fmenu.style.top = `${r.bottom + 4}px`;
+}
+function closeMenu() { fmenu.style.display = 'none'; }
+document.addEventListener('click', e => { if (!e.target.closest('#fmenu')) closeMenu(); });
+
+// ---------- 上拉面板内容 ----------
+function boardPanel() {
+  return `<div class="phd">看板<span class="st">${BOARD.proj}</span><button class="lk" onclick="openBoard()">完整看板</button></div>
+    ${BOARD.milestones.map(([id, g, st]) => `<div class="ms"><span class="id">${id}</span><span class="g">${g}</span>${MS_BADGE[st]}</div>`).join('')}
+    <div class="sec">review</div><div class="li">${BOARD.review}</div>
+    <div class="sec">待决策 ${BOARD.decisions.length}</div>${BOARD.decisions.map(d => `<div class="li">· ${d}</div>`).join('')}`;
+}
+function subPanel(subs) {
+  if (!subs.length) return '<div class="emp">还没有子 agent</div>';
+  return subs.map((x, i) => `<button class="subrow" onclick="openSub(${i})"><span class="dot ${x.s === 'run' ? 'run' : x.s === 'done' ? 'ok' : 'bad'}"></span><span class="n">${x.n}<span class="d">${x.desc}</span></span><span class="r">${x.tok}<br>${x.dur}</span></button>`).join('');
+}
+function taskPanel(tasks, done, doing) {
+  if (!tasks.length) return '<div class="emp">还没有任务</div>';
+  return `<div class="phd">${I.listChecks}任务<span class="st">${done} 已完成${doing ? ` · ${doing} 进行中` : ''}</span><button class="iconbtn" style="margin-left:auto" onclick="closePulls()">${I.chevD}</button></div>`
+    + tasks.map(t => `<div class="task ${t.s}"><span class="ic">${t.s === 'done' ? I.checkCircle : t.s === 'doing' ? I.loader : I.circle}</span>${t.t}</div>`).join('');
+}
+
+// ---------- 输入区（按会话渲染） ----------
+function composerHTML(s) {
+  const streaming = !!s.streaming;
+  const subs = s.subs || [], tasks = s.tasks || [];
+  const running = subs.filter(x => x.s === 'run').length;
+  const done = tasks.filter(t => t.s === 'done').length, doing = tasks.filter(t => t.s === 'doing').length;
+  const firstDoing = BOARD.milestones.find(m => m[2] === 'doing');
+  const boardSt = firstDoing ? `${firstDoing[0]} 进行中` : '';
+  const subSt = subs.length ? (running ? `${running} 运行中 / ${subs.length}` : `${subs.length}`) : '';
+  const taskSt = tasks.length ? `${done} 已完成${doing ? ` · ${doing} 进行中` : ''}` : '';
+  const c = s.ctx;
+  const pct = Math.round(c.usedK / c.totalK * 100);
+  const C = 2 * Math.PI * 7;
+  const dash = (pct / 100 * C).toFixed(1);
+  const p = k => (k / c.totalK * 100).toFixed(1);
+  const fmt = k => k >= 1000 ? `${(k / 1000).toFixed(1)}M` : `${k}K`;
+  return `<div class="composer-inner">
+    <div class="pullbar">
+      <div class="pull-wrap">
+        <button class="pchip" onclick="togglePull(this)">${I.grid}<span class="lb">看板</span>${boardSt ? `<span class="st">${boardSt}</span>` : ''}${BOARD.decisions.length ? '<span class="dot pend" title="有待决策"></span>' : ''}${I.chevU}</button>
+        <div class="pull" style="width:520px">${boardPanel()}</div>
+      </div>
+      <div class="pull-wrap">
+        <button class="pchip" onclick="togglePull(this)">${I.bot}<span class="lb">子 agent</span>${subSt ? `<span class="st">${subSt}</span>` : ''}${running ? '<span class="dot run"></span>' : ''}${I.chevU}</button>
+        <div class="pull" style="width:480px">${subPanel(subs)}</div>
       </div>
       <span class="spacer"></span>
-      <div class="pop-wrap">
-        <button class="chip" onclick="togglePop(this)">${I.box}deepseek-v4 · 思考 高${I.chevD}</button>
-        <div class="pop up">
-          <div class="grp">anthropic</div>
-          <button class="item"><span class="n">claude-sonnet-5</span><span class="m">$3 / $15</span></button>
-          <button class="item"><span class="n">claude-opus-5</span><span class="m">$15 / $75</span></button>
-          <div class="grp">deepseek</div>
-          <button class="item"><span class="ck">${I.check}</span><span class="n">deepseek-v4</span><span class="m">$0.28 / $0.42</span></button>
-          <button class="item"><span class="n">deepseek-v4-flash</span><span class="m">$0.07 / $0.28</span></button>
-          <hr>
-          <div class="seg"><span class="lb">思考</span><button>关</button><button>低</button><button>中</button><button class="on">高</button><button>最高</button></div>
-        </div>
+      <div class="pull-wrap">
+        <button class="pchip" onclick="togglePull(this)">${I.listChecks}<span class="lb">任务</span>${taskSt ? `<span class="st">${taskSt}</span>` : ''}${I.chevU}</button>
+        <div class="pull right" style="width:460px">${taskPanel(tasks, done, doing)}</div>
       </div>
-      <button class="send ${streaming ? 'stop' : ''}" title="${streaming ? '停止' : '发送'}">${streaming ? I.stop : I.up}</button>
     </div>
+    <div class="composer">
+      <textarea rows="2" placeholder="${streaming ? '运行中——现在发送会排在本轮之后' : '描述你要做的事'}"></textarea>
+      <div class="composer-bar">
+        <button class="iconbtn" title="附件">${I.clip}</button>
+        <div class="pop-wrap">
+          <button class="chip" onclick="togglePop(this)">${I.shield}允许编辑${I.chevD}</button>
+          <div class="pop up left">
+            <button class="item"><span class="n">询问<span class="sub">每次工具调用都确认</span></span></button>
+            <button class="item"><span class="ck">${I.check}</span><span class="n">允许编辑<span class="sub">读写编辑放行，bash 等确认</span></span></button>
+            <button class="item"><span class="n">全放行<span class="sub">不再询问（逃生舱）</span></span></button>
+          </div>
+        </div>
+        <span class="spacer"></span>
+        <div class="pop-wrap">
+          <button class="chip" onclick="togglePop(this)">${I.box}deepseek-v4 · 思考 高${I.chevD}</button>
+          <div class="pop up">
+            <div class="grp">anthropic</div>
+            <button class="item"><span class="n">claude-sonnet-5</span><span class="m">200K</span></button>
+            <button class="item"><span class="n">claude-opus-5</span><span class="m">200K</span></button>
+            <div class="grp">deepseek</div>
+            <button class="item"><span class="ck">${I.check}</span><span class="n">deepseek-v4</span><span class="m">256K</span></button>
+            <button class="item"><span class="n">deepseek-v4-flash</span><span class="m">128K</span></button>
+            <hr>
+            <div class="seg"><span class="lb">思考</span><button>关</button><button>低</button><button>中</button><button class="on">高</button><button>最高</button></div>
+          </div>
+        </div>
+        <div class="ctx-wrap">
+          <span class="ring">
+            <svg viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" fill="none" stroke="var(--line)" stroke-width="2.5"/><circle cx="9" cy="9" r="7" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${dash} ${C.toFixed(1)}"/></svg>
+          </span>
+          <div class="ctx-pop">
+            <div class="t"><span>上下文已用 ${pct}%</span><span>~${fmt(c.usedK)} / ${fmt(c.totalK)}</span></div>
+            <div class="bar"><span style="width:${p(c.sysK)}%;background:var(--line-strong)"></span><span style="width:${p(c.toolsK)}%;background:var(--violet)"></span><span style="width:${p(c.msgsK)}%;background:var(--accent)"></span></div>
+            <div class="r"><span class="sw" style="background:var(--line-strong)"></span>系统提示词<span class="v">~${fmt(c.sysK)}</span></div>
+            <div class="r"><span class="sw" style="background:var(--violet)"></span>工具定义<span class="v">~${fmt(c.toolsK)}</span></div>
+            <div class="r"><span class="sw" style="background:var(--accent)"></span>对话消息<span class="v">~${fmt(c.msgsK)}</span></div>
+          </div>
+        </div>
+        <button class="send ${streaming ? 'stop' : ''}" title="${streaming ? '停止' : '发送'}">${streaming ? I.stop : I.up}</button>
+      </div>
+    </div>
+    ${s.stats ? `<div class="runstats">${s.stats.join('<i>｜</i>')}</div>` : ''}
   </div>`;
 }
-document.querySelectorAll('[data-composer]').forEach(el => { el.innerHTML = composerHTML(el.dataset.composer === 'streaming'); });
+function renderComposer() {
+  const view = document.getElementById('view-' + state.view);
+  const wrap = view && view.querySelector('.composer-wrap');
+  if (wrap) wrap.innerHTML = composerHTML(SESSIONS[state.sid]);
+}
 
 // ---------- 头部 ----------
 function renderHeader() {
   const s = SESSIONS[state.sid];
   let h = `<button class="iconbtn" id="expandNav" title="展开侧栏" onclick="toggleNav()">${I.panel}</button>`;
   const drawerBtn = `<button class="iconbtn ${state.drawer ? 'on' : ''}" title="上下文" onclick="toggleDrawer()">${I.panelR}</button>`;
-
   if (state.view === 'board') {
-    h += `<div class="crumb"><span class="pl">${s.proj}</span><span class="sep">›</span><span class="title">看板</span></div><span class="spacer"></span><button class="btn ghost sm">${I.refresh}刷新</button>`;
+    h += `<button class="iconbtn" title="返回" onclick="selectSession('${state.sid}')">${I.back}</button>
+      <div class="hd2"><div class="ttl">看板</div><div class="desc">${s.proj}</div></div>
+      <span class="spacer"></span><button class="btn ghost sm">${I.refresh}刷新</button>`;
   } else if (state.sub !== null) {
     const sub = s.subs[state.sub];
     const [lbl, tone] = SUB_STATUS[sub.s];
     h += `<button class="iconbtn" title="返回" onclick="selectSession('${state.sid}')">${I.back}</button>
-      <div class="crumb"><span class="pl">${s.proj}</span><span class="sep">›</span><button class="lnk" onclick="selectSession('${state.sid}')">${s.title}</button><span class="sep">›</span><span class="title">${sub.n}</span></div>
-      <span class="badge ${tone}">${lbl}</span><span class="role">${sub.m} · ${sub.c}</span>
+      <div class="crumb"><button class="lnk" onclick="selectSession('${state.sid}')">${s.title}</button><span class="sep">›</span><span class="title">${sub.n}</span></div>
+      <span class="badge ${tone}">${lbl}</span><span class="role">${sub.m} · ${sub.tok} · ${sub.dur}</span>
       <span class="spacer"></span>${drawerBtn}`;
   } else {
-    const running = s.subs.filter(x => x.s === 'run').length;
-    const subChip = s.subs.length ? `<div class="pop-wrap">
-        <button class="chip" onclick="togglePop(this)">${I.bot}子 agent ${s.subs.length}${running ? ` <span class="dot run"></span>${running} 运行中` : ''}${I.chevD}</button>
-        <div class="pop">${s.subs.map((x, i) => {
-          const [lbl, tone] = SUB_STATUS[x.s];
-          return `<button class="item" onclick="openSub(${i})"><span class="n">${x.n}<span class="sub">${x.m} · ${x.c}</span></span><span class="badge ${tone}">${lbl}</span></button>`;
-        }).join('')}</div>
-      </div>` : '';
-    h += `<div class="crumb"><span class="pl">${s.proj}</span><span class="sep">›</span><button class="title">${s.title}${I.chevD}</button></div>
-      <span class="role">${s.role}</span><span class="spacer"></span>${subChip}${drawerBtn}
+    h += `<div class="hd2"><div class="ttl">${s.title}</div><div class="desc">${s.role}</div></div>
+      <span class="spacer"></span>${drawerBtn}
       ${s.kind !== 'main' ? `<button class="btn ghost" onclick="selectSession('${MAIN_OF[s.proj]}')">回主对话</button>` : ''}`;
   }
   document.getElementById('topbar').innerHTML = h;
@@ -748,12 +1053,12 @@ function renderHeader() {
 function showView(v) {
   document.querySelectorAll('.view').forEach(el => { el.hidden = el.id !== 'view-' + v; });
   document.getElementById('drawer').hidden = !state.drawer || v === 'board';
+  renderComposer();
 }
 function selectSession(sid) {
   state.sid = sid; state.sub = null; state.view = SESSIONS[sid].view;
-  document.querySelectorAll('.row[data-sid]').forEach(r => r.classList.toggle('active', r.dataset.sid === sid));
   document.getElementById('drawerTitle').textContent = SESSIONS[sid].title;
-  closePops(); renderHeader(); showView(state.view);
+  hideCard(); closePops(); renderSidebar(); renderHeader(); showView(state.view);
 }
 function openSub(i) {
   state.sub = i; state.view = 'subagent';
@@ -762,37 +1067,49 @@ function openSub(i) {
 }
 function openBoard() {
   state.sub = null; state.view = 'board';
-  document.querySelectorAll('.row[data-sid]').forEach(r => r.classList.remove('active'));
-  closePops(); renderHeader(); showView('board');
+  closePops(); renderSidebar(); renderHeader(); showView('board');
 }
-document.getElementById('sbList').addEventListener('click', e => {
-  const r = e.target.closest('[data-sid]'); if (r) selectSession(r.dataset.sid);
+function toggleNav() { document.getElementById('app').classList.toggle('nav-collapsed'); hideCard(); }
+function toggleDrawer() { state.drawer = !state.drawer; renderHeader(); document.getElementById('drawer').hidden = !state.drawer || state.view === 'board'; }
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') { e.preventDefault(); toggleNav(); }
+  if (e.key === 'Escape') { closePops(); closeMenu(); closeSettings(); }
 });
-function toggleProj(btn) { btn.parentElement.classList.toggle('open'); }
-function expandMore(btn) { btn.style.display = 'none'; btn.nextElementSibling.classList.add('open'); }
-function toggleArch(btn) { btn.nextElementSibling.classList.toggle('open'); }
-function toggleNav() { document.getElementById('app').classList.toggle('nav-collapsed'); }
-function toggleDrawer() { state.drawer = !state.drawer; renderHeader(); showView(state.view); }
-document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') { e.preventDefault(); toggleNav(); } if (e.key === 'Escape') { closePops(); closeSettings(); } });
 
-// ---------- 弹出菜单 ----------
-function closePops() { document.querySelectorAll('.pop.open').forEach(p => p.classList.remove('open')); }
+// ---------- 弹出菜单 / 上拉面板 ----------
+function closePulls() { document.querySelectorAll('.pull.open').forEach(p => p.classList.remove('open')); document.querySelectorAll('.pchip.on').forEach(b => b.classList.remove('on')); }
+function togglePull(btn) {
+  const pull = btn.parentElement.querySelector('.pull');
+  const wasOpen = pull.classList.contains('open');
+  closePulls();
+  if (!wasOpen) { pull.classList.add('open'); btn.classList.add('on'); }
+}
+function closePops() { document.querySelectorAll('.pop.open').forEach(p => p.classList.remove('open')); closePulls(); }
 function togglePop(btn) {
   const pop = btn.parentElement.querySelector('.pop');
   const wasOpen = pop.classList.contains('open');
-  closePops(); if (!wasOpen) pop.classList.add('open');
+  document.querySelectorAll('.pop.open').forEach(p => p.classList.remove('open'));
+  if (!wasOpen) pop.classList.add('open');
 }
-document.addEventListener('click', e => { if (!e.target.closest('.pop-wrap')) closePops(); });
+document.addEventListener('click', e => {
+  if (!e.target.closest('.pop-wrap')) document.querySelectorAll('.pop.open').forEach(p => p.classList.remove('open'));
+  if (!e.target.closest('.pull-wrap')) closePulls();
+});
 
 // ---------- 设置弹窗 ----------
 function openSettings() { document.getElementById('settings').classList.add('open'); }
 function closeSettings() { document.getElementById('settings').classList.remove('open'); }
-function setTab(btn, id) {
-  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b === btn));
+function setTab(id) {
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
   document.querySelectorAll('.pane').forEach(p => { p.hidden = p.id !== 'pane-' + id; });
 }
+function openSettingsTab(id) { hideCard(); closeMenu(); setTab(id); openSettings(); }
 
-renderHeader(); showView(state.view);
+// ---------- 完整看板表格 ----------
+document.getElementById('boardRows').innerHTML = BOARD.milestones.map(([id, g, st, dep, docs]) =>
+  `<tr><td>${id}</td><td>${g}</td><td>${MS_BADGE[st]}</td><td>${dep}</td><td>${docs.split(' · ').map(d => `<span class="lnk2">${d}</span>`).join(' · ')}</td></tr>`).join('');
+
+renderSidebar(); renderHeader(); showView(state.view);
 </script>
 </body>
 </html>

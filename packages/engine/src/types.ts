@@ -5,7 +5,7 @@ import type { TSchema } from "typebox";
 
 // ---------- 路径与项目 ----------
 
-export interface KeelPaths {
+export interface KeelHomePaths {
   /** keel 用户目录，默认 ~/.keel */
   home: string;
   /** 凭据文件（pi 格式） */
@@ -18,6 +18,9 @@ export interface KeelPaths {
   piAgentDir: string;
   /** 全部项目的会话根目录 */
   sessionsRoot: string;
+}
+
+export interface KeelPaths extends KeelHomePaths {
   /** 当前项目的会话目录 */
   projectSessionsDir: string;
   /** 当前项目的会话索引文件 */
@@ -390,6 +393,26 @@ export interface EngineOptions {
   homeDir?: string;
   /** 允许创建时联网刷新模型目录，默认 false */
   allowModelNetwork?: boolean;
+  /** 复用已建好的宿主（多工作区共享凭据 / 模型目录 / 设置）；给了就忽略 homeDir / allowModelNetwork */
+  host?: EngineHost;
+}
+
+export interface EngineHostOptions {
+  /** 默认 ~/.keel */
+  homeDir?: string;
+  /** 允许创建时联网刷新模型目录，默认 false */
+  allowModelNetwork?: boolean;
+}
+
+/** 用户级宿主：一个进程一份，承载凭据、模型目录、设置；多个项目引擎共享它。 */
+export interface EngineHost {
+  /** keel 用户目录（~/.keel） */
+  readonly home: string;
+  readonly models: Engine["models"];
+  readonly settings: Engine["settings"];
+  /** 在这个宿主上为某个项目目录建引擎 */
+  createEngine(options: { cwd: string }): Promise<Engine>;
+  dispose(): Promise<void>;
 }
 
 export interface Engine {
