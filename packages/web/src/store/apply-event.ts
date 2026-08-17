@@ -22,14 +22,18 @@ export interface ChatState {
   activeTools: Record<string, { toolName: string; args: unknown }>;
 }
 
+const EMPTY_MESSAGES: ChatState["messages"] = [];
+const EMPTY_ENTRIES: ChatState["entries"] = [];
+const EMPTY_TOOLS: ChatState["activeTools"] = {};
+
 export const emptyChat = (): ChatState => ({
-  messages: [],
-  entries: [],
+  messages: EMPTY_MESSAGES,
+  entries: EMPTY_ENTRIES,
   streamingIndex: null,
   streaming: false,
   loaded: false,
   needsResync: false,
-  activeTools: {},
+  activeTools: EMPTY_TOOLS,
 });
 
 export function applyEngineEvent(chat: ChatState, event: EngineEvent): ChatState {

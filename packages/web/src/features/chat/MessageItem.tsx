@@ -45,8 +45,8 @@ function UserMessage({ message }: { message: Extract<EngineMessage, { role: "use
       ? message.content
       : message.content.map((p) => (p.type === "text" ? p.text : "[图片]")).join("\n");
   return (
-    <div className="mx-auto flex max-w-3xl justify-end px-4 py-2">
-      <div className="max-w-[80%] whitespace-pre-wrap rounded-lg bg-accent-soft px-3 py-2 text-sm">
+    <div className="mx-auto flex max-w-[760px] justify-end px-5 py-1.5">
+      <div className="max-w-[78%] whitespace-pre-wrap rounded-[14px] rounded-br-sm bg-panel-2 px-3 py-2 text-sm">
         {text}
       </div>
     </div>
@@ -63,7 +63,7 @@ function AssistantMessage({
   streaming: boolean;
 }) {
   return (
-    <div className="mx-auto max-w-3xl space-y-2 px-4 py-2">
+    <div className="space-y-2 px-5 py-1">
       {message.content.map((part, i) => {
         const key = `${message.timestamp}-${i}`;
         if (part.type === "thinking") return <ThinkingBlock key={key} text={part.thinking} />;
