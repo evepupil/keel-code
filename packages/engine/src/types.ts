@@ -85,6 +85,7 @@ export interface CatalogProvider {
   name?: string;
   baseUrl?: string;
   api?: string;
+  headers?: Record<string, string>;
   models?: CatalogModel[];
 }
 

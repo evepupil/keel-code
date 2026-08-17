@@ -11,6 +11,7 @@ import type {
   UpsertProviderInput,
 } from "../types.js";
 import {
+  backfillDefaultHeaders,
   catalogOf,
   isKnownApi,
   readModelsFile,
@@ -47,6 +48,12 @@ export function readCatalog(modelsPath: string, providerId: string): CatalogProv
   return catalogOf(readModelsFile(modelsPath), providerId);
 }
 
+/** 启动时把默认请求头补进已有 models.json（改动了才写回）。 */
+export function normalizeModelsFile(modelsPath: string): void {
+  const file = readModelsFile(modelsPath);
+  if (backfillDefaultHeaders(file)) writeModelsFile(modelsPath, file);
+}
+
 export async function upsertProvider(
   runtime: ModelRuntime,
   modelsPath: string,
@@ -74,6 +81,7 @@ export async function upsertProvider(
     ...(input.api !== undefined ? { api: input.api } : {}),
     ...(input.models !== undefined ? { models: input.models } : {}),
   });
+  backfillDefaultHeaders(file);
   writeModelsFile(modelsPath, file);
 
   const body = file.providers[input.id];
@@ -81,6 +89,7 @@ export async function upsertProvider(
     ...(body?.name ? { name: body.name } : {}),
     ...(body?.baseUrl ? { baseUrl: body.baseUrl } : {}),
     ...(body?.api ? { api: body.api as never } : {}),
+    ...(body?.headers ? { headers: body.headers } : {}),
     ...(body?.models
       ? {
           models: toRuntimeModels(

@@ -1,8 +1,9 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { makeTempDir } from "@keel-code/testkit";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  backfillDefaultHeaders,
   catalogOf,
   emptyModelsFile,
   readModelsFile,
@@ -76,5 +77,31 @@ describe("models.json 读写", () => {
       file,
     );
     expect(shown.map((m) => m.id)).toEqual(["a", "c"]);
+  });
+
+  it("backfill 补默认 user-agent；已有的不动；内联 apiKey 不丢", () => {
+    const fileA = upsertCatalog(emptyModelsFile(), "a", { name: "A" });
+    const file = upsertCatalog(fileA, "b", { name: "B", headers: { "user-agent": "mine" } });
+    expect(backfillDefaultHeaders(file)).toBe(true);
+    expect(file.providers.a?.headers?.["user-agent"]).toBe("keel-code");
+    expect(file.providers.b?.headers?.["user-agent"]).toBe("mine");
+    expect(backfillDefaultHeaders(file)).toBe(false);
+
+    const tmp = makeTempDir();
+    dirs.push(tmp);
+    const path = join(tmp.path, "models.json");
+    // pi 兼容：models.json 里可以有内联 apiKey，回填写回不能丢
+    writeModelsFile(path, file);
+    const raw = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+    raw.providers = {
+      ...raw.providers,
+      c: { name: "C", apiKey: "inline-key", baseUrl: "https://x", api: "openai-completions" },
+    };
+    writeFileSync(path, JSON.stringify(raw, null, 2));
+    const reloaded = readModelsFile(path);
+    expect(reloaded.providers.c?.apiKey).toBe("inline-key");
+    expect(backfillDefaultHeaders(reloaded)).toBe(true);
+    writeModelsFile(path, reloaded);
+    expect(readModelsFile(path).providers.c?.apiKey).toBe("inline-key");
   });
 });

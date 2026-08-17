@@ -2,6 +2,7 @@ import { HookBus } from "./hooks/bus.js";
 import {
   addedProviders,
   fetchRemoteModels,
+  normalizeModelsFile,
   readCatalog,
   removeProvider,
   unusedBuiltins,
@@ -33,6 +34,7 @@ export async function createEngineHost(options: EngineHostOptions = {}): Promise
   scrubInheritedProviderEnv();
   const home = resolveHomePaths(options.homeDir);
   ensureHomeDirs(home);
+  normalizeModelsFile(home.modelsFile);
   // 只在默认用户目录（~/.keel）首次启动时从 pi 导入凭据；测试 / 演示用的临时目录不导，避免误用真 key
   if (!options.homeDir && !process.env.KEEL_HOME) importPiCredentials(home);
   const runtimeOptions =

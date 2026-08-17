@@ -581,6 +581,8 @@ class AppStore {
   }
 
   async abort(id: string): Promise<void> {
+    // 先本地置非流式，点按立即有反馈；服务端随后的事件再校准
+    this.setChat(id, (c) => ({ ...c, streaming: false, streamingIndex: null }));
     try {
       await api.abort(id);
     } catch (e) {

@@ -18,8 +18,11 @@ import { Segmented } from "../../design-system/components/segmented";
 import { appStore, useAppState } from "../../store/app-store";
 import { emptyChat } from "../../store/apply-event";
 import { modelKey, parseModelKey } from "../models/ModelSelect";
+import { type InputHistory, newInputHistory, pushHistory, stepHistory } from "./input-history";
 import { PullBar } from "./PullBar";
 import { formatTok, runStatsOf } from "./stats";
+
+const HISTORY_KEY = "keel.inputHistory";
 
 const PERM: { value: "ask" | "edits" | "yolo"; label: string; sub: string }[] = [
   { value: "ask", label: "询问", sub: "每次工具调用都确认" },
@@ -49,6 +52,14 @@ export function Composer({
   const models = useAppState((s) => s.models);
   const [text, setText] = useState("");
   const [perm, setPerm] = useState<"ask" | "edits" | "yolo">("edits");
+  const [history, setHistory] = useState<InputHistory>(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]") as unknown;
+      return newInputHistory(Array.isArray(raw) ? raw.filter((x) => typeof x === "string") : []);
+    } catch {
+      return newInputHistory();
+    }
+  });
   const ref = useRef<HTMLTextAreaElement>(null);
   const draft = useAppState((s) => s.composerDraft);
   const stats = runStatsOf(messages);
@@ -86,6 +97,13 @@ export function Composer({
     const t = text.trim();
     if (!t) return;
     void appStore.sendPrompt(session.meta.id, t);
+    const next = pushHistory(history, t);
+    setHistory(next);
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(next.items));
+    } catch {
+      // 隐私模式下存不进就算了
+    }
     setText("");
     ref.current?.focus();
   };
@@ -94,6 +112,20 @@ export function Composer({
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       send();
+      return;
+    }
+    if ((e.key === "ArrowUp" || e.key === "ArrowDown") && !e.nativeEvent.isComposing) {
+      const step = stepHistory(history, e.key, text);
+      if (step) {
+        e.preventDefault();
+        setHistory(step.history);
+        setText(step.text);
+        // 光标挪到结尾，像 shell 一样接着编辑
+        requestAnimationFrame(() => {
+          const el = ref.current;
+          if (el) el.selectionStart = el.selectionEnd = el.value.length;
+        });
+      }
     }
   };
 

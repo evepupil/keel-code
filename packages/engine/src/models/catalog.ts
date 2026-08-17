@@ -13,7 +13,28 @@ export interface CatalogProviderBody {
   name?: string;
   baseUrl?: string;
   api?: string;
+  headers?: Record<string, string>;
+  /** 兼容 pi 的内联密钥（测试夹具用它）；keel 自己的 UI 流程密钥走 auth.json */
+  apiKey?: string;
   models?: CatalogModel[];
+}
+
+/** 请求头默认值：不少中转网关按 User-Agent 拦官方 SDK 标识（403 Your request was blocked）。 */
+export const DEFAULT_USER_AGENT = "keel-code";
+
+/**
+ * 给没有 user-agent 的提供方补默认值。返回是否改动了文件（需要写回）。
+ * 用户自己写过的 headers 不动。
+ */
+export function backfillDefaultHeaders(file: ModelsFile): boolean {
+  let changed = false;
+  for (const body of Object.values(file.providers)) {
+    const hasUa = Object.keys(body.headers ?? {}).some((k) => k.toLowerCase() === "user-agent");
+    if (hasUa) continue;
+    body.headers = { ...(body.headers ?? {}), "user-agent": DEFAULT_USER_AGENT };
+    changed = true;
+  }
+  return changed;
 }
 
 export const PROVIDER_ID_RE = /^[a-z][a-z0-9_-]{0,62}$/;
@@ -78,6 +99,7 @@ export function upsertCatalog(
   if (patch.name !== undefined) next.name = patch.name || undefined;
   if (patch.baseUrl !== undefined) next.baseUrl = patch.baseUrl || undefined;
   if (patch.api !== undefined) next.api = patch.api || undefined;
+  if (patch.headers !== undefined) next.headers = patch.headers;
   if (patch.models !== undefined) next.models = patch.models;
   return { providers: { ...file.providers, [id]: next } };
 }
@@ -108,10 +130,20 @@ function sanitizeBody(raw: Record<string, unknown>): CatalogProviderBody {
         )
         .map((m) => sanitizeModel(m))
     : undefined;
+  const headers =
+    raw.headers && typeof raw.headers === "object"
+      ? Object.fromEntries(
+          Object.entries(raw.headers as Record<string, unknown>).filter(
+            (kv): kv is [string, string] => typeof kv[1] === "string",
+          ),
+        )
+      : undefined;
   return {
     ...(typeof raw.name === "string" ? { name: raw.name } : {}),
     ...(typeof raw.baseUrl === "string" ? { baseUrl: raw.baseUrl } : {}),
     ...(typeof raw.api === "string" ? { api: raw.api } : {}),
+    ...(typeof raw.apiKey === "string" ? { apiKey: raw.apiKey } : {}),
+    ...(headers ? { headers } : {}),
     ...(models ? { models } : {}),
   };
 }
