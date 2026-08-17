@@ -1,4 +1,4 @@
-import { ChevronRight, Folder, MoreHorizontal, Settings, SquarePen, Trash2 } from "lucide-react";
+import { Folder, FolderOpen, MoreHorizontal, Settings, SquarePen, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { SessionListItem, WorkspaceInfo } from "../../api/types";
 import {
@@ -14,7 +14,6 @@ import {
   MenuSeparator,
   MenuTrigger,
 } from "../../design-system/components/menu";
-import { cn } from "../../lib/cn";
 import { appStore, useAppState } from "../../store/app-store";
 import { NewSessionDialog } from "../sessions/NewSessionDialog";
 import { bucketSessions } from "./group-sessions";
@@ -51,13 +50,11 @@ export function ProjectGroup({ workspace }: { workspace: WorkspaceInfo }) {
               className="flex min-w-0 flex-1 items-center gap-1.5 px-1.5 py-1.5 text-left text-sm font-medium"
               onClick={() => appStore.toggleWorkspace(workspace.id)}
             >
-              <ChevronRight
-                className={cn(
-                  "h-3.5 w-3.5 shrink-0 text-ink-faint transition-transform",
-                  expanded && "rotate-90",
-                )}
-              />
-              <Folder className="h-3.5 w-3.5 shrink-0 text-ink-muted" />
+              {expanded ? (
+                <FolderOpen className="h-3.5 w-3.5 shrink-0 text-ink-muted" />
+              ) : (
+                <Folder className="h-3.5 w-3.5 shrink-0 text-ink-muted" />
+              )}
               <span className="min-w-0 truncate">{workspace.name}</span>
             </button>
             <span className="inline-flex shrink-0">
@@ -158,7 +155,7 @@ export function ProjectGroup({ workspace }: { workspace: WorkspaceInfo }) {
           {bucket.hidden > 0 ? (
             <button
               type="button"
-              className="w-full rounded-md py-1 pr-2 pl-7 text-left text-xs text-ink-faint hover:bg-panel-2"
+              className="w-full rounded-md py-1 pr-2 pl-[2.125rem] text-left text-xs text-ink-faint hover:bg-panel-2"
               onClick={() => setShowAll(true)}
             >
               展开其余 {bucket.hidden} 个对话
@@ -168,7 +165,7 @@ export function ProjectGroup({ workspace }: { workspace: WorkspaceInfo }) {
             <>
               <button
                 type="button"
-                className="flex w-full items-center rounded-md py-1 pr-2 pl-7 text-left text-xs text-ink-faint hover:bg-panel-2"
+                className="flex w-full items-center rounded-md py-1 pr-2 pl-[2.125rem] text-left text-xs text-ink-faint hover:bg-panel-2"
                 onClick={() => setShowArch((v) => !v)}
               >
                 已归档 ({bucket.archived.length})
