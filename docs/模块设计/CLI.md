@@ -4,7 +4,7 @@
 - **对应代码**：`packages/cli/`（bin：`keel`）
 - **所属里程碑**：[M1 — init / serve / doctor](../roadmap.md#m1) → [M5 — run](../roadmap.md#m5) → [M6 — 分发与 tui](../roadmap.md#m6) → [M7 — keel web 多工作区](../roadmap.md#m7) → [M8 — ext](../roadmap.md#m8) → [M9](../roadmap.md#m9) / [M10](../roadmap.md#m10)
 - **当前状态**：进行中（init / web / serve / status / doctor / run 已落地）
-- **最近更新**：2026-08-18
+- **最近更新**：2026-08-19
 
 ## 职责与边界
 
@@ -40,7 +40,7 @@ packages/cli/src/
 
 ## 发布形态
 
-`keel-code` 与 `@keel-code/*`（web、testkit 除外）均为可发布包；`prepack` 跑 `scripts/copy-web.mjs` 把 `packages/web/dist` 复制到 `packages/cli/web/`（发布产物含 Web 工作台）；统一版本为 `0.1.0` 后用 `pnpm -r publish` 发布，`workspace:*` 会被替换为版本号。开发期用 `pnpm keel <命令>`（根脚本）。
+`keel-code` 与 `@keel-code/*`（web、testkit 除外）均为可发布包；`prepack` 跑 `scripts/copy-web.mjs` 把 `packages/web/dist` 复制到 `packages/cli/web/`（发布产物含 Web 工作台）。8 个 `@keel-code/*` 运行包已发布 `0.1.0`；由于 npm 不允许复用已撤回的 `keel-code@0.1.0`，CLI 使用 `0.1.1` 发布，CLI 发布时用 `pnpm --filter keel-code publish --no-git-checks`，`workspace:*` 会被替换为已发布版本号。开发期用 `pnpm keel <命令>`（根脚本）。
 
 ## 待扩展项
 
@@ -60,6 +60,7 @@ packages/cli/src/
 | 2026-08-17 | M5：run 无头模式；init 配置含 permissions / docPrune |
 | 2026-08-17 | M6 准备：包设为可发布（publishConfig），prepack 复制 Web 产物到 `<cli>/web`，根脚本 `pnpm keel` |
 | 2026-08-18 | M6：公开包统一为 `0.1.0`，准备通过 `pnpm -r publish` 发布；CLI 包 README 补齐 |
+| 2026-08-19 | M6：8 个运行包已发布 `0.1.0`；CLI 因 npm 版本不可复用改为 `0.1.1`，待单独发布 |
 | 2026-08-17 | run 退出前等待后台子 agent；DeepSeek 真机冒烟通过 |
 | 2026-08-17 | M8 设计：`keel ext` / init 配置段 / doctor 扩展检查 |
 | 2026-08-17 | M9 / M10 设计：init / doctor 覆盖说明书、危险清单、worktree、钩子 |
