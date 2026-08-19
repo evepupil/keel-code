@@ -1,6 +1,6 @@
 {
   "name": "keel-code",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "keel-code：把工程方法论焊进基础设施的编程 agent 工具（keel serve / run / init / doctor）",
   "license": "MIT",
   "type": "module",
